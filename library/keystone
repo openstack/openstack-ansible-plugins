@@ -1174,6 +1174,9 @@ def main():
             login_tenant_name=dict(
                 required=False
             ),
+            login_project_name=dict(
+                required=False
+            ),
             token=dict(
                 required=False
             ),
