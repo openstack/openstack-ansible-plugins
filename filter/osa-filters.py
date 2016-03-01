@@ -14,17 +14,108 @@
 #
 # (c) 2015, Kevin Carter <kevin.carter@rackspace.com>
 
+import hashlib
+import logging
 import os
 import re
 import urlparse
-import hashlib
 
 from ansible import errors
+from jinja2.runtime import Undefined
 
 """Filter usage:
 
 Simple filters that may be useful from within the stack
 """
+
+
+def _deprecated(new_var, old_var=None, old_var_name=None,
+                new_var_name=None, removed_in=None, fatal=False):
+    """Provide a deprecation warning on deprecated variables.
+
+    This filter will return the old_var value if defined along with a
+    deprecation warning that will inform the user that the old variable
+    should no longer be used.
+
+    In order to use this filter the old and new variable names must be provided
+    to the filter as a string which is used to render the warning message. The
+    removed_in option is used to give a date or release name where the old
+    option will be removed. Optionally, if fatal is set to True, the filter
+    will raise an exception if the old variable is used.
+
+    USAGE: {{ new_var | deprecated(old_var,
+                                   "old_var_name",
+                                   "new_var_name",
+                                   "removed_in",
+                                   false) }}
+
+    :param new_var: ``object``
+    :param old_var: ``object``
+    :param old_var_name: ``str``
+    :param new_var_name: ``str``
+    :param removed_in: ``str``
+    :param fatal: ``bol``
+    """
+    _usage = (
+        'USAGE: '
+        '{{ new_var | deprecated(old_var=old_var, old_var_name="old_var_name",'
+        ' new_var_name="new_var_name", removed_in="removed_in",'
+        ' fatal=false) }}'
+    )
+
+    if not old_var_name:
+        raise errors.AnsibleUndefinedVariable(
+            'To use this filter you must provide the "old_var_name" option'
+            ' with the string name of the old variable that will be'
+            ' replaced. ' + _usage
+        )
+    if not new_var_name:
+        raise errors.AnsibleUndefinedVariable(
+            'To use this filter you must provide the "new_var_name" option'
+            ' with the string name of the new variable that will replace the'
+            ' deprecated one. ' + _usage
+        )
+    if not removed_in:
+        raise errors.AnsibleUndefinedVariable(
+            'To use this filter you must provide the "removed_in" option with'
+            ' the string name of the release where the old_var will be'
+            ' removed. ' + _usage
+        )
+
+    # If old_var is undefined or has a None value return the new_var value
+    if isinstance(old_var, Undefined) or not old_var:
+        return new_var
+
+    name = 'Ansible-Warning| '
+    log = logging.getLogger(name)
+    for handler in log.handlers:
+        if name == handler.name:
+            break
+    else:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.DEBUG)
+        stream_handler.name = name
+        stream_format = logging.Formatter(
+            '%(asctime)s - %(name)s%(levelname)s => %(message)s'
+        )
+        stream_handler.setFormatter(stream_format)
+
+        log.setLevel(logging.DEBUG)
+        log.addHandler(stream_handler)
+
+    message = (
+        'Deprecated Option provided: Deprecated variable: "%(old)s", Removal'
+        ' timeframe: "%(removed_in)s", Future usage: "%(new)s"'
+        % {'old': old_var_name, 'new': new_var_name, 'removed_in': removed_in}
+    )
+
+    if str(fatal).lower() in ['yes', 'true']:
+        message = 'Fatally %s' % message
+        log.fatal(message)
+        raise RuntimeError(message)
+    else:
+        log.warn(message)
+        return old_var
 
 
 def _pip_requirement_split(requirement):
@@ -240,5 +331,6 @@ class FilterModule(object):
             'splitlines': splitlines,
             'filtered_list': filtered_list,
             'git_link_parse': git_link_parse,
-            'git_link_parse_name': git_link_parse_name
+            'git_link_parse_name': git_link_parse_name,
+            'deprecated': _deprecated
         }
