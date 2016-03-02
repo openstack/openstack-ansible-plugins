@@ -387,8 +387,9 @@ class DependencyFileProcessor(object):
         # get the repo name definition
         name = git_data['name'] = loaded_yaml.get(name_var)
         if not name:
+            # NOTE: strip off trailing /, .git, or .git/
             name = git_data['name'] = os.path.basename(
-                git_data['repo'].rstrip('/')
+                re.sub(r'(\/$|\.git(\/)?$)', '', git_data['repo'])
             )
         git_data['egg_name'] = name.replace('-', '_')
 
