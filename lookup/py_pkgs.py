@@ -22,6 +22,15 @@ from distutils.version import LooseVersion
 from ansible import __version__ as __ansible_version__
 import yaml
 
+BASECLASS = object
+if LooseVersion(__ansible_version__) < LooseVersion("2.0"):
+    from ansible import utils, errors
+    LOOKUP_MODULE_CLASS = 'V1'
+else:
+    from ansible.errors import AnsibleError
+    from ansible.plugins.lookup import LookupBase
+    BASECLASS = LookupBase
+    LOOKUP_MODULE_CLASS = 'V2'
 
 # Used to keep track of git package parts as various files are processed
 GIT_PACKAGE_DEFAULT_PARTS = dict()
@@ -501,117 +510,111 @@ def _abs_path(path):
     )
 
 
-class LookupModule(object):
-    def __new__(class_name, *args, **kwargs):
-        if LooseVersion(__ansible_version__) < LooseVersion("2.0"):
-            from ansible import utils, errors
+class LookupModule(BASECLASS):
+    def __init__(self, basedir=None, **kwargs):
+        """Run the lookup module.
 
-            class LookupModuleV1(object):
-                def __init__(self, basedir=None, **kwargs):
-                    """Run the lookup module.
+        :type basedir:
+        :type kwargs:
+        """
+        self.ansible_v1_basedir = basedir
 
-                    :type basedir:
-                    :type kwargs:
-                    """
-                    self.basedir = basedir
-
-                def run(self, terms, inject=None, **kwargs):
-                    """Run the main application.
-
-                    :type terms: ``str``
-                    :type inject: ``str``
-                    :type kwargs: ``dict``
-                    :returns: ``list``
-                    """
-                    terms = utils.listify_lookup_plugin_terms(
-                        terms,
-                        self.basedir,
-                        inject
-                    )
-                    if isinstance(terms, basestring):
-                        terms = [terms]
-
-                    return_data = PACKAGE_MAPPING
-
-                    for term in terms:
-                        return_list = list()
-                        try:
-                            dfp = DependencyFileProcessor(
-                                local_path=_abs_path(str(term))
-                            )
-                            return_list.extend(dfp.pip['py_package'])
-                            return_list.extend(dfp.pip['git_package'])
-                        except Exception as exp:
-                            raise errors.AnsibleError(
-                                'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
-                                    term,
-                                    str(exp),
-                                    traceback.format_exc()
-                                )
-                            )
-
-                        for item in return_list:
-                            map_base_and_remote_packages(item, return_data)
-                        else:
-                            parse_remote_package_parts(return_data)
-                    else:
-                        map_role_packages(return_data)
-                        map_base_package_details(return_data)
-                        # Sort everything within the returned data
-                        for key, value in return_data.items():
-                            if isinstance(value, (list, set)):
-                                return_data[key] = sorted(value)
-                        return [return_data]
-            return LookupModuleV1(*args, **kwargs)
-
+    def run(self, *args, **kwargs):
+        if LOOKUP_MODULE_CLASS == 'V1':
+            return self.run_v1(*args, **kwargs)
         else:
-            from ansible.errors import AnsibleError
-            from ansible.plugins.lookup import LookupBase
+            return self.run_v2(*args, **kwargs)
 
-            class LookupModuleV2(LookupBase):
-                def run(self, terms, variables=None, **kwargs):
-                    """Run the main application.
+    def run_v2(self, terms, variables=None, **kwargs):
+        """Run the main application.
 
-                    :type terms: ``str``
-                    :type variables: ``str``
-                    :type kwargs: ``dict``
-                    :returns: ``list``
-                    """
-                    if isinstance(terms, basestring):
-                        terms = [terms]
+        :type terms: ``str``
+        :type variables: ``str``
+        :type kwargs: ``dict``
+        :returns: ``list``
+        """
+        if isinstance(terms, basestring):
+            terms = [terms]
 
-                    return_data = PACKAGE_MAPPING
+        return_data = PACKAGE_MAPPING
 
-                    for term in terms:
-                        return_list = list()
-                        try:
-                            dfp = DependencyFileProcessor(
-                                local_path=_abs_path(str(term))
-                            )
-                            return_list.extend(dfp.pip['py_package'])
-                            return_list.extend(dfp.pip['git_package'])
-                        except Exception as exp:
-                            raise AnsibleError(
-                                'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
-                                    term,
-                                    str(exp),
-                                    traceback.format_exc()
-                                )
-                            )
+        for term in terms:
+            return_list = list()
+            try:
+                dfp = DependencyFileProcessor(
+                    local_path=_abs_path(str(term))
+                )
+                return_list.extend(dfp.pip['py_package'])
+                return_list.extend(dfp.pip['git_package'])
+            except Exception as exp:
+                raise AnsibleError(
+                    'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
+                        term,
+                        str(exp),
+                        traceback.format_exc()
+                    )
+                )
 
-                        for item in return_list:
-                            map_base_and_remote_packages(item, return_data)
-                        else:
-                            parse_remote_package_parts(return_data)
-                    else:
-                        map_role_packages(return_data)
-                        map_base_package_details(return_data)
-                        # Sort everything within the returned data
-                        for key, value in return_data.items():
-                            if isinstance(value, (list, set)):
-                                return_data[key] = sorted(value)
-                        return [return_data]
-            return LookupModuleV2(*args, **kwargs)
+            for item in return_list:
+                map_base_and_remote_packages(item, return_data)
+            else:
+                parse_remote_package_parts(return_data)
+        else:
+            map_role_packages(return_data)
+            map_base_package_details(return_data)
+            # Sort everything within the returned data
+            for key, value in return_data.items():
+                if isinstance(value, (list, set)):
+                    return_data[key] = sorted(value)
+            return [return_data]
+
+    def run_v1(self, terms, inject=None, **kwargs):
+        """Run the main application.
+
+        :type terms: ``str``
+        :type inject: ``str``
+        :type kwargs: ``dict``
+        :returns: ``list``
+        """
+        terms = utils.listify_lookup_plugin_terms(
+            terms,
+            self.ansible_v1_basedir,
+            inject
+        )
+        if isinstance(terms, basestring):
+            terms = [terms]
+
+        return_data = PACKAGE_MAPPING
+
+        for term in terms:
+            return_list = list()
+            try:
+                dfp = DependencyFileProcessor(
+                    local_path=_abs_path(str(term))
+                )
+                return_list.extend(dfp.pip['py_package'])
+                return_list.extend(dfp.pip['git_package'])
+            except Exception as exp:
+                raise errors.AnsibleError(
+                    'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
+                        term,
+                        str(exp),
+                        traceback.format_exc()
+                    )
+                )
+
+            for item in return_list:
+                map_base_and_remote_packages(item, return_data)
+            else:
+                parse_remote_package_parts(return_data)
+        else:
+            map_role_packages(return_data)
+            map_base_package_details(return_data)
+            # Sort everything within the returned data
+            for key, value in return_data.items():
+                if isinstance(value, (list, set)):
+                    return_data[key] = sorted(value)
+            return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
 if __name__ == '__main__':
