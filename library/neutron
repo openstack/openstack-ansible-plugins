@@ -48,6 +48,10 @@ options:
     subnet_name:
         description:
             - Name of subnet
+    allocation_pools:
+        description:
+            - List of allocation pools for a subnet. Format is
+              startip-endip[,startip-endip]...
     router_name:
         description:
             - Name of router
@@ -138,7 +142,8 @@ COMMAND_MAP = {
             'net_name',
             'subnet_name',
             'cidr',
-            'tenant_id'
+            'tenant_id',
+            'allocation_pools'
         ]
     },
     'create_router': {
@@ -325,6 +330,16 @@ class ManageNeutron(object):
         network_id = self._get_resource_by_name('networks', net_name)
         tenant_id = variables_dict.pop('tenant_id')
 
+        # allocation_pools is a string with the format:
+        # startip-endip[,startip-endip]...
+        allocation_pools_str = variables_dict.get('allocation_pools', "")
+        allocation_pools = []
+        for ap in allocation_pools_str.split(','):
+            if "-" not in ap:
+                continue
+            start, end = ap.split('-')
+            allocation_pools.append({'start': start, 'end': end})
+
         if not network_id:
             self.failure(
                 error='Network not found',
@@ -338,6 +353,9 @@ class ManageNeutron(object):
                  "network_id": network_id}
             if tenant_id:
                 s["tenant_id"] = tenant_id
+            if allocation_pools:
+                s["allocation_pools"] = allocation_pools
+
             self.neutron.create_subnet({"subnet": s})
         return self._facts('subnets', self.neutron.list_subnets())
 
@@ -411,7 +429,8 @@ def main():
             external_gateway_info=dict(required=False),
             tenant_id=dict(required=False),
             insecure=dict(default=False, required=False,
-                          choices=BOOLEANS + ['True', 'False'])
+                          choices=BOOLEANS + ['True', 'False']),
+            allocation_pools=dict(required=False)
         ),
         supports_check_mode=False
     )
