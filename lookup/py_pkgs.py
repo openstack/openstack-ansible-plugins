@@ -424,7 +424,7 @@ class DependencyFileProcessor(object):
         if name not in GIT_PACKAGE_DEFAULT_PARTS:
             GIT_PACKAGE_DEFAULT_PARTS[name] = git_data.copy()
         else:
-            GIT_PACKAGE_DEFAULT_PARTS[name].update()
+            GIT_PACKAGE_DEFAULT_PARTS[name].update(git_data)
 
         # get the repo plugin definitions, if any
         git_data['plugins'] = loaded_yaml.get(plugins_var)
@@ -434,6 +434,24 @@ class DependencyFileProcessor(object):
                 git_repo_plugins=git_data['plugins'],
                 git_data=git_data
             )
+
+    def _package_build_index(self, packages, role_name, var_name):
+        self._py_pkg_extend(packages)
+        if role_name:
+            if role_name in ROLE_PACKAGES:
+                role_pkgs = ROLE_PACKAGES[role_name]
+            else:
+                role_pkgs = ROLE_PACKAGES[role_name] = dict()
+
+            pkgs = role_pkgs.get(var_name, list())
+            if 'optional' not in var_name:
+                pkgs.extend(packages)
+            ROLE_PACKAGES[role_name][var_name] = pkgs
+        else:
+            for k, v in ROLE_PACKAGES.items():
+                for item_name in v.keys():
+                    if var_name == item_name:
+                        ROLE_PACKAGES[k][item_name].extend(packages)
 
     def _process_files(self):
         """Process files."""
@@ -462,25 +480,29 @@ class DependencyFileProcessor(object):
                         loaded_yaml=loaded_config,
                         git_item=key,
                         yaml_file_name=file_name
-                )
+                    )
 
-                if [i for i in BUILT_IN_PIP_PACKAGE_VARS if i in key]:
-                    self._py_pkg_extend(values)
-                    if role_name:
-                        if role_name in ROLE_PACKAGES:
-                            role_pkgs = ROLE_PACKAGES[role_name]
-                        else:
-                            role_pkgs = ROLE_PACKAGES[role_name] = dict()
+                if [i for i in BUILT_IN_PIP_PACKAGE_VARS
+                    if i in key
+                        if 'proprietary' not in key]:
+                        self._package_build_index(
+                            packages=values,
+                            role_name=role_name,
+                            var_name=key
+                        )
 
-                        pkgs = role_pkgs.get(key, list())
-                        if 'optional' not in key:
-                            pkgs.extend(values)
-                        ROLE_PACKAGES[role_name][key] = pkgs
-                    else:
-                        for k, v in ROLE_PACKAGES.items():
-                            for item_name in v.keys():
-                                if key == item_name:
-                                    ROLE_PACKAGES[k][item_name].extend(values)
+            for key, values in loaded_config.items():
+                if 'proprietary' in key:
+                    proprietary_pkgs = [
+                        i for i in values
+                        if GIT_PACKAGE_DEFAULT_PARTS.get(i)
+                    ]
+                    if proprietary_pkgs:
+                        self._package_build_index(
+                            packages=proprietary_pkgs,
+                            role_name=role_name,
+                            var_name=key
+                        )
 
         for file_name in self._filter_files(self.file_names, 'txt'):
             if os.path.basename(file_name) in REQUIREMENTS_FILE_TYPES:
