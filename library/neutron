@@ -334,11 +334,12 @@ class ManageNeutron(object):
         # startip-endip[,startip-endip]...
         allocation_pools_str = variables_dict.get('allocation_pools', "")
         allocation_pools = []
-        for ap in allocation_pools_str.split(','):
-            if "-" not in ap:
-                continue
-            start, end = ap.split('-')
-            allocation_pools.append({'start': start, 'end': end})
+        if allocation_pools_str:
+            for ap in allocation_pools_str.split(','):
+                if "-" not in ap:
+                    continue
+                start, end = ap.split('-')
+                allocation_pools.append({'start': start, 'end': end})
 
         if not network_id:
             self.failure(
