@@ -278,6 +278,7 @@ class ActionModule(object):
             dict_type=MultiKeyDict,
             allow_no_value=True
         )
+        config.optionxform = str
         config_object = io.BytesIO(resultant.encode('utf-8'))
         config.readfp(config_object)
         for section, items in config_overrides.items():
