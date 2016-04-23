@@ -38,6 +38,11 @@ options:
             - login username to authenticate to keystone
         required: false
         default: admin
+    login_user_domain_name:
+        description:
+            - The domain login_user belongs to
+        required: false
+        default: None
     login_password:
         description:
             - Password of login user
@@ -46,6 +51,11 @@ options:
     login_project_name:
         description:
             - The project login_user belongs to
+        required: false
+        default: None
+    login_project_domain_name:
+        description:
+            - The domain login_project belongs to
         required: false
         default: None
     login_tenant_name:
@@ -522,6 +532,8 @@ class ManageKeystone(object):
             'login_password',
             'login_project_name',
             'login_tenant_name',
+            'login_user_domain_name',
+            'login_project_domain_name',
             'token',
             'insecure'
         ]
@@ -532,6 +544,10 @@ class ManageKeystone(object):
         login_password = variables_dict.pop('login_password')
         login_project_name = (variables_dict.pop('login_project_name', None) or
                               variables_dict.pop('login_tenant_name'))
+        user_domain_name = variables_dict.pop('login_user_domain_name',
+                                              'Default')
+        project_domain_name = variables_dict.pop('login_project_domain_name',
+                                                 'Default')
         token = variables_dict.pop('token')
         insecure = variables_dict.pop('insecure')
 
@@ -564,8 +580,10 @@ class ManageKeystone(object):
                 insecure=insecure,
                 auth_url=endpoint,
                 username=login_user,
+                user_domain_name=user_domain_name,
                 password=login_password,
-                project_name=login_project_name
+                project_name=login_project_name,
+                project_domain_name=project_domain_name,
             )
 
     def _get_domain_from_vars(self, variables):
@@ -1166,6 +1184,9 @@ def main():
             login_user=dict(
                 required=False
             ),
+            login_user_domain_name=dict(
+                required=False
+            ),
             login_password=dict(
                 required=False
             ),
@@ -1173,6 +1194,9 @@ def main():
                 required=False
             ),
             login_project_name=dict(
+                required=False
+            ),
+            login_project_domain_name=dict(
                 required=False
             ),
             token=dict(
