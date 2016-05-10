@@ -368,7 +368,8 @@ COMMAND_MAP = {
             'user_name',
             'project_name',
             'tenant_name',
-            'role_name'
+            'role_name',
+            'domain_name'
         ]
     },
     'ensure_group_role': {
@@ -732,7 +733,7 @@ class ManageKeystone(object):
 
         domain = self._get_domain_from_vars(variables_dict)
         project = self._get_project(name=project_name)
-        if project is None:
+        if project is None and project_name is not None:
             self.failure(
                 error='project [ %s ] was not found.' % project_name,
                 rc=2,
@@ -819,7 +820,7 @@ class ManageKeystone(object):
             user = None
 
         project = self._get_project(name=project_name)
-        if project is None:
+        if project is None and project_name is not None:
             self.failure(
                 error='project [ %s ] was not found.' % project_name,
                 rc=2,
@@ -867,10 +868,11 @@ class ManageKeystone(object):
 
         return self._facts(facts={'id': role.id})
 
-    def _get_user_roles(self, name, user, project):
+    def _get_user_roles(self, name, user, project, domain):
         role_list = self.keystone.roles.list(
             user=user,
-            project=project
+            project=project,
+            domain=domain
         )
         for entry in role_list:
             if entry.name == name:
@@ -908,15 +910,15 @@ class ManageKeystone(object):
         )
 
         user_role = self._get_user_roles(
-            name=role_name, user=user, project=project
+            name=role_name, user=user, project=project, domain=domain
         )
 
         if user_role is None:
             self.keystone.roles.grant(
-                user=user, role=role, project=project
+                user=user, role=role, project=project, domain=domain
             )
             user_role = self._get_user_roles(
-                name=role_name, user=user, project=project
+                name=role_name, user=user, project=project, domain=domain
             )
 
         return self._facts(facts={'id': user_role.id})
