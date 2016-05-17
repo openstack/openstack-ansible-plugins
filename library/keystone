@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 # (c) 2014, Kevin Carter <kevin.carter@rackspace.com>
 #
 # Copyright 2014, Rackspace US, Inc.
@@ -197,6 +198,11 @@ options:
             - Name for a domain
         required: False
         default: True
+    state:
+        description:
+            - Ensuring the endpoint is either present, absent, or update
+        required: False
+        default: 'present'
     command:
         description:
             - Indicate desired state of the resource
@@ -345,7 +351,8 @@ COMMAND_MAP = {
             'region_name',
             'service_name',
             'service_type',
-            'endpoint_list'
+            'endpoint_list',
+            'state'
         ]
     },
     'ensure_role': {
@@ -1016,7 +1023,35 @@ class ManageKeystone(object):
 
         return self._facts(facts={'id': service.id})
 
+    def _get_endpoint_by_details(self, region, service_id, interface):
+        """ Getting endpoints per complete definition
+
+        Returns the endpoint details for an endpoint matching
+        region, service id and interface.
+
+        :param interface: ``str`` ‘public’, ‘admin’ or ‘internal’ network
+                                  interface
+        :param service_id: service to which the endpoint belongs
+        :param region: geographic location of the endpoint
+
+        """
+        for entry in self.keystone.endpoints.list():
+            check = [
+                entry.region == region,
+                entry.service_id == service_id,
+                entry.interface == interface
+            ]
+            if all(check):
+                return entry
+        else:
+            return None
+
     def _get_endpoint(self, region, url, interface):
+        """ Getting endpoints per URL
+        Returns the endpoint details for an endpoint matching
+        URL, region and interface.
+        This interface should be deprecated in next release.
+        """
         for entry in self.keystone.endpoints.list():
             check = [
                 entry.region == region,
@@ -1029,7 +1064,8 @@ class ManageKeystone(object):
             return None
 
     def ensure_endpoint(self, variables):
-        """Create a new endpoint within Keystone if it does not exist.
+        """Ensures the deletion/modification/addition of endpoints
+        within Keystone.
 
         Returns the endpoint ID on a successful run.
 
@@ -1049,6 +1085,7 @@ class ManageKeystone(object):
         service_type = variables_dict.pop('service_type')
         region = variables_dict.pop('region_name')
         endpoint_list = variables_dict.pop('endpoint_list')
+        state = variables_dict.pop('state')
 
         service = self._get_service(name=service_name, srv_type=service_type)
         if service is None:
@@ -1067,19 +1104,55 @@ class ManageKeystone(object):
                 url=url,
                 interface=interface
             )
-            if endpoint is None:
-                self.state_change = True
-                endpoint = self.keystone.endpoints.create(
+            if state == 'present':
+                ''' Creating an endpoint for this url
+                    (if it does not exist)
+                '''
+                if endpoint is None:
+                    self.state_change = True
+                    endpoint = self.keystone.endpoints.create(
+                        region=region,
+                        service=service,
+                        url=url,
+                        interface=interface
+                    )
+            elif state == 'update':
+                ''' Checking if there is a similar endpoint with a
+                    different url. Update it if there is one, create
+                    if there is none.
+                '''
+                similar_endpoint = self._get_endpoint_by_details(
                     region=region,
-                    service=service,
-                    url=url,
+                    service_id=service.id,
                     interface=interface
                 )
-            endpoints[interface] = endpoint
+                if similar_endpoint is None:
+                    self.state_change = True
+                    endpoint = self.keystone.endpoints.create(
+                        region=region,
+                        service=service,
+                        url=url,
+                        interface=interface
+                    )
+                elif similar_endpoint.url != url:
+                    self.state_change = True
+                    endpoint = self.keystone.endpoints.update(
+                        endpoint=similar_endpoint,
+                        url=url
+                    )
+            elif state == 'absent':
+                if endpoint is not None:
+                    self.state_change = True
+                    result = self.keystone.endpoints.delete(endpoint.id)
+                    if result[0].status_code != 204:
+                        module.fail()
 
-        return self._facts(
-            facts={'%sid' % interface: endpoint.id
-                   for interface, endpoint in endpoints.items()})
+        if state != 'absent':
+            endpoints[interface] = endpoint
+            return self._facts({'%sid' % interface: endpoint.id
+                                for interface, endpoint in endpoints.items()})
+        else:
+            return self._facts({})
 
     def _ensure_generic(self, manager, required_vars, variables):
         """Try and create a new 'thing' in keystone.
@@ -1305,6 +1378,11 @@ def main():
                 type='bool',
                 required=False,
                 default=True
+            ),
+            state=dict(
+                choices=['present', 'absent', 'update'],
+                required=False,
+                default='present'
             )
         ),
         supports_check_mode=False,
