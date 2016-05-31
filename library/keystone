@@ -1334,7 +1334,7 @@ def main():
             insecure=dict(
                 default=False,
                 required=False,
-                choices=BOOLEANS + ['True', 'False']
+                type='bool'
             ),
             return_code=dict(
                 type='str',

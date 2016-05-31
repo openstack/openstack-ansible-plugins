@@ -220,11 +220,6 @@ class ProviderNetworksParsing(object):
 
 def main():
 
-    # Add in python True False
-    BOOLEANS.extend(['False', 'True'])
-    BOOLEANS_TRUE.append('True')
-    BOOLEANS_FALSE.append('False')
-
     module = AnsibleModule(
         argument_spec=dict(
             provider_networks=dict(
@@ -232,7 +227,7 @@ def main():
                 required=True
             ),
             is_metal=dict(
-                choices=BOOLEANS,
+                type='bool',
                 default='false'
             ),
             bind_prefix=dict(
@@ -245,12 +240,6 @@ def main():
     )
 
     try:
-        is_metal = module.params.get('is_metal')
-        if is_metal in BOOLEANS_TRUE:
-            module.params['is_metal'] = True
-        else:
-            module.params['is_metal'] = False
-
         pnp = ProviderNetworksParsing(module=module)
         pnp.load_networks(
             provider_networks=module.params.get('provider_networks'),

@@ -222,10 +222,9 @@ def main():
             image_url=dict(required=False),
             image_container_format=dict(required=False),
             image_disk_format=dict(required=False),
-            image_is_public=dict(required=False, choices=BOOLEANS),
+            image_is_public=dict(required=False, type='bool'),
             api_version=dict(default='1', required=False, choices=['1', '2']),
-            insecure=dict(default=False, required=False,
-                          choices=BOOLEANS + ['True', 'False'])
+            insecure=dict(default=False, required=False, type='bool')
         ),
         supports_check_mode=False
     )
