@@ -187,9 +187,10 @@ class ManageGlance(object):
             name=image_name,
             disk_format=p['image_disk_format'],
             container_format=p['image_container_format'],
-            copy_from=p['image_url'],
-            properties=p['image_properties']
+            copy_from=p['image_url']
         )
+        if p['image_properties']:
+            image_opts['properties'] = p['image_properties']
         if v == '1':
             image_opts['is_public'] = p['image_is_public']
         elif v == '2':
