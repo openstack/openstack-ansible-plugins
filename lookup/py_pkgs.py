@@ -520,8 +520,9 @@ class DependencyFileProcessor(object):
                 return_list.remove(file_name)
                 return_list.insert(index, file_name)
         else:
-            print return_list
             for file_name in return_list:
+                if file_name.endswith('other-requirements.txt'):
+                    continue
                 with open(file_name, 'r') as f:
                     packages = [
                         i.split()[0] for i in f.read().splitlines()
