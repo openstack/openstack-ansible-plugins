@@ -15,8 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # import module snippets
 from ansible.module_utils.basic import *
+
 
 DOCUMENTATION = """
 ---
@@ -59,6 +61,7 @@ author:
   - Kevin Carter
   - Sam Yaple
 """
+
 
 EXAMPLES = """
 - dist_sort:
@@ -106,16 +109,19 @@ class DistSort(object):
 
         :returns: ``str``
         """
-        index = self.params['ref_list'].index(self.params['value_to_lookup'])
-        index += self.params['sort_modifier']
-        src_list = self.params['src_list'].split(
-            self.params['delimiter']
-        )
+        try:
+            index = self.params['ref_list'].index(
+                self.params['value_to_lookup']
+            )
+        except ValueError:
+            index = 0
 
-        for _ in range(index % len(src_list)):
+        src_list = self.params['src_list'].split(self.params['delimiter'])
+        index += self.params['sort_modifier']
+        for _ in xrange(index % len(src_list)):
             src_list.append(src_list.pop(0))
-        else:
-            return self.params['delimiter'].join(src_list)
+
+        return self.params['delimiter'].join(src_list)
 
 
 def main():
@@ -151,18 +157,17 @@ def main():
         # This is done so that the failure can be parsed and does not cause
         # ansible to fail if a non-int is passed.
         module.params['sort_modifier'] = int(module.params['sort_modifier'])
-
         _ds = DistSort(module=module)
         if _ds.return_data == module.params['src_list']:
             _changed = False
         else:
             _changed = True
-
-        module.exit_json(changed=_changed, **{'sorted_list': _ds.return_data})
     except Exception as exp:
         resp = {'stderr': str(exp)}
         resp.update(module.params)
         module.fail_json(msg='Failed Process', **resp)
+    else:
+        module.exit_json(changed=_changed, **{'sorted_list': _ds.return_data})
 
 if __name__ == '__main__':
     main()
