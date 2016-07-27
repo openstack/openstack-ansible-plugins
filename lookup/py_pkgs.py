@@ -458,8 +458,8 @@ class DependencyFileProcessor(object):
 
             pkgs = role_pkgs.get(var_name, list())
             if 'optional' not in var_name:
-                pkgs.extend(packages)
-            pkg_index[role_name][var_name] = self._py_pkg_extend(packages, pkgs)
+                pkgs = self._py_pkg_extend(packages, pkgs)
+            pkg_index[role_name][var_name] = pkgs
         else:
             for k, v in pkg_index.items():
                 for item_name in v.keys():
