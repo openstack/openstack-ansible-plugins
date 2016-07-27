@@ -63,7 +63,8 @@ PACKAGE_MAPPING = {
     'packages': set(),
     'remote_packages': set(),
     'remote_package_parts': list(),
-    'role_packages': dict()
+    'role_packages': dict(),
+    'role_project_groups': dict()
 }
 
 
@@ -79,12 +80,12 @@ def map_base_and_remote_packages(package, package_map):
             package_map['packages'].add(package)
         else:
             git_parts = git_pip_link_parse(package)
-            package_name = git_parts[-1]
+            package_name = git_parts[-2]
             if not package_name:
                 package_name = git_pip_link_parse(package)[0]
 
             for rpkg in list(package_map['remote_packages']):
-                rpkg_name = git_pip_link_parse(rpkg)[-1]
+                rpkg_name = git_pip_link_parse(rpkg)[-2]
                 if not rpkg_name:
                     rpkg_name = git_pip_link_parse(package)[0]
 
@@ -110,7 +111,8 @@ def parse_remote_package_parts(package_map):
         'fragment',
         'url',
         'original',
-        'egg_name'
+        'egg_name',
+        'project_group'
     ]
     remote_pkg_parts = [
         dict(
@@ -135,6 +137,7 @@ def map_role_packages(package_map):
     """
     for k, v in ROLE_PACKAGES.items():
         role_pkgs = package_map['role_packages'][k] = list()
+        package_map['role_project_groups'][k] = v.pop('project_group', 'all')
         for pkg_list in v.values():
             role_pkgs.extend(pkg_list)
         else:
@@ -242,7 +245,11 @@ def git_pip_link_parse(repo):
         if 'gitname=' in _branch[-1]:
             name = _meta_return(_branch[-1], 'gitname')
 
-    return name.lower(), branch, plugin_path, url, repo, egg_name
+        project_group = 'all'
+        if 'projectgroup=' in _branch[-1]:
+            project_group = _meta_return(_branch[-1], 'projectgroup')
+
+    return name.lower(), branch, plugin_path, url, repo, egg_name, project_group
 
 
 def _pip_requirement_split(requirement):
@@ -392,9 +399,11 @@ class DependencyFileProcessor(object):
         branch_var = prefix + 'git_install_branch'
         fragment_var = prefix + 'git_install_fragments'
         plugins_var = prefix + 'repo_plugins'
+        group_var = prefix + 'git_project_group'
 
         # get the repo definition
         git_data['repo'] = loaded_yaml.get(repo_var)
+        group = git_data['project_group'] = loaded_yaml.get(group_var, 'all')
 
         # get the repo name definition
         name = git_data['name'] = loaded_yaml.get(name_var)
@@ -426,6 +435,7 @@ class DependencyFileProcessor(object):
 
         package += '#egg=%s' % git_data['egg_name']
         package += '&gitname=%s' % name
+        package += '&projectgroup=%s' % group
         if git_data['fragments']:
             package += '&%s' % git_data['fragments']
 
@@ -448,13 +458,14 @@ class DependencyFileProcessor(object):
             )
 
     def _package_build_index(self, packages, role_name, var_name,
-                             pkg_index=ROLE_PACKAGES):
+                             pkg_index=ROLE_PACKAGES, project_group='all'):
         self._py_pkg_extend(packages)
         if role_name:
             if role_name in pkg_index:
                 role_pkgs = pkg_index[role_name]
             else:
                 role_pkgs = pkg_index[role_name] = dict()
+            role_pkgs['project_group'] = project_group
 
             pkgs = role_pkgs.get(var_name, list())
             if 'optional' not in var_name:
@@ -487,6 +498,13 @@ class DependencyFileProcessor(object):
                         _role_name = file_name.split('roles%s' % os.sep)[-1]
                         role_name = _role_name.split(os.sep)[0]
 
+            for key, value in loaded_config.items():
+                if key.endswith('role_project_group'):
+                    project_group = value
+                    break
+            else:
+                project_group = 'all'
+
             for key, values in loaded_config.items():
                 if key.endswith('git_repo'):
                     self._process_git(
@@ -501,7 +519,8 @@ class DependencyFileProcessor(object):
                         self._package_build_index(
                             packages=values,
                             role_name=role_name,
-                            var_name=key
+                            var_name=key,
+                            project_group=project_group
                         )
 
             for key, values in loaded_config.items():
@@ -514,7 +533,8 @@ class DependencyFileProcessor(object):
                         self._package_build_index(
                             packages=proprietary_pkgs,
                             role_name=role_name,
-                            var_name=key
+                            var_name=key,
+                            project_group=project_group
                         )
         else:
             role_name = None
@@ -544,14 +564,23 @@ class DependencyFileProcessor(object):
                     base_file_name = os.path.basename(file_name)
                     if base_file_name.endswith('test-requirements.txt'):
                         continue
+                    if base_file_name.endswith('global-requirement-pins.txt'):
+                        self._package_build_index(
+                            packages=packages,
+                            role_name='global_pins',
+                            var_name='pinned_packages',
+                            pkg_index=ROLE_REQUIREMENTS,
+                            project_group='all'
+                        )
                     self._package_build_index(
                         packages=packages,
                         role_name=role_name,
                         var_name='txt_file_packages',
-                        pkg_index=ROLE_REQUIREMENTS
+                        pkg_index=ROLE_REQUIREMENTS,
+                        project_group='all'
                     )
-            else:
-                role_name = None
+
+
 def _abs_path(path):
     return os.path.abspath(
         os.path.expanduser(
