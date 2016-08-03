@@ -22,12 +22,22 @@ from distutils.version import LooseVersion
 from ansible import __version__ as __ansible_version__
 import yaml
 
+BASECLASS = object
+if LooseVersion(__ansible_version__) < LooseVersion("2.0"):
+    from ansible import utils, errors
+    LOOKUP_MODULE_CLASS = 'V1'
+else:
+    from ansible.errors import AnsibleError
+    from ansible.plugins.lookup import LookupBase
+    BASECLASS = LookupBase
+    LOOKUP_MODULE_CLASS = 'V2'
 
 # Used to keep track of git package parts as various files are processed
 GIT_PACKAGE_DEFAULT_PARTS = dict()
 
 
 ROLE_PACKAGES = dict()
+ROLE_REQUIREMENTS = dict()
 
 
 REQUIREMENTS_FILE_TYPES = [
@@ -53,7 +63,8 @@ PACKAGE_MAPPING = {
     'packages': set(),
     'remote_packages': set(),
     'remote_package_parts': list(),
-    'role_packages': dict()
+    'role_packages': dict(),
+    'role_project_groups': dict()
 }
 
 
@@ -69,12 +80,12 @@ def map_base_and_remote_packages(package, package_map):
             package_map['packages'].add(package)
         else:
             git_parts = git_pip_link_parse(package)
-            package_name = git_parts[-1]
+            package_name = git_parts[-2]
             if not package_name:
                 package_name = git_pip_link_parse(package)[0]
 
             for rpkg in list(package_map['remote_packages']):
-                rpkg_name = git_pip_link_parse(rpkg)[-1]
+                rpkg_name = git_pip_link_parse(rpkg)[-2]
                 if not rpkg_name:
                     rpkg_name = git_pip_link_parse(package)[0]
 
@@ -100,7 +111,8 @@ def parse_remote_package_parts(package_map):
         'fragment',
         'url',
         'original',
-        'egg_name'
+        'egg_name',
+        'project_group'
     ]
     remote_pkg_parts = [
         dict(
@@ -125,6 +137,7 @@ def map_role_packages(package_map):
     """
     for k, v in ROLE_PACKAGES.items():
         role_pkgs = package_map['role_packages'][k] = list()
+        package_map['role_project_groups'][k] = v.pop('project_group', 'all')
         for pkg_list in v.values():
             role_pkgs.extend(pkg_list)
         else:
@@ -232,7 +245,11 @@ def git_pip_link_parse(repo):
         if 'gitname=' in _branch[-1]:
             name = _meta_return(_branch[-1], 'gitname')
 
-    return name.lower(), branch, plugin_path, url, repo, egg_name
+        project_group = 'all'
+        if 'projectgroup=' in _branch[-1]:
+            project_group = _meta_return(_branch[-1], 'projectgroup')
+
+    return name.lower(), branch, plugin_path, url, repo, egg_name, project_group
 
 
 def _pip_requirement_split(requirement):
@@ -274,15 +291,18 @@ class DependencyFileProcessor(object):
         # Process everything simply by calling the method
         self._process_files()
 
-    def _py_pkg_extend(self, packages):
+    def _py_pkg_extend(self, packages, py_package=None):
+        if py_package is None:
+            py_package = self.pip['py_package']
         for pkg in packages:
             pkg_name = _pip_requirement_split(pkg)[0]
-            for py_pkg in self.pip['py_package']:
+            for py_pkg in py_package:
                 py_pkg_name = _pip_requirement_split(py_pkg)[0]
                 if pkg_name == py_pkg_name:
-                    self.pip['py_package'].remove(py_pkg)
+                    py_package.remove(py_pkg)
         else:
-            self.pip['py_package'].extend([i.lower() for i in packages])
+            py_package.extend([i.lower() for i in packages])
+        return py_package
 
     @staticmethod
     def _filter_files(file_names, ext):
@@ -379,9 +399,11 @@ class DependencyFileProcessor(object):
         branch_var = prefix + 'git_install_branch'
         fragment_var = prefix + 'git_install_fragments'
         plugins_var = prefix + 'repo_plugins'
+        group_var = prefix + 'git_project_group'
 
         # get the repo definition
         git_data['repo'] = loaded_yaml.get(repo_var)
+        group = git_data['project_group'] = loaded_yaml.get(group_var, 'all')
 
         # get the repo name definition
         name = git_data['name'] = loaded_yaml.get(name_var)
@@ -413,6 +435,7 @@ class DependencyFileProcessor(object):
 
         package += '#egg=%s' % git_data['egg_name']
         package += '&gitname=%s' % name
+        package += '&projectgroup=%s' % group
         if git_data['fragments']:
             package += '&%s' % git_data['fragments']
 
@@ -434,23 +457,25 @@ class DependencyFileProcessor(object):
                 git_data=git_data
             )
 
-    def _package_build_index(self, packages, role_name, var_name):
+    def _package_build_index(self, packages, role_name, var_name,
+                             pkg_index=ROLE_PACKAGES, project_group='all'):
         self._py_pkg_extend(packages)
         if role_name:
-            if role_name in ROLE_PACKAGES:
-                role_pkgs = ROLE_PACKAGES[role_name]
+            if role_name in pkg_index:
+                role_pkgs = pkg_index[role_name]
             else:
-                role_pkgs = ROLE_PACKAGES[role_name] = dict()
+                role_pkgs = pkg_index[role_name] = dict()
+            role_pkgs['project_group'] = project_group
 
             pkgs = role_pkgs.get(var_name, list())
             if 'optional' not in var_name:
-                pkgs.extend(packages)
-            ROLE_PACKAGES[role_name][var_name] = pkgs
+                pkgs = self._py_pkg_extend(packages, pkgs)
+            pkg_index[role_name][var_name] = pkgs
         else:
-            for k, v in ROLE_PACKAGES.items():
+            for k, v in pkg_index.items():
                 for item_name in v.keys():
                     if var_name == item_name:
-                        ROLE_PACKAGES[k][item_name].extend(packages)
+                        pkg_index[k][item_name] = self._py_pkg_extend(packages, pkg_index[k][item_name])
 
     def _process_files(self):
         """Process files."""
@@ -473,6 +498,13 @@ class DependencyFileProcessor(object):
                         _role_name = file_name.split('roles%s' % os.sep)[-1]
                         role_name = _role_name.split(os.sep)[0]
 
+            for key, value in loaded_config.items():
+                if key.endswith('role_project_group'):
+                    project_group = value
+                    break
+            else:
+                project_group = 'all'
+
             for key, values in loaded_config.items():
                 if key.endswith('git_repo'):
                     self._process_git(
@@ -487,7 +519,8 @@ class DependencyFileProcessor(object):
                         self._package_build_index(
                             packages=values,
                             role_name=role_name,
-                            var_name=key
+                            var_name=key,
+                            project_group=project_group
                         )
 
             for key, values in loaded_config.items():
@@ -500,8 +533,11 @@ class DependencyFileProcessor(object):
                         self._package_build_index(
                             packages=proprietary_pkgs,
                             role_name=role_name,
-                            var_name=key
+                            var_name=key,
+                            project_group=project_group
                         )
+        else:
+            role_name = None
 
         return_list = self._filter_files(self.file_names, 'txt')
         for file_name in return_list:
@@ -514,13 +550,35 @@ class DependencyFileProcessor(object):
             for file_name in return_list:
                 if file_name.endswith('other-requirements.txt'):
                     continue
+                if 'roles' in file_name:
+                    _role_name = file_name.split('roles%s' % os.sep)[-1]
+                    role_name = _role_name.split(os.sep)[0]
+                if not role_name:
+                    role_name = 'default'
                 with open(file_name, 'r') as f:
                     packages = [
-                        i.split()[0] for i in f.read().splitlines()
+                        i.split()[0].lower() for i in f.read().splitlines()
                         if i
                         if not i.startswith('#')
                     ]
-                    self._py_pkg_extend(packages)
+                    base_file_name = os.path.basename(file_name)
+                    if base_file_name.endswith('test-requirements.txt'):
+                        continue
+                    if base_file_name.endswith('global-requirement-pins.txt'):
+                        self._package_build_index(
+                            packages=packages,
+                            role_name='global_pins',
+                            var_name='pinned_packages',
+                            pkg_index=ROLE_REQUIREMENTS,
+                            project_group='all'
+                        )
+                    self._package_build_index(
+                        packages=packages,
+                        role_name=role_name,
+                        var_name='txt_file_packages',
+                        pkg_index=ROLE_REQUIREMENTS,
+                        project_group='all'
+                    )
 
 
 def _abs_path(path):
@@ -531,117 +589,113 @@ def _abs_path(path):
     )
 
 
-class LookupModule(object):
-    def __new__(class_name, *args, **kwargs):
-        if LooseVersion(__ansible_version__) < LooseVersion("2.0"):
-            from ansible import utils, errors
+class LookupModule(BASECLASS):
+    def __init__(self, basedir=None, **kwargs):
+        """Run the lookup module.
 
-            class LookupModuleV1(object):
-                def __init__(self, basedir=None, **kwargs):
-                    """Run the lookup module.
+        :type basedir:
+        :type kwargs:
+        """
+        self.ansible_v1_basedir = basedir
 
-                    :type basedir:
-                    :type kwargs:
-                    """
-                    self.basedir = basedir
-
-                def run(self, terms, inject=None, **kwargs):
-                    """Run the main application.
-
-                    :type terms: ``str``
-                    :type inject: ``str``
-                    :type kwargs: ``dict``
-                    :returns: ``list``
-                    """
-                    terms = utils.listify_lookup_plugin_terms(
-                        terms,
-                        self.basedir,
-                        inject
-                    )
-                    if isinstance(terms, basestring):
-                        terms = [terms]
-
-                    return_data = PACKAGE_MAPPING
-
-                    for term in terms:
-                        return_list = list()
-                        try:
-                            dfp = DependencyFileProcessor(
-                                local_path=_abs_path(str(term))
-                            )
-                            return_list.extend(dfp.pip['py_package'])
-                            return_list.extend(dfp.pip['git_package'])
-                        except Exception as exp:
-                            raise errors.AnsibleError(
-                                'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
-                                    term,
-                                    str(exp),
-                                    traceback.format_exc()
-                                )
-                            )
-
-                        for item in return_list:
-                            map_base_and_remote_packages(item, return_data)
-                        else:
-                            parse_remote_package_parts(return_data)
-                    else:
-                        map_role_packages(return_data)
-                        map_base_package_details(return_data)
-                        # Sort everything within the returned data
-                        for key, value in return_data.items():
-                            if isinstance(value, (list, set)):
-                                return_data[key] = sorted(value)
-                        return [return_data]
-            return LookupModuleV1(*args, **kwargs)
-
+    def run(self, *args, **kwargs):
+        if LOOKUP_MODULE_CLASS == 'V1':
+            return self.run_v1(*args, **kwargs)
         else:
-            from ansible.errors import AnsibleError
-            from ansible.plugins.lookup import LookupBase
+            return self.run_v2(*args, **kwargs)
 
-            class LookupModuleV2(LookupBase):
-                def run(self, terms, variables=None, **kwargs):
-                    """Run the main application.
+    def run_v2(self, terms, variables=None, **kwargs):
+        """Run the main application.
 
-                    :type terms: ``str``
-                    :type variables: ``str``
-                    :type kwargs: ``dict``
-                    :returns: ``list``
-                    """
-                    if isinstance(terms, basestring):
-                        terms = [terms]
+        :type terms: ``str``
+        :type variables: ``str``
+        :type kwargs: ``dict``
+        :returns: ``list``
+        """
+        if isinstance(terms, basestring):
+            terms = [terms]
 
-                    return_data = PACKAGE_MAPPING
+        return_data = PACKAGE_MAPPING
 
-                    for term in terms:
-                        return_list = list()
-                        try:
-                            dfp = DependencyFileProcessor(
-                                local_path=_abs_path(str(term))
-                            )
-                            return_list.extend(dfp.pip['py_package'])
-                            return_list.extend(dfp.pip['git_package'])
-                        except Exception as exp:
-                            raise AnsibleError(
-                                'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
-                                    term,
-                                    str(exp),
-                                    traceback.format_exc()
-                                )
-                            )
+        for term in terms:
+            return_list = list()
+            try:
+                dfp = DependencyFileProcessor(
+                    local_path=_abs_path(str(term))
+                )
+                return_list.extend(dfp.pip['py_package'])
+                return_list.extend(dfp.pip['git_package'])
+            except Exception as exp:
+                raise AnsibleError(
+                    'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
+                        term,
+                        str(exp),
+                        traceback.format_exc()
+                    )
+                )
 
-                        for item in return_list:
-                            map_base_and_remote_packages(item, return_data)
-                        else:
-                            parse_remote_package_parts(return_data)
-                    else:
-                        map_role_packages(return_data)
-                        map_base_package_details(return_data)
-                        # Sort everything within the returned data
-                        for key, value in return_data.items():
-                            if isinstance(value, (list, set)):
-                                return_data[key] = sorted(value)
-                        return [return_data]
-            return LookupModuleV2(*args, **kwargs)
+            for item in return_list:
+                map_base_and_remote_packages(item, return_data)
+            else:
+                parse_remote_package_parts(return_data)
+        else:
+            map_role_packages(return_data)
+            map_base_package_details(return_data)
+            # Sort everything within the returned data
+            for key, value in return_data.items():
+                if isinstance(value, (list, set)):
+                    return_data[key] = sorted(value)
+            return_data['role_requirement_files'] = ROLE_REQUIREMENTS
+            return [return_data]
+
+    def run_v1(self, terms, inject=None, **kwargs):
+        """Run the main application.
+
+        :type terms: ``str``
+        :type inject: ``str``
+        :type kwargs: ``dict``
+        :returns: ``list``
+        """
+        terms = utils.listify_lookup_plugin_terms(
+            terms,
+            self.ansible_v1_basedir,
+            inject
+        )
+        if isinstance(terms, basestring):
+            terms = [terms]
+
+        return_data = PACKAGE_MAPPING
+
+        for term in terms:
+            return_list = list()
+            try:
+                dfp = DependencyFileProcessor(
+                    local_path=_abs_path(str(term))
+                )
+                return_list.extend(dfp.pip['py_package'])
+                return_list.extend(dfp.pip['git_package'])
+            except Exception as exp:
+                raise errors.AnsibleError(
+                    'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
+                        term,
+                        str(exp),
+                        traceback.format_exc()
+                    )
+                )
+
+            for item in return_list:
+                map_base_and_remote_packages(item, return_data)
+            else:
+                parse_remote_package_parts(return_data)
+        else:
+            map_role_packages(return_data)
+            map_base_package_details(return_data)
+            # Sort everything within the returned data
+            for key, value in return_data.items():
+                if isinstance(value, (list, set)):
+                    return_data[key] = sorted(value)
+            return_data['role_requirement_files'] = ROLE_REQUIREMENTS
+            return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
 if __name__ == '__main__':
