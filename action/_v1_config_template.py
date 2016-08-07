@@ -267,7 +267,7 @@ class ActionModule(object):
         else:
             config.set(str(section), str(key), str(value))
 
-    def return_config_overrides_ini(self, config_overrides, resultant):
+    def return_config_overrides_ini(self, config_overrides, resultant, list_extend=True):
         """Returns string value from a modified config file.
 
         :param config_overrides: ``dict``
@@ -308,7 +308,7 @@ class ActionModule(object):
         finally:
             resultant_bytesio.close()
 
-    def return_config_overrides_json(self, config_overrides, resultant):
+    def return_config_overrides_json(self, config_overrides, resultant, list_extend=True):
         """Returns config json
 
         Its important to note that file ordering will not be preserved as the
@@ -321,7 +321,8 @@ class ActionModule(object):
         original_resultant = json.loads(resultant)
         merged_resultant = self._merge_dict(
             base_items=original_resultant,
-            new_items=config_overrides
+            new_items=config_overrides,
+            list_extend=list_extend
         )
         return json.dumps(
             merged_resultant,
@@ -329,7 +330,7 @@ class ActionModule(object):
             sort_keys=True
         )
 
-    def return_config_overrides_yaml(self, config_overrides, resultant):
+    def return_config_overrides_yaml(self, config_overrides, resultant, list_extend=True):
         """Return config yaml.
 
         :param config_overrides: ``dict``
@@ -339,7 +340,8 @@ class ActionModule(object):
         original_resultant = yaml.safe_load(resultant)
         merged_resultant = self._merge_dict(
             base_items=original_resultant,
-            new_items=config_overrides
+            new_items=config_overrides,
+            list_extend=list_extend
         )
         return yaml.safe_dump(
             merged_resultant,
@@ -347,7 +349,7 @@ class ActionModule(object):
             width=1000,
         )
 
-    def _merge_dict(self, base_items, new_items):
+    def _merge_dict(self, base_items, new_items, list_extend=True):
         """Recursively merge new_items into base_items.
 
         :param base_items: ``dict``
@@ -364,7 +366,10 @@ class ActionModule(object):
                 base_items[key] = re.split(', |,|\n', value)
                 base_items[key] = [i.strip() for i in base_items[key] if i]
             elif isinstance(value, list):
-                base_items[key] = value
+                if isinstance(base_items.get(key), list) and list_extend:
+                    base_items[key].extend(value)
+                else:
+                    base_items[key] = value
             else:
                 base_items[key] = new_items[key]
         return base_items
@@ -418,7 +423,8 @@ class ActionModule(object):
             type_merger = getattr(self, CONFIG_TYPES.get(config_type))
             resultant = type_merger(
                 config_overrides=config_overrides,
-                resultant=resultant
+                resultant=resultant,
+                list_extend=options.get('list_extend', True)
             )
 
         # Retemplate the resultant object as it may have new data within it
@@ -446,6 +452,7 @@ class ActionModule(object):
         # Remove data types that are not available to the copy module
         complex_args.pop('config_overrides')
         complex_args.pop('config_type')
+        complex_args.pop('list_extend', None)
 
         # Return the copy module status. Access to protected method is
         #  unavoidable in Ansible 1.x.

@@ -39,6 +39,16 @@ options:
       - ini
       - json
       - yaml
+  list_extend:
+    description:
+      - By default a list item in a JSON or YAML format will extend if
+        its already defined in the target template and a config_override
+        using a list is being set for the existing "key". This functionality
+        can be toggled on or off using this option. If disabled an override
+        list will replace an existing "key".
+    choices:
+      - True
+      - False
 author: Kevin Carter
 """
 
