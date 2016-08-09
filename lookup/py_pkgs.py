@@ -36,6 +36,7 @@ else:
 GIT_PACKAGE_DEFAULT_PARTS = dict()
 
 
+ROLE_BREAKOUT_REQUIREMENTS = dict()
 ROLE_PACKAGES = dict()
 ROLE_REQUIREMENTS = dict()
 
@@ -458,7 +459,7 @@ class DependencyFileProcessor(object):
             )
 
     def _package_build_index(self, packages, role_name, var_name,
-                             pkg_index=ROLE_PACKAGES, project_group='all'):
+                             pkg_index, project_group='all'):
         self._py_pkg_extend(packages)
         if role_name:
             if role_name in pkg_index:
@@ -468,19 +469,24 @@ class DependencyFileProcessor(object):
             role_pkgs['project_group'] = project_group
 
             pkgs = role_pkgs.get(var_name, list())
-            if 'optional' not in var_name:
-                pkgs = self._py_pkg_extend(packages, pkgs)
-            pkg_index[role_name][var_name] = pkgs
+            pkgs = self._py_pkg_extend(packages, pkgs)
+            pkg_index[role_name][var_name] = sorted(pkgs)
         else:
             for k, v in pkg_index.items():
                 for item_name in v.keys():
                     if var_name == item_name:
-                        pkg_index[k][item_name] = self._py_pkg_extend(packages, pkg_index[k][item_name])
+                        pkg_index[k][item_name] = self._py_pkg_extend(
+                            packages,
+                            pkg_index[k][item_name]
+                        )
 
     def _process_files(self):
-        """Process files."""
+        """Process all of the requirement files."""
+        self._process_files_defaults()
+        self._process_files_requirements()
 
-        role_name = None
+    def _process_files_defaults(self):
+        """Process files."""
         for file_name in self._filter_files(self.file_names, ('yaml', 'yml')):
             with open(file_name, 'r') as f:
                 # If there is an exception loading the file continue
@@ -494,9 +500,11 @@ class DependencyFileProcessor(object):
                     if not loaded_config or not isinstance(loaded_config, dict):
                         continue
 
-                    if 'roles' in file_name:
-                        _role_name = file_name.split('roles%s' % os.sep)[-1]
-                        role_name = _role_name.split(os.sep)[0]
+                if 'roles' in file_name:
+                    _role_name = file_name.split('roles%s' % os.sep)[-1]
+                    role_name = _role_name.split(os.sep)[0]
+                else:
+                    role_name = None
 
             for key, value in loaded_config.items():
                 if key.endswith('role_project_group'):
@@ -506,6 +514,7 @@ class DependencyFileProcessor(object):
                 project_group = 'all'
 
             for key, values in loaded_config.items():
+                key = key.lower()
                 if key.endswith('git_repo'):
                     self._process_git(
                         loaded_yaml=loaded_config,
@@ -513,32 +522,30 @@ class DependencyFileProcessor(object):
                         yaml_file_name=file_name
                     )
 
-                if [i for i in BUILT_IN_PIP_PACKAGE_VARS
-                    if i in key
-                        if 'proprietary' not in key]:
+                if [i for i in BUILT_IN_PIP_PACKAGE_VARS if i in key]:
+                    self._package_build_index(
+                        packages=values,
+                        role_name=role_name,
+                        var_name=key,
+                        pkg_index=ROLE_BREAKOUT_REQUIREMENTS,
+                        project_group=project_group
+                    )
+
+                    if 'optional' in key:
+                        continue
+                    elif 'proprietary' in key:
+                        continue
+                    else:
                         self._package_build_index(
                             packages=values,
                             role_name=role_name,
                             var_name=key,
+                            pkg_index=ROLE_PACKAGES,
                             project_group=project_group
                         )
 
-            for key, values in loaded_config.items():
-                if 'proprietary' in key:
-                    proprietary_pkgs = [
-                        i for i in values
-                        if GIT_PACKAGE_DEFAULT_PARTS.get(i)
-                    ]
-                    if proprietary_pkgs:
-                        self._package_build_index(
-                            packages=proprietary_pkgs,
-                            role_name=role_name,
-                            var_name=key,
-                            project_group=project_group
-                        )
-        else:
-            role_name = None
-
+    def _process_files_requirements(self):
+        """Process requirements files."""
         return_list = self._filter_files(self.file_names, 'txt')
         for file_name in return_list:
             base_name = os.path.basename(file_name)
@@ -550,12 +557,12 @@ class DependencyFileProcessor(object):
             for file_name in return_list:
                 if file_name.endswith('other-requirements.txt'):
                     continue
-                if file_name.endswith('bindep.txt'):
+                elif file_name.endswith('bindep.txt'):
                     continue
-                if 'roles' in file_name:
+                elif 'roles' in file_name:
                     _role_name = file_name.split('roles%s' % os.sep)[-1]
                     role_name = _role_name.split(os.sep)[0]
-                if not role_name:
+                else:
                     role_name = 'default'
                 with open(file_name, 'r') as f:
                     packages = [
@@ -648,6 +655,7 @@ class LookupModule(BASECLASS):
                 if isinstance(value, (list, set)):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
+            return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
             return [return_data]
 
     def run_v1(self, terms, inject=None, **kwargs):
@@ -697,6 +705,7 @@ class LookupModule(BASECLASS):
                 if isinstance(value, (list, set)):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
+            return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
             return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
