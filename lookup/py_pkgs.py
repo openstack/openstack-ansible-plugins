@@ -550,6 +550,8 @@ class DependencyFileProcessor(object):
             for file_name in return_list:
                 if file_name.endswith('other-requirements.txt'):
                     continue
+                if file_name.endswith('bindep.txt'):
+                    continue
                 if 'roles' in file_name:
                     _role_name = file_name.split('roles%s' % os.sep)[-1]
                     role_name = _role_name.split(os.sep)[0]
