@@ -15,24 +15,29 @@
 
 set -euov
 
-ROLE_NAME=$(basename $(pwd))
 FUNCTIONAL_TEST=${FUNCTIONAL_TEST:-true}
 
-pushd tests
-  ansible-galaxy install \
-                 --role-file=ansible-role-requirements.yml \
-                 --ignore-errors \
-                 --force
+# prep the host
+if [ "$(which apt-get)" ]; then
+  apt-get install -y build-essential python2.7 python-dev git-core libssl-dev
+fi
 
-  ansible-playbook -i inventory \
-                   --syntax-check \
-                   --list-tasks \
-                   -e "rolename=${ROLE_NAME}" \
-                   test.yml
+# get pip, if necessary
+if [ ! "$(which pip)" ]; then
+  curl --silent --show-error --retry 5 \
+    https://bootstrap.pypa.io/get-pip.py | sudo python2.7
+fi
 
-  ansible-lint test.yml
+# install tox
+pip install tox
 
-  if ${FUNCTIONAL_TEST}; then
-    ansible-playbook -i inventory -e "rolename=${ROLE_NAME}" test.yml
+# run through each tox env and execute the test
+for tox_env in $(awk -F= '/envlist/ {print $2}' tox.ini | sed 's/,/ /g'); do
+  if [ "${tox_env}" != "functional" ]; then
+    tox -e ${tox_env}
+  elif [ "${tox_env}" == "functional" ]; then
+    if ${FUNCTIONAL_TEST}; then
+      tox -e ${tox_env}
+    fi
   fi
-popd
+done
