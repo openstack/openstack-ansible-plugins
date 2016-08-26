@@ -130,21 +130,21 @@ class StrategyModule(LINEAR.StrategyModule):
                     caplevel=0
                 )
         else:
-            if 'physical_host' in task_vars:
-                physical_host = _vars.get('physical_host')
-                if not physical_host:
-                    physical_host = task_vars.get('physical_host')
-                    if physical_host:
-                        ph = self._inventory.get_host(physical_host)
-                        _vars['physical_host'] = ph.vars['ansible_ssh_host']
+            physical_host = _vars.get('physical_host')
+            if not physical_host:
+                physical_host = task_vars.get('physical_host')
+                if physical_host:
+                    ph = self._inventory.get_host(physical_host)
+                    ansible_ssh_host = ph.vars.get('ansible_ssh_host')
+                    if ansible_ssh_host:
+                        _vars['physical_host'] = ansible_ssh_host
                         _vars['physical_hostname'] = physical_host
 
-            if 'container_name' in task_vars:
-                container_name = _vars.get('container_name')
-                if not container_name:
-                    container_name = task_vars.get('container_name')
-                    if container_name:
-                        _vars['container_name'] = task_vars['container_name']
+            container_name = _vars.get('container_name')
+            if not container_name:
+                container_name = task_vars.get('container_name')
+                if container_name:
+                    _vars['container_name'] = container_name
 
         return super(StrategyModule, self)._queue_task(
             host,
