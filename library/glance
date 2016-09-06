@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import glanceclient.client as glclient
 import keystoneclient.v3.client as ksclient
+import yaml
 
 # import module snippets
 from ansible.module_utils.basic import *
@@ -88,7 +88,8 @@ EXAMPLES = """
     image_container_format: bare
     image_disk_format: qcow2
     image_is_public: True
-    image_properties: { "os_distro": "cirros" }
+    image_properties:
+      os_distro: cirros
 
 # Get facts about existing images
 - name: Get image facts
@@ -190,7 +191,7 @@ class ManageGlance(object):
             copy_from=p['image_url']
         )
         if p['image_properties']:
-            image_opts['properties'] = p['image_properties']
+            image_opts['properties'] = yaml.load(p['image_properties'])
         if v == '1':
             image_opts['is_public'] = p['image_is_public']
         elif v == '2':
