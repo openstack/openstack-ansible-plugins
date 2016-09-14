@@ -600,6 +600,9 @@ class DependencyFileProcessor(object):
         :type pip_packages: ``bool``
         """
         if [i for i in pkg_constant if i in pkg_var_name]:
+            if 'proprietary' in pkg_var_name:
+                return
+
             self._package_build_index(
                 packages=packages,
                 role_name=role_name,
@@ -613,8 +616,6 @@ class DependencyFileProcessor(object):
             if not role_index:
                 return
             elif 'optional' in pkg_var_name:
-                return
-            elif 'proprietary' in pkg_var_name:
                 return
             else:
                 self._package_build_index(
