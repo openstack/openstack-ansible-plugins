@@ -36,6 +36,8 @@ else:
 GIT_PACKAGE_DEFAULT_PARTS = dict()
 
 
+# Role based package indexes
+ROLE_DISTRO_BREAKOUT_PACKAGES = dict()
 ROLE_BREAKOUT_REQUIREMENTS = dict()
 ROLE_PACKAGES = dict()
 ROLE_REQUIREMENTS = dict()
@@ -59,13 +61,20 @@ BUILT_IN_PIP_PACKAGE_VARS = [
     'pip_packages'
 ]
 
+BUILT_IN_DISTRO_PACKAGE_VARS = [
+    'distro_packages',
+    'apt_packages',
+    'yum_packages'
+]
+
 
 PACKAGE_MAPPING = {
     'packages': set(),
     'remote_packages': set(),
     'remote_package_parts': list(),
     'role_packages': dict(),
-    'role_project_groups': dict()
+    'role_project_groups': dict(),
+    'distro_packages': set()
 }
 
 
@@ -295,6 +304,7 @@ class DependencyFileProcessor(object):
     def _py_pkg_extend(self, packages, py_package=None):
         if py_package is None:
             py_package = self.pip['py_package']
+
         for pkg in packages:
             pkg_name = _pip_requirement_split(pkg)[0]
             for py_pkg in py_package:
@@ -302,7 +312,8 @@ class DependencyFileProcessor(object):
                 if pkg_name == py_pkg_name:
                     py_package.remove(py_pkg)
         else:
-            py_package.extend([i.lower() for i in packages])
+            norm_pkgs = [i.lower() for i in packages if not i.startswith('{{')]
+            py_package.extend(norm_pkgs)
         return py_package
 
     @staticmethod
@@ -458,19 +469,35 @@ class DependencyFileProcessor(object):
                 git_data=git_data
             )
 
-    def _package_build_index(self, packages, role_name, var_name,
-                             pkg_index, project_group='all'):
-        self._py_pkg_extend(packages)
+    def _package_build_index(self, packages, role_name, var_name, pkg_index,
+                             project_group='all', var_file_name=None,
+                             pip_packages=True):
+        if pip_packages:
+            self._py_pkg_extend(packages)
+
         if role_name:
             if role_name in pkg_index:
                 role_pkgs = pkg_index[role_name]
             else:
                 role_pkgs = pkg_index[role_name] = dict()
+
             role_pkgs['project_group'] = project_group
 
-            pkgs = role_pkgs.get(var_name, list())
-            pkgs = self._py_pkg_extend(packages, pkgs)
-            pkg_index[role_name][var_name] = sorted(pkgs)
+            if var_file_name:
+                _name = os.path.splitext(os.path.basename(var_file_name))[0]
+                file_name_index = pkg_index[role_name][_name] = dict()
+                pkgs = file_name_index.get(var_name, list())
+                pkgs = self._py_pkg_extend(packages, pkgs)
+                file_name_index[var_name] = sorted(set(pkgs))
+            else:
+                pkgs = role_pkgs.get(var_name, list())
+                pkgs.extend(packages)
+                if 'pip' in var_name:
+                    pkgs = [i.lower() for i in pkgs if not i.startswith('{{')]
+                else:
+                    pkgs = [i for i in pkgs if not i.startswith('{{')]
+                if pkgs:
+                    pkg_index[role_name][var_name] = sorted(set(pkgs))
         else:
             for k, v in pkg_index.items():
                 for item_name in v.keys():
@@ -521,28 +548,84 @@ class DependencyFileProcessor(object):
                         git_item=key,
                         yaml_file_name=file_name
                     )
+                # Process pip packages
+                self._process_packages(
+                    pkg_constant=BUILT_IN_PIP_PACKAGE_VARS,
+                    pkg_breakout_index=ROLE_BREAKOUT_REQUIREMENTS,
+                    pkg_role_index=ROLE_PACKAGES,
+                    pkg_var_name=key,
+                    packages=values,
+                    role_name=role_name,
+                    project_group=project_group
+                )
+                # Process distro packages
+                self._process_packages(
+                    pkg_constant=BUILT_IN_DISTRO_PACKAGE_VARS,
+                    pkg_breakout_index=ROLE_DISTRO_BREAKOUT_PACKAGES,
+                    pkg_role_index=dict(),  # this is not used here
+                    pkg_var_name=key,
+                    packages=values,
+                    role_name=role_name,
+                    project_group=project_group,
+                    role_index=False,
+                    var_file_name=file_name,
+                    pip_packages=False
+                )
 
-                if [i for i in BUILT_IN_PIP_PACKAGE_VARS if i in key]:
-                    self._package_build_index(
-                        packages=values,
-                        role_name=role_name,
-                        var_name=key,
-                        pkg_index=ROLE_BREAKOUT_REQUIREMENTS,
-                        project_group=project_group
-                    )
+    def _process_packages(self, pkg_constant, pkg_breakout_index,
+                          pkg_role_index, pkg_var_name, packages, role_name,
+                          project_group, role_index=True, var_file_name=None,
+                          pip_packages=True):
+        """Process variables to build the package data structures.
 
-                    if 'optional' in key:
-                        continue
-                    elif 'proprietary' in key:
-                        continue
-                    else:
-                        self._package_build_index(
-                            packages=values,
-                            role_name=role_name,
-                            var_name=key,
-                            pkg_index=ROLE_PACKAGES,
-                            project_group=project_group
-                        )
+        :param pkg_constant: CONSTANT used to validate package names
+        :type pkg_constant: ``list``
+        :param pkg_breakout_index: CONSTANT used to store indexed packages
+        :type pkg_breakout_index: ``dict``
+        :param pkg_role_index: CONSTANT used to store role indexed packages
+        :type pkg_role_index: ``dict``
+        :param pkg_var_name: package variable name
+        :type pkg_var_name: ``str``
+        :param packages: list of packages to index
+        :type packages: ``list``
+        :param role_name: Name of the role where the packages came from
+        :type role_name: ``str``
+        :param project_group: Name of the group being indexed
+        :type project_group: ``str``
+        :param role_index: Enable or disable the use of the role index
+        :type role_index: ``bool``
+        :param var_file_name: Variable file name used to index packages
+        :type var_file_name: ``str``
+        :param pip_packages: Enable or disable pip index types
+        :type pip_packages: ``bool``
+        """
+        if [i for i in pkg_constant if i in pkg_var_name]:
+            self._package_build_index(
+                packages=packages,
+                role_name=role_name,
+                var_name=pkg_var_name,
+                pkg_index=pkg_breakout_index,
+                project_group=project_group,
+                var_file_name=var_file_name,
+                pip_packages=pip_packages
+            )
+
+            if not role_index:
+                return
+            elif 'optional' in pkg_var_name:
+                return
+            elif 'proprietary' in pkg_var_name:
+                return
+            else:
+                self._package_build_index(
+                    packages=packages,
+                    role_name=role_name,
+                    var_name=pkg_var_name,
+                    pkg_index=pkg_role_index,
+                    project_group=project_group,
+                    var_file_name=var_file_name,
+                    pip_packages=pip_packages
+                )
 
     def _process_files_requirements(self):
         """Process requirements files."""
@@ -656,6 +739,7 @@ class LookupModule(BASECLASS):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
+            return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
             return [return_data]
 
     def run_v1(self, terms, inject=None, **kwargs):
@@ -706,10 +790,11 @@ class LookupModule(BASECLASS):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
+            return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
             return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
 if __name__ == '__main__':
     import sys
     import json
-    print(json.dumps(LookupModule().run(terms=sys.argv[1:]), indent=4))
+    print(json.dumps(LookupModule().run(terms=sys.argv[1:]), indent=4, sort_keys=True))
