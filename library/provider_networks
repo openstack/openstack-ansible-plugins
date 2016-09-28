@@ -192,9 +192,9 @@ class ProviderNetworksParsing(object):
             elif net['network']['type'] == "flat":
                 if "flat" not in self.network_types:
                     self.network_types.append('flat')
-                    self.network_flat_networks.append(
-                        net['network']['net_name']
-                    )
+                self.network_flat_networks.append(
+                    net['network']['net_name']
+                )
 
             # Create the network mappings
             if net['network']['type'] not in ['raw', 'vxlan']:
