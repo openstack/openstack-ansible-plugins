@@ -1,0 +1,267 @@
+#!/usr/bin/env python
+# Copyright 2016, Rackspace US, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from magnumclient import client as magnum_client
+from ansible.module_utils.basic import *
+
+
+DOCUMENTATION = """
+---
+module: magnum
+version_added: "1.9.4"
+short_description:
+    - Manage OpenStack Magnum Cluster Templates
+description:
+    - Manage OpenStack Magnum Cluster Templates
+options:
+    action:
+        description:
+            - Indicate the desired state of the resource
+        choices: ['template-present', 'template-absent']
+        required: true
+    name:
+        description:
+            - Name of the resource
+        required: true
+    openrc_path:
+        description:
+            - Path to OpenRC file
+        required: true
+    insecure:
+        description:
+            - Explicitly allow client to perform "insecure" TLS
+        choices:
+            - false
+            - true
+        default: false
+    keypair:
+        description:
+            - Keypair for Cluster Template
+        required: false
+    image:
+        description:
+            - Image for Cluster Template
+        required: false
+    external_network:
+        description:
+            - External Network for Cluster Template
+        required: false
+    dns_nameserver:
+        description:
+            - DNS Nameserver for Cluster Template
+        required: false
+    flavor:
+        description:
+            - Flavor for Cluster Template
+        required: false
+    docker_volume_size:
+        description:
+            - Volume size (in GB) for Cluster Template
+        required: false
+    coe:
+        description:
+            - Container Orchestration Engine for Cluster Template
+        required: false
+    public:
+        description:
+            - Whether or not Cluster Template should be visible to all users
+        required: false
+requirements: [ python-magnumclient ]
+author: Christopher Hultin
+"""
+
+EXAMPLES = """
+#Create Swarm Template
+- magnum:
+    action: 'template-present'
+    name: 'swarm-dev-test'
+    openrc_path: '/root/openrc'
+    insecure: True
+    keypair: 'testkey'
+    image: 'fedora-atomic-latest'
+    external_network: 'public'
+    dns_nameserver: '8.8.8.8'
+    flavor: 'm1.small'
+    docker_volume_size: 5
+    coe: 'swarm'
+    public: 'false'
+
+#Change the DNS Nameserver
+- magnum:
+    action: 'template-present'
+    name: 'swarm-dev-test'
+    openrc_path: '/root/openrc'
+    insecure: True
+    keypair: 'testkey'
+    image: 'fedora-atomic-latest'
+    external_network: 'public'
+    dns_nameserver: '8.8.4.4'
+    flavor: 'm1.small'
+    docker_volume_size: 5
+    coe: 'swarm'
+    public: 'false'
+#Delete Template
+- magnum:
+    action: 'template-absent'
+    name: 'swarm-dev-test'
+    openrc_path: '/root/openrc'
+    insecure: True
+"""
+
+
+COMMAND_MAP = {
+    'template-present': 'template_present',
+    'template-absent': 'template_absent',
+}
+
+
+class ManageMagnum(object):
+    def __init__(self, module):
+        self.state_change = False
+        self.magnum = None
+        self.module = module
+        try:
+            self._init_magnum()
+        except Exception as e:
+            self.module.fail_json(
+                err="Initialisation Error: %s" % e,
+                rc=2, msg=str(e))
+
+    def _parse_openrc(self):
+        """Get credentials from an openrc file."""
+        openrc_path = self.module.params['openrc_path']
+        line_re = re.compile('^export (?P<key>OS_\w*)=(?P<value>[^\n]*)')
+        with open(openrc_path) as openrc:
+            matches = [line_re.match(l) for l in openrc]
+            return dict(
+                (g.groupdict()['key'], g.groupdict()['value'])
+                for g in matches if g
+            )
+
+    def _init_magnum(self):
+        openrc = self._parse_openrc()
+        self.magnum = magnum_client.Client(
+            username=openrc['OS_USERNAME'],
+            password=openrc['OS_PASSWORD'],
+            project_name=openrc['OS_PROJECT_NAME'],
+            auth_url=openrc['OS_AUTH_URL'],
+            service_type='container-infra',
+            insecure=self.module.params['insecure'],
+            user_domain_name=openrc['OS_USER_DOMAIN_NAME'],
+            project_domain_name=openrc['OS_PROJECT_DOMAIN_NAME']
+        )
+
+    def route(self):
+        """Run the command specified by the command parameter."""
+        getattr(self, COMMAND_MAP[self.module.params['action']])()
+
+    def template_present(self):
+        p = self.module.params
+        template_name = p['name']
+        template_opts = dict(
+            name=template_name,
+            image_id=p['image'],
+            keypair_id=p['keypair'],
+            external_network_id=p['external_network'],
+            dns_nameserver=p['dns_nameserver'],
+            flavor_id=p['flavor'],
+            docker_volume_size=p['docker_volume_size'],
+            coe=p['coe'],
+            public=p['public']
+        )
+        template_found = False
+        updates = []
+        for template in self.magnum.cluster_templates.list(detail=True):
+            if template.name == template_name:
+                template_found = True
+        if not template_found:
+            try:
+                self.magnum.cluster_templates.create(**template_opts)
+            except Exception as e:
+                self.module.fail_json(
+                    msg="Failed to create template: {}".format(e)
+                )
+            self.state_change = True
+            self.module.exit_json(
+                changed=self.state_change
+            )
+        else:
+            try:
+                for opt, val in template_opts.iteritems():
+                    if (val != getattr(template, opt) and
+                            val is not None):
+                        updates.append({opt: val})
+            except Exception as e:
+                self.module.fail_json(
+                    msg="Error: Parameters are undefined: {}".format(e)
+                )
+        if len(updates) >= 1:
+            try:
+                self.magnum.cluster_templates.update(template_name, updates)
+            except Exception as e:
+                self.module.fail_json(
+                    msg="Failed to update template: {}".format(e)
+                )
+            self.state_change = True
+        else:
+            self.state_change = False
+        self.module.exit_json(
+            changed=self.state_change
+        )
+
+    def template_absent(self):
+        p = self.module.params
+        template_name = p['name']
+        for template in self.magnum.cluster_templates.list(detail=True):
+            if template.name == template_name:
+                try:
+                    self.magnum.cluster_templates.delete(template_name)
+                except Exception as e:
+                    self.module.fail_json(
+                        msg="Failed to delete template: {}".format(e)
+                    )
+                self.state_change = True
+        self.module.exit_json(
+            changed=self.state_change
+        )
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec={
+            "name": {"required": True, "type": "str"},
+            "image": {"required": False, "type": "str"},
+            "keypair": {"required": False, "type": "str"},
+            "external_network": {"required": False, "type": "str"},
+            "dns_nameserver": {"required": False, "type": "str"},
+            "flavor": {"required": False, "type": "str"},
+            "docker_volume_size": {"required": False, "type": "int"},
+            "coe": {"required": False, "type": "str"},
+            "public": {"required": False, "type": "bool"},
+            "openrc_path": {"required": True, "type": "str"},
+            "insecure": {"required": False, "default": False, "type": "bool"},
+            "action": {
+                "choices": ['template-present', 'template-absent',
+                            'cluster-present', 'cluster-absent'],
+                "type": "str"
+            },
+        },
+        supports_check_mode=False
+    )
+    mg = ManageMagnum(module)
+    mg.route()
+
+if __name__ == '__main__':
+    main()
