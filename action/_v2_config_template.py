@@ -427,11 +427,25 @@ class ActionModule(ActionBase):
             file_path = self._loader.get_basedir()
 
         user_source = self._task.args.get('src')
+        user_content = self._task.args.get('content')
         if not user_source:
-            return False, dict(
-                failed=True,
-                msg="No user provided [ src ] was provided"
-            )
+            if not user_content:
+                return False, dict(
+                    failed=True,
+                    msg="No user [ src ] or [ content ] was provided"
+                )
+            else:
+                tmp_content = None
+                try:
+                    remote_user = task_vars.get('ansible_user') or self._play_context.remote_user
+                    if not tmp_content:
+                        tmp_content = self._make_tmp_path(remote_user) + 'content'
+                except TypeError:
+                    if not tmp_content:
+                        tmp_content = self._make_tmp_path() + 'content'
+                with open(tmp_content, 'w') as f:
+                    f.writelines(user_content)
+                user_source = tmp_content
         source = self._loader.path_dwim_relative(
             file_path,
             'templates',
