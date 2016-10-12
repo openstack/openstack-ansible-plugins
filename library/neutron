@@ -37,6 +37,7 @@ options:
             - create_subnet
             - create_router
             - add_router_interface
+            - get_networks
         required: True
     openrc_path:
         decription:
@@ -123,6 +124,10 @@ EXAMPLES = """
     openrc_path: /root/openrc
     router_name: router
     subnet_name: private-subnet
+- name: Get network information
+    command: get_network
+    openrc_path: /root/openrc
+    net_name: public
 """
 
 
@@ -157,6 +162,11 @@ COMMAND_MAP = {
         'variables': [
             'router_name',
             'subnet_name'
+        ]
+    },
+    'get_networks': {
+        'variables': [
+            'net_name'
         ]
     }
 }
@@ -412,6 +422,20 @@ class ManageNeutron(object):
             self.state_change = True
             self.neutron.add_interface_router(router_id,
                                               {'subnet_id': subnet_id})
+
+    def _get_networks(self, variables):
+        variables_dict = self._get_vars(variables)
+        net_name = variables_dict.pop('net_name')
+        if net_name:
+            network_id = self._get_resource_by_name('networks', net_name)
+            if not network_id:
+                self.failure(
+                    error='Network not found',
+                    rc=1,
+                    msg='The specified network could not be found'
+                )
+
+        return self._facts('networks', self.neutron.list_networks())
 
 
 def main():
