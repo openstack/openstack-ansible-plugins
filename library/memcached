@@ -260,7 +260,7 @@ class Memcached(object):
 
         key_name = self.module.params['name']
         get_keys = [
-            '%s.%s' % (key_name, i) for i in xrange(MAX_MEMCACHED_CHUNKS)
+            '%s.%s' % (key_name, i) for i in range(MAX_MEMCACHED_CHUNKS)
         ]
         self.mc.delete_multi(get_keys)
         value = self.mc.get_multi(get_keys)
@@ -419,7 +419,7 @@ class Memcached(object):
 
         key_name = self.module.params['name']
         get_keys = [
-            '%s.%s' % (key_name, i) for i in xrange(MAX_MEMCACHED_CHUNKS)
+            '%s.%s' % (key_name, i) for i in range(MAX_MEMCACHED_CHUNKS)
         ]
         multi_value = self.mc.get_multi(get_keys)
         if multi_value:
