@@ -118,7 +118,7 @@ class DistSort(object):
 
         src_list = self.params['src_list'].split(self.params['delimiter'])
         index += self.params['sort_modifier']
-        for _ in xrange(index % len(src_list)):
+        for _ in range(index % len(src_list)):
             src_list.append(src_list.pop(0))
 
         return self.params['delimiter'].join(src_list)
