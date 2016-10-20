@@ -419,36 +419,25 @@ class ActionModule(ActionBase):
         # Access to protected method is unavoidable in Ansible
         searchpath = [self._loader._basedir]
 
-        faf = self._task.first_available_file
-        if faf:
-            task_file = task_vars.get('_original_file', None, 'templates')
-            source = self._get_first_available_file(faf, task_file)
-            if not source:
-                return False, dict(
-                    failed=True,
-                    msg="could not find src in first_available_file list"
-                )
+        if self._task._role:
+            file_path = self._task._role._role_path
+            searchpath.insert(1, C.DEFAULT_ROLES_PATH)
+            searchpath.insert(1, self._task._role._role_path)
         else:
-            # Access to protected method is unavoidable in Ansible
-            if self._task._role:
-                file_path = self._task._role._role_path
-                searchpath.insert(1, C.DEFAULT_ROLES_PATH)
-                searchpath.insert(1, self._task._role._role_path)
-            else:
-                file_path = self._loader.get_basedir()
+            file_path = self._loader.get_basedir()
 
-            user_source = self._task.args.get('src')
-            if not user_source:
-                return False, dict(
-                    failed=True,
-                    msg="No user provided [ src ] was provided"
-                )
-            source = self._loader.path_dwim_relative(
-                file_path,
-                'templates',
-                user_source
+        user_source = self._task.args.get('src')
+        if not user_source:
+            return False, dict(
+                failed=True,
+                msg="No user provided [ src ] was provided"
             )
-            searchpath.insert(1, os.path.dirname(source))
+        source = self._loader.path_dwim_relative(
+            file_path,
+            'templates',
+            user_source
+        )
+        searchpath.insert(1, os.path.dirname(source))
 
         _dest = self._task.args.get('dest')
         list_extend = self._task.args.get('list_extend')
