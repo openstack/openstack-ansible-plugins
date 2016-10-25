@@ -137,7 +137,7 @@ class StrategyModule(LINEAR.StrategyModule):
                     ph = self._inventory.get_host(physical_host)
                     ansible_host = ph.vars.get('ansible_host')
                     if not ansible_host:
-                        ansible_host = ph.vars.get('ansible_ssh_host')
+                        ansible_host = ph.vars.get('ansible_host')
                     if ansible_host:
                         _vars['physical_host'] = ansible_host
                         _vars['physical_hostname'] = physical_host
