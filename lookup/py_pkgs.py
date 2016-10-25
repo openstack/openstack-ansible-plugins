@@ -485,7 +485,10 @@ class DependencyFileProcessor(object):
 
             if var_file_name:
                 _name = os.path.splitext(os.path.basename(var_file_name))[0]
-                file_name_index = pkg_index[role_name][_name] = dict()
+                if _name in pkg_index[role_name]:
+                    file_name_index = pkg_index[role_name][_name]
+                else:
+                    file_name_index = pkg_index[role_name][_name] = dict()
                 pkgs = file_name_index.get(var_name, list())
                 pkgs = self._py_pkg_extend(packages, pkgs)
                 file_name_index[var_name] = sorted(set(pkgs))
@@ -540,6 +543,7 @@ class DependencyFileProcessor(object):
             else:
                 project_group = 'all'
 
+            PACKAGE_MAPPING['role_project_groups'][role_name] = project_group
             for key, values in loaded_config.items():
                 key = key.lower()
                 if key.endswith('git_repo'):
@@ -740,7 +744,10 @@ class LookupModule(BASECLASS):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
-            return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
+            _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
+            for k, v in PACKAGE_MAPPING['role_project_groups'].items():
+                if k in _dp:
+                    _dp[k]['project_group'] = v
             return [return_data]
 
     def run_v1(self, terms, inject=None, **kwargs):
@@ -791,7 +798,10 @@ class LookupModule(BASECLASS):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
-            return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
+            _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
+            for k, v in PACKAGE_MAPPING['role_project_groups'].items():
+                if k in _dp:
+                    _dp[k]['project_group'] = v
             return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
