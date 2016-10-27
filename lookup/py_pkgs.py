@@ -85,9 +85,18 @@ def map_base_and_remote_packages(package, package_map):
     :type package: ``str``
     :type package_map: ``dict``
     """
+    def check_for_ignore(p):
+        p_parts = GIT_PACKAGE_DEFAULT_PARTS.get(p)
+        if p_parts:
+            fragments = p_parts.get('fragments', '') or ''
+            if 'ignorerequirements=True' not in fragments:
+                package_map['packages'].add(p)
+        else:
+            package_map['packages'].add(p)
+
     if package.startswith(('http:', 'https:', 'git+')):
         if '@' not in package:
-            package_map['packages'].add(package)
+            check_for_ignore(p=package)
         else:
             git_parts = git_pip_link_parse(package)
             package_name = git_parts[-2]
@@ -106,7 +115,7 @@ def map_base_and_remote_packages(package, package_map):
             else:
                 package_map['remote_packages'].add(package)
     else:
-        package_map['packages'].add(package)
+        check_for_ignore(p=package)
 
 
 def parse_remote_package_parts(package_map):
