@@ -34,7 +34,7 @@ import yaml
 
 
 from ansible.plugins.action import ActionBase
-from ansible.utils.unicode import to_bytes, to_unicode
+from ansible.module_utils._text import to_bytes, to_text
 from ansible import constants as C
 from ansible import errors
 
@@ -510,7 +510,7 @@ class ActionModule(ActionBase):
         temp_vars['template_run_date'] = datetime.datetime.now()
 
         with open(source, 'r') as f:
-            template_data = to_unicode(f.read())
+            template_data = to_text(f.read())
 
         self._templar.environment.loader.searchpath = _vars['searchpath']
         self._templar.set_available_variables(temp_vars)
