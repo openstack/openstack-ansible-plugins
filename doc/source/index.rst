@@ -9,7 +9,6 @@ This project provides the Ansible modules:
 
  * config_template
  * dist_sort
- * glance
  * keystone
  * memcached
  * name2int
