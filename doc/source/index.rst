@@ -12,6 +12,7 @@ This project provides the Ansible modules:
  * keystone
  * memcached
  * name2int
+ * neutron
  * provider_networks
 
 Filters
