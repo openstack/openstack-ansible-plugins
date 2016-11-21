@@ -94,8 +94,8 @@ class StrategyModule(LINEAR.StrategyModule):
     def _queue_task(self, host, task, task_vars, play_context):
         """Queue a task to be sent to the worker.
 
-        Modify the playbook_context to support adding attributes for LXC
-        containers.
+        Modify the playbook_context to support adding attributes for remote
+        LXC containers or remote chroots.
         """
         templar = LINEAR.Templar(loader=self._loader, variables=task_vars)
         if not self._check_when(host, task, templar, task_vars):
@@ -104,7 +104,7 @@ class StrategyModule(LINEAR.StrategyModule):
         _play_context = copy.deepcopy(play_context)
         _vars = _play_context._attributes['vars']
         if task.delegate_to:
-            # If a task uses delegation change teh play_context
+            # If a task uses delegation change the play_context
             #  to use paramiko with pipelining disabled for this
             #  one task on its collection of hosts.
             if _play_context.pipelining:
@@ -147,6 +147,12 @@ class StrategyModule(LINEAR.StrategyModule):
                 container_name = task_vars.get('container_name')
                 if container_name:
                     _vars['container_name'] = container_name
+
+            chroot_path = _vars.get('chroot_path')
+            if not chroot_path:
+                chroot_path = task_vars.get('chroot_path')
+                if chroot_path:
+                    _vars['chroot_path'] = chroot_path
 
         return super(StrategyModule, self)._queue_task(
             host,

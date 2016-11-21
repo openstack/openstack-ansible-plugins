@@ -47,19 +47,37 @@ class Connection(SSH.Connection):
         self.args = args
         self.kwargs = kwargs
         self.vars = self._play_context._attributes['vars']
+        self.chroot_path = self.vars.get('chroot_path')
         self.container_name = self.vars.get('container_name')
         self.physical_host = self.vars.get('physical_host')
         self.physical_hostname = self.vars.get('physical_hostname')
-        if self._container_check():
+        if self._container_check() or self._chroot_check():
             self.host = self._play_context.remote_addr = self.physical_host
 
     def _exec_command(self, cmd, in_data=None, sudoable=True):
         """run a command on the remote host."""
+
         if self._container_check():
             lxc_command = 'lxc-attach --name %s' % self.container_name
             cmd = '%s -- %s' % (lxc_command, cmd)
 
+        if self._chroot_check():
+            chroot_command = 'chroot %s' % self.chroot_path
+            cmd = '%s %s' % (chroot_command, cmd)
+
         return super(Connection, self)._exec_command(cmd, in_data, sudoable)
+
+    def _chroot_check(self):
+        if self.chroot_path:
+            SSH.display.vvv(u'chroot_path: "%s"' % self.chroot_path)
+            if self.physical_hostname:
+                SSH.display.vvv(
+                    u'physical_hostname: "%s"' % self.physical_hostname
+                )
+                SSH.display.vvv(u'chroot confirmed')
+                return True
+
+        return False
 
     def _container_check(self):
         if self.container_name:
