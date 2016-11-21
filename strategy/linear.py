@@ -18,6 +18,8 @@ import copy
 import imp
 import os
 
+from ansible.compat.six import iteritems
+
 # NOTICE(cloudnull): The connection plugin imported using the full path to the
 #                    file because the linear strategy plugin is not importable.
 import ansible.plugins.strategy as strategy
@@ -26,6 +28,16 @@ LINEAR = imp.load_source(
     os.path.join(os.path.dirname(strategy.__file__), 'linear.py')
 )
 
+# NOTICE(jmccrory): The play_context is imported so that additional container
+#                   specific variables can be made available to connection
+#                   plugins.
+import ansible.playbook.play_context
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'physical_host':
+                                                           ('physical_host',)})
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'container_name':
+                                                           ('inventory_hostname',)})
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'chroot_path':
+                                                           ('chroot_path',)})
 
 class StrategyModule(LINEAR.StrategyModule):
     """Notes about this strategy.
@@ -91,20 +103,47 @@ class StrategyModule(LINEAR.StrategyModule):
         else:
             return True
 
+    def _get_group_dict(self, inventory):
+        """
+        In get_vars() we merge a 'magic' dictionary 'groups' with group name
+        keys and hostname list values into every host variable set.
+        Cache the creation of this structure here
+        """
+
+        if not hasattr(inventory, '_group_dict_cache'):
+           inventory._group_dict_cache = {}
+        if not inventory._group_dict_cache:
+            for (group_name, group) in iteritems(inventory.groups):
+                inventory._group_dict_cache[group_name] = [h.name for h in group.get_hosts()]
+
+        return inventory._group_dict_cache
+
     def _queue_task(self, host, task, task_vars, play_context):
         """Queue a task to be sent to the worker.
 
-        Modify the playbook_context to support adding attributes for LXC
-        containers.
+        Set a host variable, 'physical_host_addrs', containing a dictionary of
+        each physical host and its 'ansible_host' variable.
+
+        Modify the playbook_context to disable pipelining and use the paramiko
+        transport method when a task is being delegated.
         """
         templar = LINEAR.Templar(loader=self._loader, variables=task_vars)
         if not self._check_when(host, task, templar, task_vars):
             return
 
         _play_context = copy.deepcopy(play_context)
-        _vars = _play_context._attributes['vars']
+
+        groups = self._get_group_dict(self._inventory)
+        physical_hosts = groups.get('hosts', groups.get('all', {}))
+        physical_host_addrs = {}
+        for physical_host in physical_hosts:
+            physical_host_vars = self._inventory.get_host_variables(physical_host)
+            physical_host_addr = physical_host_vars.get('ansible_host', physical_host)
+            physical_host_addrs[physical_host] = physical_host_addr
+        host.set_variable('physical_host_addrs', physical_host_addrs)
+
         if task.delegate_to:
-            # If a task uses delegation change teh play_context
+            # If a task uses delegation change the play_context
             #  to use paramiko with pipelining disabled for this
             #  one task on its collection of hosts.
             if _play_context.pipelining:
@@ -129,24 +168,6 @@ class StrategyModule(LINEAR.StrategyModule):
                     host=host,
                     caplevel=0
                 )
-        else:
-            physical_host = _vars.get('physical_host')
-            if not physical_host:
-                physical_host = task_vars.get('physical_host')
-                if physical_host:
-                    ph = self._inventory.get_host(physical_host)
-                    ansible_host = ph.vars.get('ansible_host')
-                    if not ansible_host:
-                        ansible_host = ph.vars.get('ansible_ssh_host')
-                    if ansible_host:
-                        _vars['physical_host'] = ansible_host
-                        _vars['physical_hostname'] = physical_host
-
-            container_name = _vars.get('container_name')
-            if not container_name:
-                container_name = task_vars.get('container_name')
-                if container_name:
-                    _vars['container_name'] = container_name
 
         return super(StrategyModule, self)._queue_task(
             host,
