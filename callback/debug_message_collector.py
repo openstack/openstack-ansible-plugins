@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Callback for displaying debug messages after a playbook run."""
-
+from collections import OrderedDict
 from ansible.plugins.callback import CallbackBase
 
 
@@ -33,31 +33,31 @@ class CallbackModule(CallbackBase):
 
     def __init__(self):
         """Constructor for the plugin class."""
-        self.debug_tasks = []
+        self.debug_tasks = OrderedDict()
 
-    def v2_playbook_on_task_start(self, task, is_conditional):
+    def v2_runner_on_ok(self, result):
         """
-        Collect debug messages from tasks.
+        Get details from debug tasks.
 
-        After each task runs, this function checks to see if the task's action
-        is 'debug'. If so, we collect the name of the task as well as its
-        debug message here.
+        We only care about successful debug tasks. This function takes the
+        debug message that is returned from the task and adds it into a
+        dictionary of debug tasks. The message includes rendered template data
+        if jinja2 templates were used to generate the debug output.
         """
-        if task.action == 'debug':
-            self.debug_tasks.append({
-                'name': task.name,
-                'msg': task.args['msg']
-            })
+        self.debug_tasks[result._task._uuid] = {
+            'name': result._task.name,
+            'msg': result._result['msg'],
+        }
 
     def v2_playbook_on_stats(self, stats):
         """
-        Print debug messages when the playbook has finished.
+        Print debug tasks at the end of the playbook run.
 
         Print all of the collected debug messages (if any exist) and display
         them at the end of the Ansible task output.
         """
         if len(self.debug_tasks) > 0:
             print("DEBUG MESSAGE RECAP ".ljust(80, '*'))
-        for task in self.debug_tasks:
+        for uuid, task in self.debug_tasks.items():
             print("DEBUG: [{0}] ".format(task['name']).ljust(80, '*'))
             print("{0}\n".format(task['msg']))
