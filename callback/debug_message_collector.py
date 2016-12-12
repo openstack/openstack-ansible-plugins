@@ -44,10 +44,11 @@ class CallbackModule(CallbackBase):
         dictionary of debug tasks. The message includes rendered template data
         if jinja2 templates were used to generate the debug output.
         """
-        self.debug_tasks[result._task._uuid] = {
-            'name': result._task.name,
-            'msg': result._result['msg'],
-        }
+        if result._task.action == 'debug':
+            self.debug_tasks[result._task._uuid] = {
+                'name': result._task.name,
+                'msg': result._result['msg'],
+            }
 
     def v2_playbook_on_stats(self, stats):
         """
