@@ -38,6 +38,26 @@
           - "(lookup('ini', 'new_key section=DEFAULT file=/tmp/test.ini')) == 'new_value'"
           - "(lookup('ini', 'baz section=foo file=/tmp/test.ini')) == 'bar'"
 
+    # Test basic function of config_template with content instead of src
+    - name: Template test INI template
+      config_template:
+        content: "{{ lookup('file', playbook_dir + '/templates/test.ini') }}"
+        dest: "/tmp/test_with_content.ini"
+        config_overrides: "{{ test_config_ini_overrides }}"
+        config_type: "ini"
+
+    - name: Read test.ini
+      slurp:
+        src: /tmp/test_with_content.ini
+      register: ini_file_with_content
+    - debug:
+        msg: "ini - {{ ini_file_with_content.content | b64decode }}"
+    - name: Validate output
+      assert:
+        that:
+          - "(lookup('ini', 'new_key section=DEFAULT file=/tmp/test_with_content.ini')) == 'new_value'"
+          - "(lookup('ini', 'baz section=foo file=/tmp/test_with_content.ini')) == 'bar'"
+
     # Test list additions in config_template
     - name: Template test YML template
       config_template:
