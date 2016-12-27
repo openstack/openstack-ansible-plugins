@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # openstack-ansible-plugins documentation build configuration file, created by
 # sphinx-quickstart on Mon Apr 13 20:42:26 2015.
