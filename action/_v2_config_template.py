@@ -31,6 +31,7 @@ import pwd
 import re
 import time
 import yaml
+import tempfile as tmpfilelib
 
 
 from ansible.plugins.action import ActionBase
@@ -427,7 +428,7 @@ class ActionModule(ActionBase):
             file_path = self._loader.get_basedir()
 
         user_source = self._task.args.get('src')
-        user_content = self._task.args.get('content')
+        user_content = str(self._task.args.get('content'))
         if not user_source:
             if not user_content:
                 return False, dict(
@@ -436,21 +437,20 @@ class ActionModule(ActionBase):
                 )
             else:
                 tmp_content = None
+                fd, tmp_content = tmpfilelib.mkstemp()
                 try:
-                    remote_user = task_vars.get('ansible_user') or self._play_context.remote_user
-                    if not tmp_content:
-                        tmp_content = self._make_tmp_path(remote_user) + 'content'
-                except TypeError:
-                    if not tmp_content:
-                        tmp_content = self._make_tmp_path() + 'content'
-                with open(tmp_content, 'w') as f:
-                    f.writelines(user_content)
-                user_source = tmp_content
-        source = self._loader.path_dwim_relative(
-            file_path,
-            'templates',
-            user_source
-        )
+                    with open(tmp_content, 'wb') as f:
+                        f.write(user_content.encode())
+                except Exception as err:
+                    os.remove(tmp_content)
+                    raise Exception(err)
+                self._task.args['src'] = source = tmp_content
+        else:
+            source = self._loader.path_dwim_relative(
+                file_path,
+                'templates',
+                user_source
+            )
         searchpath.insert(1, os.path.dirname(source))
 
         _dest = self._task.args.get('dest')
@@ -577,10 +577,15 @@ class ActionModule(ActionBase):
         new_module_args.pop('config_overrides', None)
         new_module_args.pop('config_type', None)
         new_module_args.pop('list_extend', None)
+        # Content from config_template is converted to src
+        new_module_args.pop('content', None)
 
         # Run the copy module
-        return self._execute_module(
+        rc = self._execute_module(
             module_name='copy',
             module_args=new_module_args,
             task_vars=task_vars
         )
+        if self._task.args.get('content'):
+            os.remove(_vars['source'])
+        return rc
