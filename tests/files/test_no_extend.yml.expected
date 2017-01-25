@@ -1,5 +1,5 @@
 list_one:
-- four
+  - four
 list_two:
-- one
-- two
+  - one
+  - two

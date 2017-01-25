@@ -73,6 +73,11 @@ def _convert_2_string(item):
             return str(item)
 
 
+class IDumper(yaml.SafeDumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(IDumper, self).increase_indent(flow, False)
+
+
 class MultiKeyDict(dict):
     """Dictionary class which supports duplicate keys.
     This class allows for an item to be added into a standard python dictionary
@@ -374,8 +379,9 @@ class ActionModule(ActionBase):
             new_items=config_overrides,
             list_extend=list_extend
         )
-        return yaml.safe_dump(
+        return yaml.dump(
             merged_resultant,
+            Dumper=IDumper,
             default_flow_style=False,
             width=1000,
         )
