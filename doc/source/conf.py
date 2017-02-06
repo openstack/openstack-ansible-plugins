@@ -35,7 +35,7 @@ extensions = [
 ]
 
 # The link to the browsable source code (for the left hand menu)
-oslosphinx_cgit_link = 'http://git.openstack.org/cgit/openstack/openstack-ansible-plugins'
+oslosphinx_cgit_link = 'https://git.openstack.org/cgit/openstack/openstack-ansible-plugins'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
