@@ -142,7 +142,7 @@ class ManageMagnum(object):
     def _parse_openrc(self):
         """Get credentials from an openrc file."""
         openrc_path = self.module.params['openrc_path']
-        line_re = re.compile('^export (?P<key>OS_\w*)=(?P<value>[^\n]*)')
+        line_re = re.compile('^export (?P<key>OS_\w*)=\'?(?P<value>[^\n\']*)')
         with open(openrc_path) as openrc:
             matches = [line_re.match(l) for l in openrc]
             return dict(
