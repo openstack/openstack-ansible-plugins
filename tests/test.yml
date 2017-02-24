@@ -17,3 +17,5 @@
 - include: test-config_template.yml
 
 - include: test-filters.yml
+
+- include: test-strategy-tagfilter.yml
