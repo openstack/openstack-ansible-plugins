@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 
+import itertools
 import os
 
 import linear
@@ -21,10 +22,17 @@ import linear
 class StrategyModule(linear.StrategyModule):
     def _queue_task(self, host, task, task_vars, play_context):
         """Wipe the notification system and return for config tasks."""
-        task.notify = None
-        skip_tags = os.environ.get('OS_ANSIBLE_SKIP_TAGS', 'config')
-        skip_tags = skip_tags.split(',')
-        if any([True for i in skip_tags if i in task.tags]):
+        skip_handlers = task_vars.get('skip_handlers', True)
+        if skip_handlers:
+            task.notify = None
+        skip_tags = task_vars.get('skip_tags')
+        if skip_tags:
+            if not hasattr(skip_tags, '__iter__'):
+                skip_tags = (skip_tags,)
+        else:
+            skip_tags = ()
+        if any([True for (i, j) in itertools.product(skip_tags, task.tags)
+               if i in j]):
             return
         else:
             return super(StrategyModule, self)._queue_task(
