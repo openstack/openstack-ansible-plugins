@@ -73,6 +73,10 @@ options:
         description:
             - The keystone url for authentication
         required: false
+    ignore_catalog:
+        description:
+            - Ignore the service catalog when identifying the endpoint
+        required: false
     password:
         description:
             - The password to be assigned to the user
@@ -538,6 +542,7 @@ class ManageKeystone(object):
         required_vars = ['endpoint']
         variables = [
             'endpoint',
+            'ignore_catalog',
             'login_user',
             'login_password',
             'login_project_name',
@@ -586,15 +591,19 @@ class ManageKeystone(object):
                 token=token
             )
         else:
-            self.keystone = client.Client(
-                insecure=insecure,
-                auth_url=endpoint,
-                username=login_user,
-                user_domain_name=user_domain_name,
-                password=login_password,
-                project_name=login_project_name,
-                project_domain_name=project_domain_name,
-            )
+            client_args = {
+                'auth_url': endpoint,
+                'insecure': insecure,
+                'username': login_user,
+                'user_domain_name': user_domain_name,
+                'password': login_password,
+                'project_name': login_project_name,
+                'project_domain_name': project_domain_name,
+            }
+
+            if variables_dict.pop('ignore_catalog'):
+                client_args.update(endpoint_override=endpoint)
+            self.keystone = client.Client(**client_args)
 
     def _get_domain_from_vars(self, variables):
         # NOTE(sigmavirus24): Since we don't require domain, this will be None
@@ -1314,6 +1323,9 @@ def main():
             ),
             endpoint=dict(
                 required=True,
+            ),
+            ignore_catalog=dict(
+                required=False
             ),
             user_name=dict(
                 required=False
