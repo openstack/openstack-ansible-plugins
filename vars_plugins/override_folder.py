@@ -39,8 +39,8 @@ def vars_files_loading(folder, name, matched=False):
     except OSError:
         return files
     for f in candidates:
-        if os.path.basename(f) in [name, name + ".yml", name + ".yaml"]
-        or matched:
+        if (os.path.basename(f) in [name, name + ".yml", name + ".yaml"]
+                or matched):
             if os.path.isfile(f):
                 files.append(f)
             elif os.path.isdir(f):
