@@ -204,7 +204,8 @@ options:
         default: True
     state:
         description:
-            - Ensuring the endpoint is either present, absent, or update
+            - Ensuring the endpoint is either present, absent.
+            - It always ensures endpoint is updated to latest url.
         required: False
         default: 'present'
     command:
@@ -1127,9 +1128,24 @@ class ManageKeystone(object):
             )
             if state == 'present':
                 ''' Creating an endpoint for this url
-                    (if it does not exist)
+                    (if it does not exist) or updating
+                    an existing endpoint that matches
+                    the service type, name, interface
+                    and region.
                 '''
-                if endpoint is None:
+                similar_endpoint = self._get_endpoint_by_details(
+                    region=region,
+                    service_id=service.id,
+                    interface=interface
+                )
+                if similar_endpoint is not None:
+                    if similar_endpoint.url != url:
+                        self.state_change = True
+                        endpoint = self.keystone.endpoints.update(
+                            endpoint=similar_endpoint,
+                            url=url
+                        )
+                elif endpoint is None:
                     self.state_change = True
                     endpoint = self.keystone.endpoints.create(
                         region=region,
@@ -1137,10 +1153,13 @@ class ManageKeystone(object):
                         url=url,
                         interface=interface
                     )
+            # The update state is deprecated and should be removed in Q
             elif state == 'update':
                 ''' Checking if there is a similar endpoint with a
                     different url. Update it if there is one, create
-                    if there is none.
+                    if there is none. Update is deprecated and will
+                    be removed in Q. "Present" achieves the same
+                    result.
                 '''
                 similar_endpoint = self._get_endpoint_by_details(
                     region=region,
@@ -1272,6 +1291,7 @@ class ManageKeystone(object):
         )
 
 
+# TODO(evrardjp): Deprecate state=update in Q.
 def main():
     module = AnsibleModule(
         argument_spec=dict(
