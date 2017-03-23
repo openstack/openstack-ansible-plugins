@@ -18,4 +18,6 @@
 
 - include: test-filters.yml
 
+- include: test-lookups.yml
+
 - include: test-strategy-tagfilter.yml
