@@ -54,7 +54,7 @@ class Connection(SSH.Connection):
         if self._container_check() or self._chroot_check():
             self.host = self._play_context.remote_addr = self.physical_host
 
-    def _exec_command(self, cmd, in_data=None, sudoable=True):
+    def exec_command(self, cmd, in_data=None, sudoable=True):
         """run a command on the remote host."""
 
         if self._container_check():
@@ -65,7 +65,7 @@ class Connection(SSH.Connection):
             chroot_command = 'chroot %s' % self.chroot_path
             cmd = '%s %s' % (chroot_command, cmd)
 
-        return super(Connection, self)._exec_command(cmd, in_data, sudoable)
+        return super(Connection, self).exec_command(cmd, in_data, sudoable)
 
     def _chroot_check(self):
         if self.chroot_path:
