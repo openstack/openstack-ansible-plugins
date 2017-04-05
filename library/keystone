@@ -1293,7 +1293,8 @@ def main():
                 required=False
             ),
             login_password=dict(
-                required=False
+                required=False,
+                no_log=True
             ),
             login_tenant_name=dict(
                 required=False
@@ -1308,7 +1309,8 @@ def main():
                 required=False
             ),
             password=dict(
-                required=False
+                required=False,
+                no_log=True
             ),
             endpoint=dict(
                 required=True,
