@@ -46,11 +46,18 @@ class Connection(SSH.Connection):
         super(Connection, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
-        self.vars = self._play_context._attributes['vars']
-        self.chroot_path = self.vars.get('chroot_path')
-        self.container_name = self.vars.get('container_name')
-        self.physical_host = self.vars.get('physical_host')
-        self.physical_hostname = self.vars.get('physical_hostname')
+        if hasattr(self._play_context, 'chroot_path'):
+            self.chroot_path = self._play_context.chroot_path
+        else:
+            self.chroot_path = None
+        if hasattr(self._play_context, 'container_name'):
+            self.container_name = self._play_context.container_name
+        else:
+            self.container_name = None
+        if hasattr(self._play_context, 'physical_host'):
+            self.physical_host = self._play_context.physical_host
+        else:
+            self.physical_host = None
         if self._container_check() or self._chroot_check():
             self.host = self._play_context.remote_addr = self.physical_host
 
@@ -68,11 +75,11 @@ class Connection(SSH.Connection):
         return super(Connection, self)._exec_command(cmd, in_data, sudoable)
 
     def _chroot_check(self):
-        if self.chroot_path:
+        if self.chroot_path is not None:
             SSH.display.vvv(u'chroot_path: "%s"' % self.chroot_path)
-            if self.physical_hostname:
+            if self.physical_host is not None:
                 SSH.display.vvv(
-                    u'physical_hostname: "%s"' % self.physical_hostname
+                    u'physical_host: "%s"' % self.physical_host
                 )
                 SSH.display.vvv(u'chroot confirmed')
                 return True
@@ -80,13 +87,13 @@ class Connection(SSH.Connection):
         return False
 
     def _container_check(self):
-        if self.container_name:
+        if self.container_name is not None:
             SSH.display.vvv(u'container_name: "%s"' % self.container_name)
-            if self.physical_hostname:
+            if self.physical_host is not None:
                 SSH.display.vvv(
-                    u'physical_hostname: "%s"' % self.physical_hostname
+                    u'physical_host: "%s"' % self.physical_host
                 )
-                if self.container_name != self.physical_hostname:
+                if self.container_name != self.physical_host:
                     SSH.display.vvv(u'Container confirmed')
                     return True
 
