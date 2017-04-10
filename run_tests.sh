@@ -13,62 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -xeuo pipefail
+set -xeu
 
-FUNCTIONAL_TEST=${FUNCTIONAL_TEST:-true}
+source /etc/os-release || source /usr/lib/os-release
 
-# Install python2 for Ubuntu 16.04 and CentOS 7
-if which apt-get; then
-    sudo apt-get update && sudo apt-get install -y python
-fi
+install_pkg_deps() {
+    pkg_deps="git"
 
-if which yum; then
-    sudo yum install -y python
-fi
+    case ${ID,,} in
+        *suse*) pkg_mgr_cmd="zypper -n in" ;;
+        centos|rhel) pkg_mgr_cmd="yum install -y" ;;
+        fedora) pkg_mgr_cmd="dnf -y install" ;;
+        ubuntu|debian) pkg_mgr_cmd="apt-get install -y" ;;
+        *) echo "unsupported distribution: ${ID,,}"; exit 1 ;;
+    esac
 
-# Install pip.
-if ! which pip; then
-  curl --silent --show-error --retry 5 \
-    https://bootstrap.pypa.io/get-pip.py | sudo python2.7
-fi
+    eval sudo $pkg_mgr_cmd $pkg_deps
+}
 
-# Install bindep and tox with pip.
-sudo pip install bindep tox
-
-# CentOS 7 requires two additional packages:
-#   redhat-lsb-core - for bindep profile support
-#   epel-release    - required to install python-ndg_httpsclient/python2-pyasn1
-if which yum; then
-    sudo yum -y install redhat-lsb-core epel-release
-fi
-
-# Get a list of packages to install with bindep. If packages need to be
-# installed, bindep exits with an exit code of 1.
-BINDEP_PKGS=$(bindep -b -f bindep.txt test || true)
-echo "Packages to install: ${BINDEP_PKGS}"
-
-# Install a list of OS packages provided by bindep.
-if which apt-get; then
-    sudo apt-get update
-    DEBIAN_FRONTEND=noninteractive \
-      sudo apt-get -q --option "Dpkg::Options::=--force-confold" \
-      --assume-yes install $BINDEP_PKGS
-elif which yum; then
-    # Don't run yum with an empty list of packages.
-    # It will fail and cause the script to exit with an error.
-    if [[ ${#BINDEP_PKGS} > 0 ]]; then
-      sudo yum install -y $BINDEP_PKGS
+git_clone_repo() {
+    if [[ ! -d tests/common ]]; then
+        git clone https://git.openstack.org/openstack/openstack-ansible-tests tests/common
     fi
-fi
+}
 
-# Loop through each tox environment and run tests.
-for tox_env in $(awk -F= '/envlist/ { gsub(",", " "); print $2 }' tox.ini); do
-  echo "Executing tox environment: ${tox_env}"
-  if [[ ${tox_env} == ansible-functional ]]; then
-    if ${FUNCTIONAL_TEST}; then
-      tox -e ${tox_env}
-    fi
-  else
-    tox -e ${tox_env}
-  fi
-done
+install_pkg_deps
+
+git_clone_repo
+
+# start executing the main test script
+source tests/common/run_tests.sh
+
+# vim: set ts=4 sw=4 expandtab:

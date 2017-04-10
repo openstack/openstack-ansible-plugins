@@ -23,6 +23,12 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - xenial
+    - name: EL
+      versions:
+        - 7
+    - name: opensuse
+      versions:
+        - all
   categories:
     - cloud
     - rabbitmq
