@@ -26,6 +26,16 @@ LINEAR = imp.load_source(
     os.path.join(os.path.dirname(strategy.__file__), 'linear.py')
 )
 
+# NOTICE(jmccrory): The play_context is imported so that additional container
+#                   specific variables can be made available to connection
+#                   plugins.
+import ansible.playbook.play_context
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'physical_host':
+                                                           ('physical_host',)})
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'container_name':
+                                                           ('inventory_hostname',)})
+ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'chroot_path':
+                                                           ('chroot_path',)})
 
 class StrategyModule(LINEAR.StrategyModule):
     """Notes about this strategy.
@@ -94,15 +104,14 @@ class StrategyModule(LINEAR.StrategyModule):
     def _queue_task(self, host, task, task_vars, play_context):
         """Queue a task to be sent to the worker.
 
-        Modify the playbook_context to support adding attributes for remote
-        LXC containers or remote chroots.
+        Modify the playbook_context to disable pipelining and use the paramiko
+        transport method when a task is being delegated.
         """
         templar = LINEAR.Templar(loader=self._loader, variables=task_vars)
         if not self._check_when(host, task, templar, task_vars):
             return
 
         _play_context = copy.deepcopy(play_context)
-        _vars = _play_context._attributes['vars']
         if task.delegate_to:
             # If a task uses delegation change the play_context
             #  to use paramiko with pipelining disabled for this
@@ -129,30 +138,6 @@ class StrategyModule(LINEAR.StrategyModule):
                     host=host,
                     caplevel=0
                 )
-        else:
-            physical_host = _vars.get('physical_host')
-            if not physical_host:
-                physical_host = task_vars.get('physical_host')
-                if physical_host:
-                    ph = self._inventory.get_host(physical_host)
-                    ansible_host = ph.vars.get('ansible_host')
-                    if not ansible_host:
-                        ansible_host = ph.vars.get('ansible_host')
-                    if ansible_host:
-                        _vars['physical_host'] = ansible_host
-                        _vars['physical_hostname'] = physical_host
-
-            container_name = _vars.get('container_name')
-            if not container_name:
-                container_name = task_vars.get('container_name')
-                if container_name:
-                    _vars['container_name'] = container_name
-
-            chroot_path = _vars.get('chroot_path')
-            if not chroot_path:
-                chroot_path = task_vars.get('chroot_path')
-                if chroot_path:
-                    _vars['chroot_path'] = chroot_path
 
         return super(StrategyModule, self)._queue_task(
             host,
