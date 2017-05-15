@@ -43,7 +43,7 @@ options:
         description:
             - The domain login_user belongs to
         required: false
-        default: None
+        default: 'Default'
     login_password:
         description:
             - Password of login user
@@ -58,7 +58,7 @@ options:
         description:
             - The domain login_project belongs to
         required: false
-        default: None
+        default: 'Default'
     login_tenant_name:
         description:
             - The tenant login_user belongs to
@@ -452,7 +452,10 @@ COMMAND_MAP = {
 
 try:
     from keystoneclient import exceptions as kexceptions
-    from keystoneclient.v3 import client
+    from keystoneclient import client
+    from keystoneauth1.identity import v3
+    from keystoneauth1 import session
+
 except ImportError:
     keystoneclient_found = False
 else:
@@ -591,19 +594,24 @@ class ManageKeystone(object):
                 token=token
             )
         else:
-            client_args = {
+            auth_args = {
                 'auth_url': endpoint,
-                'insecure': insecure,
                 'username': login_user,
                 'user_domain_name': user_domain_name,
                 'password': login_password,
                 'project_name': login_project_name,
                 'project_domain_name': project_domain_name,
             }
+            client_args = {
+                'insecure': insecure,
+            }
 
             if variables_dict.pop('ignore_catalog'):
                 client_args.update(endpoint_override=endpoint)
-            self.keystone = client.Client(**client_args)
+            auth = v3.Password(**auth_args)
+            sess = session.Session(auth=auth)
+            self.keystone = client.Client(session=sess,
+                                          **client_args)
 
     def _get_domain_from_vars(self, variables):
         # NOTE(sigmavirus24): Since we don't require domain, this will be None
@@ -1299,7 +1307,8 @@ def main():
                 required=False
             ),
             login_user_domain_name=dict(
-                required=False
+                required=False,
+                default='Default'
             ),
             login_password=dict(
                 required=False,
@@ -1312,7 +1321,8 @@ def main():
                 required=False
             ),
             login_project_domain_name=dict(
-                required=False
+                required=False,
+                default='Default'
             ),
             token=dict(
                 required=False
