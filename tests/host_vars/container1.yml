@@ -1,5 +1,5 @@
 ---
-# Copyright 2016, @WalmartLabs
+# Copyright 2017, Logan Vig <logan2211@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,18 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Collect facts for all hosts
-  hosts: hosts:!fake_hosts
-  gather_facts: yes
-
-- include: common/test-setup-host.yml
-
-- include: test-config_template.yml
-
-- include: test-filters.yml
-
-- include: test-lookups.yml
-
-- include: test-strategy-tagfilter.yml
-
-- include: test-connection-plugin.yml
+ansible_host: 10.100.100.2
+ansible_become: True
+ansible_user: root
