@@ -18,10 +18,13 @@ import hashlib
 import logging
 import os
 import re
-import urlparse
 
 from ansible import errors
 from jinja2.runtime import Undefined
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 """Filter usage:
 
@@ -161,7 +164,7 @@ def get_netloc(url):
     :returns: ``str``
     """
     try:
-        netloc = urlparse.urlparse(url).netloc
+        netloc = urlparse(url).netloc
     except Exception as exp:
         raise errors.AnsibleFilterError(
             'Failed to return the netloc of: "%s"' % str(exp)
@@ -194,7 +197,7 @@ def get_netorigin(url):
     :returns: ``str``
     """
     try:
-        parsed_url = urlparse.urlparse(url)
+        parsed_url = urlparse(url)
         netloc = parsed_url.netloc
         scheme = parsed_url.scheme
     except Exception as exp:
