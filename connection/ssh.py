@@ -65,7 +65,7 @@ class Connection(SSH.Connection):
         """run a command on the remote host."""
 
         if self._container_check():
-            lxc_command = 'lxc-attach --clear-env --name %s' % self.container_name
+            lxc_command = 'lxc-attach --name %s' % self.container_name
             cmd = '%s -- %s' % (lxc_command, cmd)
 
         if self._chroot_check():
