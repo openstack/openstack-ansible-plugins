@@ -17,6 +17,9 @@
 import imp
 import os
 
+from ansible.module_utils._text import to_bytes
+from ansible.compat.six.moves import shlex_quote
+
 # NOTICE(cloudnull): The connection plugin imported using the full path to the
 #                    file because the ssh connection plugin is not importable.
 import ansible.plugins.connection as conn
@@ -70,8 +73,32 @@ class Connection(SSH.Connection):
         """run a command on the remote host."""
 
         if self._container_check():
-            lxc_command = 'lxc-attach --name %s' % self.container_name
-            cmd = '%s -- %s' % (lxc_command, cmd)
+            # Remote user is normally set, but if it isn't, then default to 'root'
+            container_user = 'root'
+            if self._play_context.remote_user:
+                container_user = to_bytes(self._play_context.remote_user,
+                                          errors='surrogate_or_strict')
+            # NOTE(hwoarang) It is important to connect to the container
+            # without inheriting the host environment as that would interfere
+            # with running commands and services inside the container. However,
+            # it is also important to create a sensible environment within the
+            # container because certain commands and services expect some
+            # enviromental variables to be set properly. The best way to do
+            # that would be to execute the commands in a login shell
+            lxc_command = 'lxc-attach --clear-env --name %s' % self.container_name
+
+            # NOTE(hwoarang): the shlex_quote method is necessary here because
+            # we need to properly quote the cmd as it's being passed as argument
+            # to the -c su option. The Ansible ssh class has already
+            # quoted the command of the _executable_ (ie /bin/bash -c "$cmd").
+            # However, we also need to quote the executable itself because the
+            # entire command is being passed to the su process. This produces
+            # a somewhat ugly output with too many quotes in a row but we can't
+            # do much since we are effectively passing a command to a command
+            # to a command etc... It's somewhat ugly but maybe it can be
+            # improved somehow...
+            cmd = '%s -- su - %s -c %s' % (lxc_command, container_user,
+                                           shlex_quote(cmd))
 
         if self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
