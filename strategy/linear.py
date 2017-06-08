@@ -112,6 +112,9 @@ class StrategyModule(LINEAR.StrategyModule):
             return
 
         _play_context = copy.deepcopy(play_context)
+        if 'physical_host' in host.vars:
+            physical_host = self._inventory.get_host_variables(host.vars['physical_host'])
+            host.set_variable('physical_host_addr', physical_host['ansible_host'])
         if task.delegate_to:
             # If a task uses delegation change the play_context
             #  to use paramiko with pipelining disabled for this
