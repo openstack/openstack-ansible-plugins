@@ -58,8 +58,10 @@ class Connection(SSH.Connection):
             self.physical_host = self._play_context.physical_host
         else:
             self.physical_host = None
+
+    def set_host_overrides(self, host, hostvars=None):
         if self._container_check() or self._chroot_check():
-            self.host = self._play_context.remote_addr = self.physical_host
+            self.host = self._play_context.remote_addr = hostvars.get('physical_host_addr')
 
     def exec_command(self, cmd, in_data=None, sudoable=True):
         """run a command on the remote host."""
@@ -149,4 +151,3 @@ class Connection(SSH.Connection):
             cmd = map(SSH.to_bytes, cmd)
             p = SSH.subprocess.Popen(cmd, stdin=SSH.subprocess.PIPE, stdout=SSH.subprocess.PIPE, stderr=SSH.subprocess.PIPE)
             p.communicate()
-
