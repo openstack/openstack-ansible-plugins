@@ -64,9 +64,8 @@ class Connection(SSH.Connection):
 
     def set_host_overrides(self, host, hostvars=None):
         if self._container_check() or self._chroot_check():
-            physical_host_addr = hostvars.get('physical_host_addr')
-            if not physical_host_addr:
-                physical_host_addr = self.physical_host
+            physical_host_addr = hostvars.get('physical_host_addr',
+                                              self.physical_host)
             self.host = self._play_context.remote_addr = physical_host_addr
 
     def exec_command(self, cmd, in_data=None, sudoable=True):
