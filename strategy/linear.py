@@ -104,6 +104,9 @@ class StrategyModule(LINEAR.StrategyModule):
     def _queue_task(self, host, task, task_vars, play_context):
         """Queue a task to be sent to the worker.
 
+        Set a host variable, 'physical_host_addrs', containing a dictionary of
+        each physical host and its 'ansible_host' variable.
+
         Modify the playbook_context to disable pipelining and use the paramiko
         transport method when a task is being delegated.
         """
@@ -112,9 +115,16 @@ class StrategyModule(LINEAR.StrategyModule):
             return
 
         _play_context = copy.deepcopy(play_context)
-        if 'physical_host' in host.vars:
-            physical_host = self._inventory.get_host_variables(host.vars['physical_host'])
-            host.set_variable('physical_host_addr', physical_host['ansible_host'])
+
+        groups = self._inventory.get_group_dict()
+        physical_hosts = groups.get('hosts', groups.get('all', {}))
+        physical_host_addrs = {}
+        for physical_host in physical_hosts:
+            physical_host_vars = self._inventory.get_host_variables(physical_host)
+            physical_host_addr = physical_host_vars.get('ansible_host', physical_host)
+            physical_host_addrs[physical_host] = physical_host_addr
+        host.set_variable('physical_host_addrs', physical_host_addrs)
+
         if task.delegate_to:
             # If a task uses delegation change the play_context
             #  to use paramiko with pipelining disabled for this
