@@ -17,9 +17,6 @@
 import imp
 import os
 
-from ansible.module_utils._text import to_bytes
-from ansible.compat.six.moves import shlex_quote
-
 # NOTICE(cloudnull): The connection plugin imported using the full path to the
 #                    file because the ssh connection plugin is not importable.
 import ansible.plugins.connection as conn
@@ -76,8 +73,8 @@ class Connection(SSH.Connection):
             # Remote user is normally set, but if it isn't, then default to 'root'
             container_user = 'root'
             if self._play_context.remote_user:
-                container_user = to_bytes(self._play_context.remote_user,
-                                          errors='surrogate_or_strict')
+                container_user = SSH.to_bytes(self._play_context.remote_user,
+                                              errors='surrogate_or_strict')
             # NOTE(hwoarang) It is important to connect to the container
             # without inheriting the host environment as that would interfere
             # with running commands and services inside the container. However,
@@ -98,7 +95,7 @@ class Connection(SSH.Connection):
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
             cmd = '%s -- su - %s -c %s' % (lxc_command, container_user,
-                                           shlex_quote(cmd))
+                                           SSH.shlex_quote(cmd))
 
         if self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
