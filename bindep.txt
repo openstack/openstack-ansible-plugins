@@ -39,17 +39,18 @@ openssl-devel     [platform:rpm]
 python-devel      [platform:rpm]
 
 # For SELinux
-libselinux-python [platform:centos]
-libsemanage-python [platform:centos]
+libselinux-python [platform:redhat]
+libsemanage-python [platform:redhat]
 
 # For SSL SNI support
-python-pyasn1               [platform:dpkg platform:suselinux]
-python-openssl              [platform:dpkg platform:suselinux]
+python-pyasn1               [platform:dpkg platform:suse]
+python-openssl              [platform:dpkg platform:suse]
 python-ndg-httpsclient      [platform:ubuntu]
-python2-pyasn1              [platform:centos]
-python2-pyOpenSSL           [platform:centos]
-python-pyOpenSSL            [platform:suselinux]
-python-ndg_httpsclient      [platform:centos]
+python2-pyasn1              [platform:redhat]
+python2-pyOpenSSL           [platform:redhat]
+python-pyOpenSSL            [platform:suse]
+python-ndg_httpsclient      [platform:redhat]
+python-ndg-httpsclient      [platform:suse]
 
 # Required for compressing collected log files in CI
 gzip
