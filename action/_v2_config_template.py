@@ -434,7 +434,19 @@ class ActionModule(ActionBase):
             file_path = self._loader.get_basedir()
 
         user_source = self._task.args.get('src')
-        user_content = str(self._task.args.get('content'))
+        # (alextricity25) It's possible that the user could pass in a datatype
+        # and not always a string. In this case we don't want the datatype
+        # python representation to be printed out to the file, but rather we
+        # want the serialized version.
+        _user_content = self._task.args.get('content')
+
+        # If the data type of the content input is a dictionary, it's
+        # converted dumped as json if config_type is 'json'.
+        if isinstance(_user_content, dict):
+            if self._task.args.get('config_type') == 'json':
+                _user_content = json.dumps(_user_content)
+
+        user_content = str(_user_content)
         if not user_source:
             if not user_content:
                 return False, dict(
