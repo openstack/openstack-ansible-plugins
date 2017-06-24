@@ -718,7 +718,7 @@ class LookupModule(BASECLASS):
         :type kwargs: ``dict``
         :returns: ``list``
         """
-        if isinstance(terms, basestring):
+        if isinstance(terms, str):
             terms = [terms]
 
         return_data = PACKAGE_MAPPING
@@ -772,7 +772,7 @@ class LookupModule(BASECLASS):
             self.ansible_v1_basedir,
             inject
         )
-        if isinstance(terms, basestring):
+        if isinstance(terms, str):
             terms = [terms]
 
         return_data = PACKAGE_MAPPING
