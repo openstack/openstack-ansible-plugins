@@ -49,6 +49,16 @@ options:
     choices:
       - True
       - False
+  ignore_none_type:
+    description:
+      - Can be true or false. If ignore_none_type is set to true, then
+        valueless INI options will not be written out to the resultant file.
+        If it's set to false, then config_template will write out only
+        the option name without the '=' or ':' suffix. The default is true.
+    choices:
+      - True
+      - False
+
 author: Kevin Carter
 """
 

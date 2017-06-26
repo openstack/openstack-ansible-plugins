@@ -155,9 +155,17 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
     key = var3
     key = var2
     """
-    def _write(self, fp, section, item, entry):
+    def __init__(self, *args, **kwargs):
+        self.ignore_none_type = bool(kwargs.pop('ignore_none_type', True))
+        ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
+
+    def _write(self, fp, section, key, item, entry):
         if section:
-            if (item is not None) or (self._optcre == self.OPTCRE):
+            # If we are not ignoring a none type value, then print out
+            # the option name only if the value type is None.
+            if not self.ignore_none_type and item is None:
+                fp.write(key + '\n')
+            elif (item is not None) or (self._optcre == self.OPTCRE):
                 fp.write(entry)
         else:
             fp.write(entry)
@@ -167,14 +175,14 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
             for item in value:
                 item = str(item).replace('\n', '\n\t')
                 entry = "%s = %s\n" % (key, item)
-                self._write(fp, section, item, entry)
+                self._write(fp, section, key, item, entry)
         else:
             if isinstance(value, list):
                 _value = [str(i.replace('\n', '\n\t')) for i in value]
                 entry = '%s = %s\n' % (key, ','.join(_value))
             else:
                 entry = '%s = %s\n' % (key, str(value).replace('\n', '\n\t'))
-            self._write(fp, section, value, entry)
+            self._write(fp, section, key, value, entry)
 
     def write(self, fp):
         if self._defaults:
@@ -268,7 +276,11 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
 class ActionModule(ActionBase):
     TRANSFERS_FILES = True
 
-    def return_config_overrides_ini(self, config_overrides, resultant, list_extend=True):
+    def return_config_overrides_ini(self,
+                                    config_overrides,
+                                    resultant,
+                                    list_extend=True,
+                                    ignore_none_type=True):
         """Returns string value from a modified config file.
 
         :param config_overrides: ``dict``
@@ -281,7 +293,8 @@ class ActionModule(ActionBase):
         try:
             config = ConfigTemplateParser(
                 allow_no_value=True,
-                dict_type=MultiKeyDict
+                dict_type=MultiKeyDict,
+                ignore_none_type=ignore_none_type
             )
             config.optionxform = str
         except Exception:
@@ -344,7 +357,11 @@ class ActionModule(ActionBase):
         else:
             config.set(str(section), str(key), str(value))
 
-    def return_config_overrides_json(self, config_overrides, resultant, list_extend=True):
+    def return_config_overrides_json(self,
+                                     config_overrides,
+                                     resultant,
+                                     list_extend=True,
+                                     ignore_none_type=True):
         """Returns config json
 
         Its important to note that file ordering will not be preserved as the
@@ -366,7 +383,11 @@ class ActionModule(ActionBase):
             sort_keys=True
         )
 
-    def return_config_overrides_yaml(self, config_overrides, resultant, list_extend=True):
+    def return_config_overrides_yaml(self,
+                                     config_overrides,
+                                     resultant,
+                                     list_extend=True,
+                                     ignore_none_type=True):
         """Return config yaml.
 
         :param config_overrides: ``dict``
@@ -484,13 +505,23 @@ class ActionModule(ActionBase):
             if user_dest.endswith(os.sep):
                 user_dest = os.path.join(user_dest, os.path.basename(source))
 
+        # Get ignore_none_type
+        # In some situations(i.e. my.cnf files), INI files can have valueless
+        # options that don't have a '=' or ':' suffix. In these cases,
+        # ConfigParser gives these options a "None" value. If ignore_none_type
+        # is set to true, these key/value options will be ignored, if it's set
+        # to false, then ConfigTemplateParser will write out only the option
+        # name with out the '=' or ':' suffix. The default is true.
+        ignore_none_type = self._task.args.get('ignore_none_type', True)
+
         return True, dict(
             source=source,
             dest=user_dest,
             config_overrides=self._task.args.get('config_overrides', dict()),
             config_type=config_type,
             searchpath=searchpath,
-            list_extend=list_extend
+            list_extend=list_extend,
+            ignore_none_type=ignore_none_type
         )
 
     def run(self, tmp=None, task_vars=None):
@@ -563,7 +594,8 @@ class ActionModule(ActionBase):
             resultant = type_merger(
                 config_overrides=_vars['config_overrides'],
                 resultant=resultant,
-                list_extend=_vars.get('list_extend', True)
+                list_extend=_vars.get('list_extend', True),
+                ignore_none_type=_vars.get('ignore_none_type', True)
             )
 
         # Re-template the resultant object as it may have new data within it
@@ -595,6 +627,7 @@ class ActionModule(ActionBase):
         new_module_args.pop('config_overrides', None)
         new_module_args.pop('config_type', None)
         new_module_args.pop('list_extend', None)
+        new_module_args.pop('ignore_none_type', None)
         # Content from config_template is converted to src
         new_module_args.pop('content', None)
 
