@@ -552,7 +552,8 @@ class DependencyFileProcessor(object):
             else:
                 project_group = 'all'
 
-            PACKAGE_MAPPING['role_project_groups'][role_name] = project_group
+            if role_name is not None:
+                PACKAGE_MAPPING['role_project_groups'][role_name] = project_group
             for key, values in loaded_config.items():
                 key = key.lower()
                 if key.endswith('git_repo'):
@@ -750,7 +751,10 @@ class LookupModule(BASECLASS):
             # Sort everything within the returned data
             for key, value in return_data.items():
                 if isinstance(value, (list, set)):
-                    return_data[key] = sorted(value)
+                    if all(isinstance(item, dict) for item in value):
+                        return_data[key] = sorted(value, key = lambda k: k['name'])
+                    else:
+                        return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
             _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
