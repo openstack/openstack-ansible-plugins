@@ -82,8 +82,7 @@ class Connection(SSH.Connection):
             # Remote user is normally set, but if it isn't, then default to 'root'
             container_user = 'root'
             if self._play_context.remote_user:
-                container_user = SSH.to_bytes(self._play_context.remote_user,
-                                              errors='surrogate_or_strict')
+                container_user = self._play_context.remote_user
             # NOTE(hwoarang) It is important to connect to the container
             # without inheriting the host environment as that would interfere
             # with running commands and services inside the container. However,
@@ -151,7 +150,7 @@ class Connection(SSH.Connection):
         )
         if returncode == 0:
             pad = os.path.join(
-                '/proc/%s/root' % stdout.strip(),
+                '/proc/%s/root' % SSH.to_text(stdout.strip()),
                 path.lstrip(os.sep)
             )
             SSH.display.vvv(
