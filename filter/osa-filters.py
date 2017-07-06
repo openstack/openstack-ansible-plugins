@@ -317,6 +317,34 @@ def git_link_parse_name(repo):
 
     return git_link_parse(repo)['name']
 
+def get_nested(target_dict, keys):
+    """Retrieves values through a nested dictionary.
+
+    If any key on the path is missing, return None
+
+    This helps solves convoluted guards in roles/plays such as the following:
+
+      ('openstack_ansible' not in ansible_local or
+       'swift' not in ansible_local['openstack_ansible'] or
+       'venv_tag' not in ansible_local['openstack_ansible']['swift'] or
+       ansible_local['openstack_ansible']['swift']['venv_tag'] == swift_venv_tag)
+
+    With this filter, it could be instead written:
+        ansible_local|get_nested('openstack_ansible.swift.venv_tag') == swift_venv_tag
+
+    """
+
+    try:
+        key, next_keys = keys.split('.', 1)
+    except ValueError:
+        return target_dict.get(keys, None)
+
+    try:
+        next_dict = target_dict[key]
+    except KeyError:
+        return None
+    return get_nested(next_dict, next_keys)
+
 
 class FilterModule(object):
     """Ansible jinja2 filters."""
@@ -335,5 +363,6 @@ class FilterModule(object):
             'filtered_list': filtered_list,
             'git_link_parse': git_link_parse,
             'git_link_parse_name': git_link_parse_name,
-            'deprecated': _deprecated
+            'deprecated': _deprecated,
+            'get_nested': get_nested
         }
