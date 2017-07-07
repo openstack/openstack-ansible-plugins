@@ -120,3 +120,18 @@
     - name: Validate deprecated filter
       assert:
         that: "deprecated_value == old_var"
+
+    - name: Set test_dict fact
+      set_fact:
+        test_dict:
+          a:
+            b:
+              c: d
+
+    - name: Validate get_nested returns value
+      assert:
+        that: "{{ test_dict|get_nested('a.b.c') == 'd' }}"
+
+    - name: Validate get_nested returns None on missing key
+      assert:
+        that: "{{ test_dict|get_nested('a.c') ==  None }}"
