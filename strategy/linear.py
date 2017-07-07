@@ -120,8 +120,9 @@ class StrategyModule(LINEAR.StrategyModule):
         physical_hosts = groups.get('hosts', groups.get('all', {}))
         physical_host_addrs = {}
         for physical_host in physical_hosts:
-            physical_host_vars = self._inventory.get_host_variables(physical_host)
-            physical_host_addr = physical_host_vars.get('ansible_host', physical_host)
+            physical_host_vars = self._inventory.get_host(physical_host).vars
+            physical_host_addr = physical_host_vars.get('ansible_host',
+                                                        physical_host)
             physical_host_addrs[physical_host] = physical_host_addr
         host.set_variable('physical_host_addrs', physical_host_addrs)
 
