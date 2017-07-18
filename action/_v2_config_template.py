@@ -370,7 +370,7 @@ class ActionModule(ActionBase):
         original_resultant = yaml.safe_load(resultant)
         merged_resultant = self._merge_dict(
             base_items=original_resultant,
-            new_items=config_overrides,
+            new_items=_convert_2_string(config_overrides),
             list_extend=list_extend
         )
         return yaml.safe_dump(
