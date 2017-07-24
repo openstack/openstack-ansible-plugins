@@ -66,10 +66,14 @@ def _convert_2_string(item):
     elif isinstance(item, set):
         return item
     else:
+        # try to return as an int first
         try:
-            return item.encode('utf-8')
-        except AttributeError:
-            return str(item)
+            return int(item)
+        except ValueError:
+            try:
+                return item.encode('utf-8')
+            except AttributeError:
+                return str(item)
 
 
 class MultiKeyDict(dict):
