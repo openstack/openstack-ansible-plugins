@@ -58,7 +58,7 @@ def _convert_2_string(item):
         # Old style dict comprehension for legacy python support
         return dict(
             (_convert_2_string(key), _convert_2_string(value))
-            for key, value in item.iteritems()
+            for key, value in item.items()
         )
     elif isinstance(item, list):
         return [_convert_2_string(i) for i in item]
@@ -414,7 +414,7 @@ class ActionModule(ActionBase):
         :param new_items: ``dict``
         :returns: ``dict``
         """
-        for key, value in new_items.iteritems():
+        for key, value in new_items.items():
             if isinstance(value, dict):
                 base_items[key] = self._merge_dict(
                     base_items=base_items.get(key, {}),
