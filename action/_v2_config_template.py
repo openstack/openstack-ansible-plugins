@@ -38,6 +38,7 @@ from ansible.plugins.action import ActionBase
 from ansible.module_utils._text import to_bytes, to_text
 from ansible import constants as C
 from ansible import errors
+from ansible.parsing.yaml.dumper import AnsibleDumper
 
 
 CONFIG_TYPES = {
@@ -73,7 +74,7 @@ def _convert_2_string(item):
             return str(item)
 
 
-class IDumper(yaml.SafeDumper):
+class IDumper(AnsibleDumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(IDumper, self).increase_indent(flow, False)
 
