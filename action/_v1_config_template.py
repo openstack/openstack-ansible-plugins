@@ -356,7 +356,7 @@ class ActionModule(object):
         :param new_items: ``dict``
         :returns: ``dict``
         """
-        for key, value in new_items.iteritems():
+        for key, value in new_items.items():
             if isinstance(value, dict):
                 base_items[key] = self._merge_dict(
                     base_items.get(key, {}),

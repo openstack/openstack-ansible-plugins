@@ -199,7 +199,7 @@ class ManageMagnum(object):
             )
         else:
             try:
-                for opt, val in template_opts.iteritems():
+                for opt, val in template_opts.items():
                     if (val != getattr(template, opt) and
                             val is not None):
                         updates.append({opt: val})
