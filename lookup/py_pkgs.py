@@ -32,6 +32,13 @@ else:
     BASECLASS = LookupBase
     LOOKUP_MODULE_CLASS = 'V2'
 
+
+try:
+  basestring
+except NameError:
+  basestring = str
+
+
 # Used to keep track of git package parts as various files are processed
 GIT_PACKAGE_DEFAULT_PARTS = dict()
 
@@ -751,10 +758,13 @@ class LookupModule(BASECLASS):
             # Sort everything within the returned data
             for key, value in return_data.items():
                 if isinstance(value, (list, set)):
-                    if all(isinstance(item, dict) for item in value):
-                        return_data[key] = sorted(value, key = lambda k: k['name'])
-                    else:
-                        return_data[key] = sorted(value)
+                    try:
+                        if all(isinstance(item, dict) for item in value):
+                            return_data[key] = sorted(value, key = lambda k: k['name'])
+                        else:
+                            return_data[key] = sorted(value)
+                    except TypeError:
+                        return_data[key] = value
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
             _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
