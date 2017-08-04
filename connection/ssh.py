@@ -35,7 +35,7 @@ if not hasattr(SSH, 'shlex_quote'):
 
 
 class Connection(SSH.Connection):
-    """Transport options for LXC containers.
+    """Transport options for containers.
 
     This transport option makes the assumption that the playbook context has
     vars within it that contain "physical_host" which is the machine running a
@@ -45,7 +45,7 @@ class Connection(SSH.Connection):
     set the attributes accordingly.
 
     This plugin operates exactly the same way as the standard SSH plugin but
-    will pad pathing or add command syntax for lxc containers when a container
+    will pad pathing or add command syntax for containers when a container
     is detected at runtime.
     """
 
@@ -67,6 +67,16 @@ class Connection(SSH.Connection):
             self.physical_host = self._play_context.physical_host
         else:
             self.physical_host = None
+        if hasattr(self._play_context, 'container_tech'):
+            self.container_tech = self._play_context.container_tech
+        else:
+            # NOTE(cloudnull): For now the default is "lxc" if undefined
+            #                  revise this in the future.
+            self.container_tech = 'lxc'
+        # Remote user is normally set, but if it isn't, then default to 'root'
+        self.container_user = 'root'
+        if self._play_context.remote_user:
+            self.container_user = self._play_context.remote_user
 
     def set_host_overrides(self, host, hostvars=None, templar=None):
         if self._container_check() or self._chroot_check():
@@ -80,9 +90,9 @@ class Connection(SSH.Connection):
 
         if self._container_check():
             # Remote user is normally set, but if it isn't, then default to 'root'
-            container_user = 'root'
+            self.container_user = 'root'
             if self._play_context.remote_user:
-                container_user = self._play_context.remote_user
+                self.container_user = self._play_context.remote_user
             # NOTE(hwoarang) It is important to connect to the container
             # without inheriting the host environment as that would interfere
             # with running commands and services inside the container. However,
@@ -90,7 +100,6 @@ class Connection(SSH.Connection):
             # container because certain commands and services expect some
             # enviromental variables to be set properly. The best way to do
             # that would be to execute the commands in a login shell
-            lxc_command = 'lxc-attach --clear-env --name %s' % self.container_name
 
             # NOTE(hwoarang): the shlex_quote method is necessary here because
             # we need to properly quote the cmd as it's being passed as argument
@@ -102,8 +111,27 @@ class Connection(SSH.Connection):
             # do much since we are effectively passing a command to a command
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
-            cmd = '%s -- su - %s -c %s' % (lxc_command, container_user,
-                                           SSH.shlex_quote(cmd))
+            _pad = None
+            if self.container_tech == 'lxc':
+                _pad = 'lxc-attach --clear-env --name {}'.format(
+                    self.container_name
+                )
+
+            elif self.container_tech == 'nspawn':
+                _, pid_path = self._pid_lookup(subdir='ns')
+                _pad = ('nsenter'
+                        ' --mount={path}/mnt'
+                        ' --net={path}/net'
+                        ' --pid={path}/pid'
+                        ' --uts={path}/uts'
+                        ' --ipc={path}/ipc'
+                        ' --follow-context').format(path=pid_path)
+            if _pad:
+                cmd = '%s -- su - %s -c %s' % (
+                    _pad,
+                    self.container_user,
+                    SSH.shlex_quote(cmd)
+                )
 
         if self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
@@ -132,25 +160,53 @@ class Connection(SSH.Connection):
                 )
                 if self.container_name != self.physical_host:
                     SSH.display.vvv(u'Container confirmed')
+                    SSH.display.vvv(u'Container type "{}"'.format(
+                        self.container_tech)
+                    )
                     return True
 
+        # If the container check fails set the container_tech to None.
+        self.container_tech = None
         return False
 
-    def _container_path_pad(self, path, fake_path=False):
-        args = (
-            'ssh',
-            self.host,
-            u"lxc-info --name %s --pid | awk '/PID:/ {print $2}'"
-            % self.container_name
-        )
+    def _pid_lookup(self, subdir=None):
+        if self.container_tech == 'nspawn':
+            lookup_command = (
+                u"machinectl show %s | awk -F'=' '/Leader/ {print $2}'"
+                % self.container_name
+            )
+            pid_path = """/proc/%s"""
+            if not subdir:
+                subdir = 'cwd'
+        elif self.container_tech == 'lxc':
+            lookup_command = (
+                u"lxc-info --name %s --pid | awk '/PID:/ {print $2}'"
+                % self.container_name
+            )
+            pid_path = """/proc/%s"""
+            if not subdir:
+                subdir = 'root'
+        else:
+            return 1, ''
+
+        args = ('ssh', self.host, lookup_command)
         returncode, stdout, _ = self._run(
             self._build_command(*args),
             in_data=None,
             sudoable=False
         )
+        pid_path = os.path.join(
+            pid_path % SSH.to_text(stdout.strip()),
+            subdir
+        )
+        return returncode, pid_path
+
+    def _container_path_pad(self, path):
+
+        returncode, pid_path = self._pid_lookup()
         if returncode == 0:
             pad = os.path.join(
-                '/proc/%s/root' % SSH.to_text(stdout.strip()),
+                pid_path,
                 path.lstrip(os.sep)
             )
             SSH.display.vvv(
@@ -159,10 +215,7 @@ class Connection(SSH.Connection):
             )
             return pad
         else:
-            raise SSH.AnsibleError(
-                u'No valid container info was found for container "%s" Please'
-                u' check the state of the container.' % self.container_name
-            )
+            return path
 
     def fetch_file(self, in_path, out_path):
         """fetch a file from remote to local."""
@@ -184,5 +237,8 @@ class Connection(SSH.Connection):
         if self._connected and self._persistent:
             cmd = self._build_command('ssh', '-O', 'stop', self.host)
             cmd = map(SSH.to_bytes, cmd)
-            p = SSH.subprocess.Popen(cmd, stdin=SSH.subprocess.PIPE, stdout=SSH.subprocess.PIPE, stderr=SSH.subprocess.PIPE)
+            p = SSH.subprocess.Popen(cmd,
+                                     stdin=SSH.subprocess.PIPE,
+                                     stdout=SSH.subprocess.PIPE,
+                                     stderr=SSH.subprocess.PIPE)
             p.communicate()
