@@ -66,14 +66,10 @@ def _convert_2_string(item):
     elif isinstance(item, set):
         return item
     else:
-        # try to return as an int first
         try:
-            return int(item)
-        except ValueError:
-            try:
-                return item.encode('utf-8')
-            except AttributeError:
-                return str(item)
+            return item.encode('utf-8')
+        except AttributeError:
+            return str(item)
 
 
 class MultiKeyDict(dict):
@@ -374,7 +370,7 @@ class ActionModule(ActionBase):
         original_resultant = yaml.safe_load(resultant)
         merged_resultant = self._merge_dict(
             base_items=original_resultant,
-            new_items=_convert_2_string(config_overrides),
+            new_items=config_overrides,
             list_extend=list_extend
         )
         return yaml.safe_dump(
