@@ -24,7 +24,10 @@ except ImportError:
     import configparser as ConfigParser
 
 import datetime
-import io
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import json
 import os
 import pwd
@@ -46,32 +49,6 @@ CONFIG_TYPES = {
     'json': 'return_config_overrides_json',
     'yaml': 'return_config_overrides_yaml'
 }
-
-
-def _convert_2_string(item):
-    """Return byte strings for all items.
-
-    This will convert everything within a dict, list or unicode string such
-    that the values will be encode('utf-8') where applicable.
-    """
-
-    if isinstance(item, dict):
-        # Old style dict comprehension for legacy python support
-        return dict(
-            (_convert_2_string(key), _convert_2_string(value))
-            for key, value in item.items()
-        )
-    elif isinstance(item, list):
-        return [_convert_2_string(i) for i in item]
-    elif isinstance(item, tuple):
-        return tuple([_convert_2_string(i) for i in item])
-    elif isinstance(item, set):
-        return item
-    else:
-        try:
-            return item.encode('utf-8')
-        except AttributeError:
-            return str(item)
 
 
 class IDumper(AnsibleDumper):
@@ -301,18 +278,18 @@ class ActionModule(ActionBase):
         except Exception:
             config = ConfigTemplateParser(dict_type=MultiKeyDict)
 
-        config_object = io.BytesIO(str(resultant))
+        config_object = StringIO(resultant)
         config.readfp(config_object)
         for section, items in config_overrides.items():
             # If the items value is not a dictionary it is assumed that the
             #  value is a default item for this config type.
             if not isinstance(items, dict):
                 if isinstance(items, list):
-                    items = ','.join(_convert_2_string(items))
+                    items = ','.join(to_text(i) for i in items)
                 self._option_write(
                     config,
                     'DEFAULT',
-                    str(section),
+                    section,
                     items
                 )
             else:
@@ -320,7 +297,7 @@ class ActionModule(ActionBase):
                 #  an error is raised that is related to the section
                 #  already existing.
                 try:
-                    config.add_section(section.encode('utf-8'))
+                    config.add_section(section)
                 except (ConfigParser.DuplicateSectionError, ValueError):
                     pass
                 for key, value in items.items():
@@ -336,12 +313,12 @@ class ActionModule(ActionBase):
         else:
             config_object.close()
 
-        resultant_bytesio = io.BytesIO()
+        resultant_stringio = StringIO()
         try:
-            config.write(resultant_bytesio)
-            return resultant_bytesio.getvalue()
+            config.write(resultant_stringio)
+            return resultant_stringio.getvalue()
         finally:
-            resultant_bytesio.close()
+            resultant_stringio.close()
 
     @staticmethod
     def _option_write(config, section, key, value):
