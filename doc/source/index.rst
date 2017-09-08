@@ -6,7 +6,6 @@ OpenStack-Ansible plugins
    :maxdepth: 2
 
    actions.rst
-   callbacks.rst
    filters.rst
    lookups.rst
 
