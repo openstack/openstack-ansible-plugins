@@ -17,20 +17,10 @@
 import os
 import re
 import traceback
-
-from distutils.version import LooseVersion
-from ansible import __version__ as __ansible_version__
 import yaml
 
-BASECLASS = object
-if LooseVersion(__ansible_version__) < LooseVersion("2.0"):
-    from ansible import utils, errors
-    LOOKUP_MODULE_CLASS = 'V1'
-else:
-    from ansible.errors import AnsibleError
-    from ansible.plugins.lookup import LookupBase
-    BASECLASS = LookupBase
-    LOOKUP_MODULE_CLASS = 'V2'
+from ansible.errors import AnsibleError
+from ansible.plugins.lookup import LookupBase
 
 
 try:
@@ -703,22 +693,15 @@ def _abs_path(path):
     )
 
 
-class LookupModule(BASECLASS):
+class LookupModule(LookupBase):
     def __init__(self, basedir=None, **kwargs):
         """Run the lookup module.
 
         :type basedir:
         :type kwargs:
         """
-        self.ansible_v1_basedir = basedir
 
-    def run(self, *args, **kwargs):
-        if LOOKUP_MODULE_CLASS == 'V1':
-            return self.run_v1(*args, **kwargs)
-        else:
-            return self.run_v2(*args, **kwargs)
-
-    def run_v2(self, terms, variables=None, **kwargs):
+    def run(self, terms, variables=None, **kwargs):
         """Run the main application.
 
         :type terms: ``str``
@@ -765,60 +748,6 @@ class LookupModule(BASECLASS):
                             return_data[key] = sorted(value)
                     except TypeError:
                         return_data[key] = value
-            return_data['role_requirement_files'] = ROLE_REQUIREMENTS
-            return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
-            _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
-            for k, v in PACKAGE_MAPPING['role_project_groups'].items():
-                if k in _dp:
-                    _dp[k]['project_group'] = v
-            return [return_data]
-
-    def run_v1(self, terms, inject=None, **kwargs):
-        """Run the main application.
-
-        :type terms: ``str``
-        :type inject: ``str``
-        :type kwargs: ``dict``
-        :returns: ``list``
-        """
-        terms = utils.listify_lookup_plugin_terms(
-            terms,
-            self.ansible_v1_basedir,
-            inject
-        )
-        if isinstance(terms, str):
-            terms = [terms]
-
-        return_data = PACKAGE_MAPPING
-
-        for term in terms:
-            return_list = list()
-            try:
-                dfp = DependencyFileProcessor(
-                    local_path=_abs_path(str(term))
-                )
-                return_list.extend(dfp.pip['py_package'])
-                return_list.extend(dfp.pip['git_package'])
-            except Exception as exp:
-                raise errors.AnsibleError(
-                    'lookup_plugin.py_pkgs(%s) returned "%s" error "%s"' % (
-                        term,
-                        str(exp),
-                        traceback.format_exc()
-                    )
-                )
-
-            for item in return_list:
-                map_base_and_remote_packages(item, return_data)
-            else:
-                parse_remote_package_parts(return_data)
-        else:
-            map_role_packages(return_data)
-            map_base_package_details(return_data)
-            # Sort everything within the returned data
-            for key, value in return_data.items():
-                if isinstance(value, (list, set)):
-                    return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
             _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
