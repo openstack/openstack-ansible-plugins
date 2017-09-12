@@ -116,7 +116,10 @@ class StrategyModule(LINEAR.StrategyModule):
 
         _play_context = copy.deepcopy(play_context)
 
-        groups = self._inventory.get_group_dict()
+        try:
+            groups = self._inventory.get_groups_dict()
+        except AttributeError:
+            groups = self._inventory.get_group_dict()
         physical_hosts = groups.get('hosts', groups.get('all', {}))
         physical_host_addrs = {}
         for physical_host in physical_hosts:
