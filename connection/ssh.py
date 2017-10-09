@@ -68,7 +68,7 @@ class Connection(SSH.Connection):
         else:
             self.physical_host = None
 
-    def set_host_overrides(self, host, hostvars=None):
+    def set_host_overrides(self, host, hostvars=None, templar=None):
         if self._container_check() or self._chroot_check():
             physical_host_addrs = hostvars.get('physical_host_addrs', {})
             physical_host_addr = physical_host_addrs.get(self.physical_host,
