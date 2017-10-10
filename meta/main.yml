@@ -35,6 +35,3 @@ galaxy_info:
     - development
     - openstack
 dependencies: []
-openstack_ansible_info:
-  maturity: complete
-  created_during: mitaka
