@@ -34,9 +34,6 @@ extensions = [
     'sphinxmark'
 ]
 
-# The link to the browsable source code (for the left hand menu)
-oslosphinx_cgit_link = 'https://git.openstack.org/cgit/openstack/openstack-ansible-plugins'
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -62,7 +59,9 @@ target_name = 'openstack-ansible-' + role_name
 title = 'OpenStack-Ansible Documentation: ' + role_name + 'role'
 
 # The link to the browsable source code (for the left hand menu)
-oslosphinx_cgit_link = 'https://git.openstack.org/cgit/openstack/' + target_name
+oslosphinx_cgit_link = (
+    "https://git.openstack.org/cgit/openstack/{}".format(target_name)
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
