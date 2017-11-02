@@ -28,6 +28,8 @@ except ImportError:
 
 from ansible.parsing.dataloader import DataLoader
 from ansible.utils.vars import merge_hash
+from ansible import __version__ as ansible_version
+from distutils.version import LooseVersion
 
 
 def vars_files_loading(folder, name, matched=False):
@@ -47,63 +49,63 @@ def vars_files_loading(folder, name, matched=False):
                 files.extend(vars_files_loading(f, name, matched=True))
     return sorted(files)
 
-
-class VarsModule(object):
-    """
-    Loads variables for groups and/or hosts
-    """
-
-    def __init__(self, inventory):
-        """ constructor """
-
-        self.inventory = inventory
-        self.inventory_basedir = inventory.basedir()
-        self.grp_vars_string = os.environ.get(
-            'GROUP_VARS_PATH', '/etc/openstack_deploy/group_vars')
-        self.grp_vars_folders = self.grp_vars_string.split(":")
-        self.host_vars_string = os.environ.get(
-            'HOST_VARS_PATH', '/etc/openstack_deploy/host_vars')
-        self.host_vars_folders = self.host_vars_string.split(":")
-
-    def run(self, host, vault_password=None):
-        """ This function is only used for backwards compatibility with ansible1.
-            We don't need to handle this case.
+if LooseVersion(ansible_version) < LooseVersion('2.4.0'):
+    class VarsModule(object):
         """
-        return {}
+        Loads variables for groups and/or hosts
+        """
 
-    def get_host_vars(self, host, vault_password=None):
-        """ Get host specific variables. """
-        resulting_host_vars = {}
-        var_files = []
+        def __init__(self, inventory):
+            """ constructor """
 
-        for host_var_folder in self.host_vars_folders:
-            var_files.extend(vars_files_loading(host_var_folder, host.name))
+            self.inventory = inventory
+            self.inventory_basedir = inventory.basedir()
+            self.grp_vars_string = os.environ.get(
+                'GROUP_VARS_PATH', '/etc/openstack_deploy/group_vars')
+            self.grp_vars_folders = self.grp_vars_string.split(":")
+            self.host_vars_string = os.environ.get(
+                'HOST_VARS_PATH', '/etc/openstack_deploy/host_vars')
+            self.host_vars_folders = self.host_vars_string.split(":")
 
-        _dataloader = DataLoader()
-        _dataloader.set_vault_password(vault_password)
-        for filename in var_files:
-            display.vvvvv(
-                "Hostname {}: Loading var file {}".format(host.name, filename))
-            data = _dataloader.load_from_file(filename)
-            if data is not None:
-                resulting_host_vars = merge_hash(resulting_host_vars, data)
-        return resulting_host_vars
+        def run(self, host, vault_password=None):
+            """ This function is only used for backwards compatibility with ansible1.
+                We don't need to handle this case.
+            """
+            return {}
 
-    def get_group_vars(self, group, vault_password=None):
-        """ Get group specific variables. """
+        def get_host_vars(self, host, vault_password=None):
+            """ Get host specific variables. """
+            resulting_host_vars = {}
+            var_files = []
 
-        resulting_group_vars = {}
-        var_files = []
+            for host_var_folder in self.host_vars_folders:
+                var_files.extend(vars_files_loading(host_var_folder, host.name))
 
-        for grp_var_folder in self.grp_vars_folders:
-            var_files.extend(vars_files_loading(grp_var_folder, group.name))
+            _dataloader = DataLoader()
+            _dataloader.set_vault_password(vault_password)
+            for filename in var_files:
+                display.vvvvv(
+                    "Hostname {}: Loading var file {}".format(host.name, filename))
+                data = _dataloader.load_from_file(filename)
+                if data is not None:
+                    resulting_host_vars = merge_hash(resulting_host_vars, data)
+            return resulting_host_vars
 
-        _dataloader = DataLoader()
-        _dataloader.set_vault_password(vault_password)
-        for filename in var_files:
-            display.vvvvv(
-                "Group {}: Loading var file {}".format(group.name, filename))
-            data = _dataloader.load_from_file(filename)
-            if data is not None:
-                resulting_group_vars = merge_hash(resulting_group_vars, data)
-        return resulting_group_vars
+        def get_group_vars(self, group, vault_password=None):
+            """ Get group specific variables. """
+
+            resulting_group_vars = {}
+            var_files = []
+
+            for grp_var_folder in self.grp_vars_folders:
+                var_files.extend(vars_files_loading(grp_var_folder, group.name))
+
+            _dataloader = DataLoader()
+            _dataloader.set_vault_password(vault_password)
+            for filename in var_files:
+                display.vvvvv(
+                    "Group {}: Loading var file {}".format(group.name, filename))
+                data = _dataloader.load_from_file(filename)
+                if data is not None:
+                    resulting_group_vars = merge_hash(resulting_group_vars, data)
+            return resulting_group_vars
