@@ -898,10 +898,11 @@ class ManageKeystone(object):
         else:
             return None
 
-    def _get_group_roles(self, name, group, project):
+    def _get_group_roles(self, name, group, project, domain):
         group_list = self.keystone.roles.list(
             group=group,
-            project=project
+            project=project,
+            domain=domain
         )
         for entry in group_list:
             if entry.name == name:
