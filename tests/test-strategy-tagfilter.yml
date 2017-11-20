@@ -41,6 +41,7 @@
       register: run_task
       notify: Skipped Handler
       tags:
+        - skip_ansible_lint
         - test-runit
   handlers:
     - name: Skipped Handler
@@ -73,6 +74,7 @@
       register: run_task
       notify: Skipped Handler
       tags:
+        - skip_ansible_lint
         - test-runit
   handlers:
     - name: Skipped Handler
@@ -100,12 +102,14 @@
       register: skipped_task
       notify: Skipped Handler
       tags:
+        - skip_ansible_lint
         - test-skipit
     - name: Test unskipped task
       command: /bin/true
       register: run_task
       notify: Run Handler
       tags:
+        - skip_ansible_lint
         - test-runit
   handlers:
     - name: Skipped Handler
