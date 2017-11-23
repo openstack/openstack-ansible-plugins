@@ -177,6 +177,32 @@
           - "{{ test_ignore_none_type.content | b64decode | search('(?m)^india$') }}"
           - "{{ test_ignore_none_type.content | b64decode | search('(?m)^juliett kilo$') }}"
 
+        # Test basic function of config_template
+    - name: Template test INI comments
+      config_template:
+        src: "{{ playbook_dir }}/templates/test_with_comments.ini"
+        dest: "/tmp/test_with_comments.ini"
+        config_overrides: "{{ test_config_ini_overrides }}"
+        config_type: "ini"
+      tags: test
+
+    - name: Read test.ini
+      slurp:
+        src: /tmp/test_with_comments.ini
+      register: ini_file
+      tags: test
+
+    - debug:
+        msg: "ini - {{ ini_file.content | b64decode }}"
+    - name: Validate output
+      tags: test
+      assert:
+        that:
+          - "(lookup('ini', 'new_key section=DEFAULT file=/tmp/test_with_comments.ini')) == 'new_value'"
+          - "(lookup('ini', 'baz section=foo file=/tmp/test_with_comments.ini')) == 'bar'"
+          - "{{ ini_file.content | b64decode | search('#This is a comment')}}"
+          - "{{ ini_file.content | b64decode | search('# A default section comment\n# broken into multiple lines\n\\[DEFAULT\\]')}}"
+
   vars:
     test_config_ini_overrides:
       DEFAULT:
