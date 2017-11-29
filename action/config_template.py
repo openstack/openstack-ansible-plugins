@@ -134,6 +134,7 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
     key = var2
     """
     def __init__(self, *args, **kwargs):
+        self._comments = {}
         self.ignore_none_type = bool(kwargs.pop('ignore_none_type', True))
         ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
 
@@ -163,21 +164,31 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
             self._write(fp, section, key, value, entry)
 
     def write(self, fp):
+        def _write_comments(section, optname=None):
+            comsect = self._comments.get(section, {})
+            if optname in comsect:
+                fp.write(''.join(comsect[optname]))
+
         if self._defaults:
+            _write_comments('DEFAULT')
             fp.write("[%s]\n" % 'DEFAULT')
             for key, value in self._defaults.items():
+                _write_comments('DEFAULT', optname=key)
                 self._write_check(fp, key=key, value=value)
             else:
                 fp.write("\n")
 
         for section in self._sections:
+            _write_comments(section)
             fp.write("[%s]\n" % section)
             for key, value in self._sections[section].items():
+                _write_comments(section, optname=key)
                 self._write_check(fp, key=key, value=value, section=True)
             else:
                 fp.write("\n")
 
     def _read(self, fp, fpname):
+        comments = []
         cursect = None
         optname = None
         lineno = 0
@@ -187,8 +198,15 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
             if not line:
                 break
             lineno += 1
-            if line.strip() == '' or line[0] in '#;':
+            if line.strip() == '':
+                if comments:
+                    comments.append('')
                 continue
+
+            if line[0] in '#;':
+                comments.append(line)
+                continue
+
             if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":
                 continue
             if line[0].isspace() and cursect is not None and optname:
@@ -215,6 +233,13 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
                         cursect = self._dict()
                         self._sections[sectname] = cursect
                     optname = None
+
+                    comsect = self._comments.setdefault(sectname, {})
+                    if comments:
+                        # NOTE(flaper87): Using none as the key for
+                        # section level comments
+                        comsect[None] = comments
+                        comments = []
                 elif cursect is None:
                     raise ConfigParser.MissingSectionHeaderError(
                         fpname,
@@ -235,6 +260,9 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
                             if optval == '""':
                                 optval = ''
                         cursect[optname] = optval
+                        if comments:
+                            comsect[optname] = comments
+                            comments = []
                     else:
                         if not e:
                             e = ConfigParser.ParsingError(fpname)
