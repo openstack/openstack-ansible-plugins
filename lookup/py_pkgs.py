@@ -349,7 +349,7 @@ class DependencyFileProcessor(object):
         :type path: ``str``
         :returns: ``list``
         """
-        paths = os.walk(os.path.abspath(path))
+        paths = os.walk(os.path.abspath(path), followlinks=True)
         files = list()
         for fpath, _, afiles in paths:
             for afile in afiles:
