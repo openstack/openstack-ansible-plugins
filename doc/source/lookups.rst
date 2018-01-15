@@ -55,7 +55,6 @@ Example
    #        "python-memcached",
    #        "python-novaclient",
    #        "virtualenv",
-   #        "virtualenv-tools",
    #        "websockify"
    #    ],
    #    "remote_package_parts": [
@@ -123,7 +122,6 @@ Example
    #            "python-memcached",
    #            "python-novaclient",
    #            "virtualenv",
-   #            "virtualenv-tools",
    #            "websockify"
    #        ]
    #    },
@@ -163,7 +161,6 @@ Example
    #                "httplib2",
    #                "python-keystoneclient",
    #                "virtualenv",
-   #                "virtualenv-tools"
    #            ],
    #            "project_group": "nova_all"
    #        }
