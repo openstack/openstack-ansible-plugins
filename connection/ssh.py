@@ -124,8 +124,7 @@ class Connection(SSH.Connection):
                         ' --net={path}/net'
                         ' --pid={path}/pid'
                         ' --uts={path}/uts'
-                        ' --ipc={path}/ipc'
-                        ' --follow-context').format(path=pid_path)
+                        ' --ipc={path}/ipc').format(path=pid_path)
             if _pad:
                 cmd = '%s -- su - %s -c %s' % (
                     _pad,
