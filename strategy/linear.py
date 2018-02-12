@@ -26,18 +26,24 @@ LINEAR = imp.load_source(
     os.path.join(os.path.dirname(strategy.__file__), 'linear.py')
 )
 
-# NOTICE(jmccrory): The play_context is imported so that additional container
-#                   specific variables can be made available to connection
-#                   plugins.
-import ansible.playbook.play_context
-ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'physical_host':
-                                                           ('physical_host',)})
-ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'container_name':
-                                                           ('inventory_hostname',)})
-ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'chroot_path':
-                                                           ('chroot_path',)})
-ansible.playbook.play_context.MAGIC_VARIABLE_MAPPING.update({'container_tech':
-                                                           ('container_tech',)})
+# NOTICE(jmccrory): MAGIC_VARIABLE_MAPPING is imported so that additional
+#                   container specific variables can be made available to
+#                   the connection plugin.
+#                   In Ansible 2.5 the magic variable mapping has been moved,
+#                   but updating it directly is no longer necessary. The
+#                   variables can be made available through being defined in
+#                   the connection plugin's docstring and this can eventually
+#                   be removed.
+try:
+    from ansible.playbook.play_context import MAGIC_VARIABLE_MAPPING
+    MAGIC_VARIABLE_MAPPING.update({
+        'physical_host': ('physical_host',),
+        'container_name': ('inventory_hostname',),
+        'chroot_path': ('chroot_path',),
+        'container_tech': ('container_tech',),
+    })
+except ImportError:
+    pass
 
 class StrategyModule(LINEAR.StrategyModule):
     """Notes about this strategy.
