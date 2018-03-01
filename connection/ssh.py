@@ -277,6 +277,29 @@ class Connection(SSH.Connection):
             self.physical_host = self._play_context.physical_host
         else:
             self.physical_host = None
+        if hasattr(self._play_context, 'container_namespaces'):
+            namespaces = self._play_context.namespaces
+            _namespaces = list()
+            if isinstance(namespaces, list):
+                pass
+            else:
+                namespaces = namespaces.split(',')
+            for ns in namespaces:
+                if ns == 'mnt':
+                    _namespaces.append('--mount={path}/%s' % ns)
+                else:
+                    _namespaces.append('--%s={path}/%s' % (ns, ns))
+        else:
+            _namespaces = [
+                '--mount={path}/mnt',
+                '--net={path}/net',
+                '--pid={path}/pid',
+                '--uts={path}/uts',
+                '--ipc={path}/ipc'
+            ]
+        # Create the namespace string
+        self.container_namespaces = ' '.join(_namespaces)
+
         if hasattr(self._play_context, 'container_tech'):
             self.container_tech = self._play_context.container_tech
         else:
@@ -338,19 +361,10 @@ class Connection(SSH.Connection):
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
             _pad = None
-            if self.container_tech == 'lxc':
-                _pad = 'lxc-attach --clear-env --name {}'.format(
-                    self.container_name
-                )
-
-            elif self.container_tech == 'nspawn':
+            if self.container_tech in ['lxc', 'nspawn']:
                 _, pid_path = self._pid_lookup(subdir='ns')
-                _pad = ('nsenter'
-                        ' --mount={path}/mnt'
-                        ' --net={path}/net'
-                        ' --pid={path}/pid'
-                        ' --uts={path}/uts'
-                        ' --ipc={path}/ipc').format(path=pid_path)
+                ns_cmd = 'nsenter ' + self.container_namespaces
+                _pad = ns_cmd.format(path=pid_path)
             if _pad:
                 cmd = '%s -- su - %s -c %s' % (
                     _pad,
@@ -395,20 +409,17 @@ class Connection(SSH.Connection):
         return False
 
     def _pid_lookup(self, subdir=None):
+        pid_path = """/proc/%s"""
         if self.container_tech == 'nspawn':
             lookup_command = (
                 u"machinectl show %s | awk -F'=' '/Leader/ {print $2}'"
                 % self.container_name
             )
-            pid_path = """/proc/%s"""
+
             if not subdir:
                 subdir = 'cwd'
         elif self.container_tech == 'lxc':
-            lookup_command = (
-                u"lxc-info --name %s --pid | awk '/PID:/ {print $2}'"
-                % self.container_name
-            )
-            pid_path = """/proc/%s"""
+            lookup_command = (u"lxc-info -Hpn '%s'" % self.container_name)
             if not subdir:
                 subdir = 'root'
         else:
