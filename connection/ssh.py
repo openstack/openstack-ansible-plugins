@@ -311,6 +311,9 @@ class Connection(SSH.Connection):
         if self._play_context.remote_user:
             self.container_user = self._play_context.remote_user
 
+        # Store the container pid for multi-use
+        self.container_pid = None
+
     def set_host_overrides(self, host, hostvars=None, templar=None):
         if self._container_check() or self._chroot_check():
             physical_host_addrs = host.get_vars().get('physical_host_addrs', {})
@@ -339,17 +342,10 @@ class Connection(SSH.Connection):
 
         if self._container_check():
             # Remote user is normally set, but if it isn't, then default to 'root'
-            self.container_user = 'root'
             if self._play_context.remote_user:
                 self.container_user = self._play_context.remote_user
-            # NOTE(hwoarang) It is important to connect to the container
-            # without inheriting the host environment as that would interfere
-            # with running commands and services inside the container. However,
-            # it is also important to create a sensible environment within the
-            # container because certain commands and services expect some
-            # enviromental variables to be set properly. The best way to do
-            # that would be to execute the commands in a login shell
-
+            else:
+                self.container_user = 'root'
             # NOTE(hwoarang): the shlex_quote method is necessary here because
             # we need to properly quote the cmd as it's being passed as argument
             # to the -c su option. The Ansible ssh class has already
@@ -372,7 +368,7 @@ class Connection(SSH.Connection):
                     SSH.shlex_quote(cmd)
                 )
 
-        if self._chroot_check():
+        elif self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
             cmd = '%s %s' % (chroot_command, cmd)
 
@@ -409,6 +405,14 @@ class Connection(SSH.Connection):
         return False
 
     def _pid_lookup(self, subdir=None):
+        """Lookup the container pid return padding.
+
+        The container pid path will be set and returned to the
+        function. If this is a new lookup, the method will run
+        a lookup command and set the "self.container_pid" variable
+        so that a container lookup is not required on a subsequent
+        command within the same task.
+        """
         pid_path = """/proc/%s"""
         if self.container_tech == 'nspawn':
             lookup_command = (
@@ -425,20 +429,26 @@ class Connection(SSH.Connection):
         else:
             return 1, ''
 
-        args = ('ssh', self.host, lookup_command)
-        returncode, stdout, _ = self._run(
-            self._build_command(*args),
-            in_data=None,
-            sudoable=False
-        )
-        pid_path = os.path.join(
-            pid_path % SSH.to_text(stdout.strip()),
-            subdir
-        )
-        return returncode, pid_path
+        if not self.container_pid:
+            args = ('ssh', self.host, lookup_command)
+            returncode, stdout, _ = self._run(
+                self._build_command(*args),
+                in_data=None,
+                sudoable=False
+            )
+            self.container_pid = stdout.strip()
+            pid_path = os.path.join(
+                pid_path % SSH.to_text(self.container_pid),
+                subdir
+            )
+            return returncode, pid_path
+        else:
+            return 0, os.path.join(
+                pid_path % SSH.to_text(self.container_pid),
+                subdir
+            )
 
     def _container_path_pad(self, path):
-
         returncode, pid_path = self._pid_lookup()
         if returncode == 0:
             pad = os.path.join(
