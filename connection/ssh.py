@@ -67,6 +67,8 @@ class Connection(SSH.Connection):
             self.physical_host = self._play_context.physical_host
         else:
             self.physical_host = None
+        # Store the container pid for multi-use
+        self.container_pid = None
 
     def set_host_overrides(self, host, hostvars=None):
         if self._container_check() or self._chroot_check():
@@ -137,32 +139,35 @@ class Connection(SSH.Connection):
         return False
 
     def _container_path_pad(self, path, fake_path=False):
-        args = (
-            'ssh',
-            self.host,
-            u"lxc-info --name %s --pid | awk '/PID:/ {print $2}'"
-            % self.container_name
+        if not self.container_pid:
+            args = (
+                'ssh',
+                self.host,
+                u"lxc-info --name %s --pid | awk '/PID:/ {print $2}'"
+                % self.container_name
+            )
+            returncode, stdout, _ = self._run(
+                self._build_command(*args),
+                in_data=None,
+                sudoable=False
+            )
+            if returncode != 0:
+                raise SSH.AnsibleError(
+                    u'No valid container info was found for container "%s" Please'
+                    u' check the state of the container.' % self.container_name
+                )
+            self.container_pid = stdout.strip()
+
+        pad = os.path.join(
+            '/proc/%s/root' % SSH.to_text(self.container_pid),
+            path.lstrip(os.sep)
         )
-        returncode, stdout, _ = self._run(
-            self._build_command(*args),
-            in_data=None,
-            sudoable=False
+        SSH.display.vvv(
+            u'The path has been padded with the following to support a'
+            u' container rootfs: [ %s ]' % pad
         )
-        if returncode == 0:
-            pad = os.path.join(
-                '/proc/%s/root' % SSH.to_text(stdout.strip()),
-                path.lstrip(os.sep)
-            )
-            SSH.display.vvv(
-                u'The path has been padded with the following to support a'
-                u' container rootfs: [ %s ]' % pad
-            )
-            return pad
-        else:
-            raise SSH.AnsibleError(
-                u'No valid container info was found for container "%s" Please'
-                u' check the state of the container.' % self.container_name
-            )
+        return pad
+
 
     def fetch_file(self, in_path, out_path):
         """fetch a file from remote to local."""
