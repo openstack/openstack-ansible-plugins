@@ -83,3 +83,34 @@
       changed_when: false
       failed_when:
         - whoami_output.stdout != 'testing'
+
+# Test for I69f2eed35859bdc149e5ed21441eab7c8a8352cf
+- name: Reinstall openssh-server for delegation to unknown inventory host
+  hosts: container3
+  tasks:
+    - name: Uninstall OpenSSH server
+      package:
+        name: "{{ openssh_server_package }}"
+        state: absent
+    - name: Install OpenSSH server
+      package:
+        name: "{{ openssh_server_package }}"
+        state: present
+    - name: Start OpenSSH server
+      systemd:
+        name: "{{ openssh_server_service }}"
+        enabled: yes
+        masked: no
+        daemon_reload: yes
+        state: restarted
+
+- name: Test delegation to host not in inventory
+  hosts: container1
+  remote_user: root
+  tasks:
+    - name: Test container delegation without using inventory name
+      command: cat /etc/hostname
+      delegate_to: 10.100.100.4
+      register: delegated
+      failed_when: delegated.stdout != 'container3'
+      changed_when: false

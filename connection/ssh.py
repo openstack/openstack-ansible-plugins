@@ -24,8 +24,8 @@ DOCUMENTATION = '''
     options:
       container_name:
           description: Hostname of a container
-          default: inventory_hostname
           vars:
+               - name: inventory_hostname
                - name: container_name
       container_tech:
           description: Container technology used by a container host
@@ -333,7 +333,9 @@ class Connection(SSH.Connection):
         super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
 
         self.chroot_path = self.get_option('chroot_path')
-        self.container_name = self.get_option('container_name')
+        if var_options and \
+           self.get_option('container_name') == var_options.get('inventory_hostname'):
+               self.container_name = self.get_option('container_name')
         self.physical_host = self.get_option('physical_host')
         self.container_tech = self.get_option('container_tech')
 

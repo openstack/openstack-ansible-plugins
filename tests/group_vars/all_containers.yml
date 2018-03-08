@@ -29,3 +29,6 @@ container_networks:
 properties: {}
 
 physical_host: localhost
+
+openssh_server_package: "{{ (ansible_pkg_mgr == 'zypper') | ternary('openssh', 'openssh-server') }}"
+openssh_server_service: "{{ (ansible_os_family == 'Debian') | ternary('ssh', 'sshd') }}"
