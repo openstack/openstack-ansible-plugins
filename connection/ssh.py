@@ -357,10 +357,13 @@ class Connection(SSH.Connection):
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
             _pad = None
-            if self.container_tech in ['lxc', 'nspawn']:
+            if self.container_tech == 'lxc':
+                _pad = 'lxc-attach --clear-env --name %s' % self.container_name
+            elif self.container_tech == 'nspawn':
                 _, pid_path = self._pid_lookup(subdir='ns')
                 ns_cmd = 'nsenter ' + self.container_namespaces
                 _pad = ns_cmd.format(path=pid_path)
+
             if _pad:
                 cmd = '%s -- su - %s -c %s' % (
                     _pad,
