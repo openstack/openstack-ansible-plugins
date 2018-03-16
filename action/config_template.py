@@ -43,7 +43,6 @@ from ansible import constants as C
 from ansible import errors
 from ansible.parsing.yaml.dumper import AnsibleDumper
 
-
 CONFIG_TYPES = {
     'ini': 'return_config_overrides_ini',
     'json': 'return_config_overrides_json',
@@ -172,16 +171,16 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
         if self._defaults:
             _write_comments('DEFAULT')
             fp.write("[%s]\n" % 'DEFAULT')
-            for key, value in self._defaults.items():
+            for key, value in sorted(self._defaults.items()):
                 _write_comments('DEFAULT', optname=key)
                 self._write_check(fp, key=key, value=value)
             else:
                 fp.write("\n")
 
-        for section in self._sections:
+        for section in sorted(self._sections):
             _write_comments(section)
             fp.write("[%s]\n" % section)
-            for key, value in self._sections[section].items():
+            for key, value in sorted(self._sections[section].items()):
                 _write_comments(section, optname=key)
                 self._write_check(fp, key=key, value=value, section=True)
             else:
