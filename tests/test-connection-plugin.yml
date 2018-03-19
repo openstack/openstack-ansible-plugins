@@ -67,3 +67,19 @@
       action:
         module: ping
       delegate_to: "{{ groups['all_containers'][0] }}"
+
+- name: Test container_user attribute
+  hosts: container1
+  tasks:
+    - name: Ensure container alt user
+      user:
+        name: testing
+        group: users
+    - name: Execute command with container_user set
+      command: whoami
+      vars:
+        container_user: testing
+      register: whoami_output
+      changed_when: false
+      failed_when:
+        - whoami_output.stdout != 'testing'
