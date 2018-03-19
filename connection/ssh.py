@@ -32,6 +32,10 @@ DOCUMENTATION = '''
           default: lxc
           vars:
                - name: container_tech
+      container_user:
+          description: Username used when running command inside a container
+          vars:
+               - name: container_user
       chroot_path:
           description: Path of a chroot host
           vars:
@@ -307,8 +311,11 @@ class Connection(SSH.Connection):
             #                  revise this in the future.
             self.container_tech = 'lxc'
 
+        # Check to see if container_user is setup first, if so use that value.
         # Remote user is normally set, but if it isn't, then default to 'root'
-        if self._play_context.remote_user:
+        if hasattr(self._play_context, 'container_user'):
+            self.container_user = self._play_context.container_user
+        elif self._play_context.remote_user:
             self.container_user = self._play_context.remote_user
         else:
             self.container_user = 'root'
