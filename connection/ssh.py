@@ -479,10 +479,20 @@ class Connection(SSH.Connection):
 
     def put_file(self, in_path, out_path):
         """transfer a file from local to remote."""
+        _out_path = out_path
         if self._container_check():
-            out_path = self._container_path_pad(path=out_path)
+            _out_path = self._container_path_pad(path=_out_path)
 
-        return super(Connection, self).put_file(in_path, out_path)
+        res = super(Connection, self).put_file(in_path, _out_path)
+
+        # NOTE(pabelanger): Because we put_file as remote_user, it is possible
+        # that user doesn't exist inside the container, so use the root user to
+        # chown the file to container_user.
+        if self.container_user != self._play_context.remote_user:
+            _user = self.container_user
+            self.container_user = 'root'
+            self.exec_command('chown %s %s' % (_user, out_path))
+            self.container_user = _user
 
     def close(self):
         # If we have a persistent ssh connection (ControlPersist), we can ask it
