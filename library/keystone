@@ -609,7 +609,7 @@ class ManageKeystone(object):
             if variables_dict.pop('ignore_catalog'):
                 client_args.update(endpoint_override=endpoint)
             auth = v3.Password(**auth_args)
-            sess = session.Session(auth=auth)
+            sess = session.Session(auth=auth, verify=(not insecure))
             self.keystone = client.Client(session=sess,
                                           **client_args)
 
