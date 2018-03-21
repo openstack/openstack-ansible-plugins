@@ -41,6 +41,7 @@ try:
         'container_name': ('inventory_hostname',),
         'chroot_path': ('chroot_path',),
         'container_tech': ('container_tech',),
+        'container_user': ('container_user',),
     })
 except ImportError:
     pass
