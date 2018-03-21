@@ -177,12 +177,56 @@
           - "{{ test_ignore_none_type.content | b64decode | search('(?m)^india$') }}"
           - "{{ test_ignore_none_type.content | b64decode | search('(?m)^juliett kilo$') }}"
 
+    - name: Template multiple times to assert no changes
+      config_template:
+        src: "{{ playbook_dir }}/templates/test.ini"
+        dest: "/tmp/test_with_content.ini"
+        config_type: "ini"
+        config_overrides: "{{ item[1] }}"
+      register: template_changed
+      failed_when: template_changed | changed
+      with_nested:
+        - [ 0, 1, 2 ]
+        - [ "{{ test_config_ini_overrides }}" ]
+
   vars:
     test_config_ini_overrides:
       DEFAULT:
         new_key: "new_value"
       foo:
         baz: "bar"
+      section1:
+        key1: "value1"
+        key2: "value2"
+        key3: "value3"
+        key4: "value4"
+        key5: "value5"
+        key6: "value6"
+        key7: "value7"
+        key8: "value8"
+        key9: "value9"
+        key10: "value10"
+        key11: "value11"
+      section2:
+        key1: "value1"
+      section3:
+        key1: "value1"
+      section4:
+        key1: "value1"
+      section5:
+        key1: "value1"
+      section6:
+        key1: "value1"
+      section7:
+        key1: "value1"
+      section8:
+        key1: "value1"
+      section9:
+        key1: "value1"
+      section10:
+        key1: "value1"
+      section11:
+        key1: "value1"
     test_config_yml_overrides:
       list_one:
         - four
