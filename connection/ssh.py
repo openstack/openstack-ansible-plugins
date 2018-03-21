@@ -306,10 +306,12 @@ class Connection(SSH.Connection):
             # NOTE(cloudnull): For now the default is "lxc" if undefined
             #                  revise this in the future.
             self.container_tech = 'lxc'
+
         # Remote user is normally set, but if it isn't, then default to 'root'
-        self.container_user = 'root'
         if self._play_context.remote_user:
             self.container_user = self._play_context.remote_user
+        else:
+            self.container_user = 'root'
 
         # Store the container pid for multi-use
         self.container_pid = None
@@ -341,11 +343,6 @@ class Connection(SSH.Connection):
         """run a command on the remote host."""
 
         if self._container_check():
-            # Remote user is normally set, but if it isn't, then default to 'root'
-            if self._play_context.remote_user:
-                self.container_user = self._play_context.remote_user
-            else:
-                self.container_user = 'root'
             # NOTE(hwoarang): the shlex_quote method is necessary here because
             # we need to properly quote the cmd as it's being passed as argument
             # to the -c su option. The Ansible ssh class has already
