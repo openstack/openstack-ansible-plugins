@@ -36,7 +36,6 @@ import time
 import yaml
 import tempfile as tmpfilelib
 
-
 from ansible.plugins.action import ActionBase
 from ansible.module_utils._text import to_bytes, to_text
 from ansible import constants as C
@@ -59,7 +58,7 @@ class MultiKeyDict(dict):
     """Dictionary class which supports duplicate keys.
     This class allows for an item to be added into a standard python dictionary
     however if a key is created more than once the dictionary will convert the
-    singular value to a python set. This set type forces all values to be a
+    singular value to a python tuple. This tuple type forces all values to be a
     string.
     Example Usage:
     >>> z = MultiKeyDict()
@@ -70,17 +69,19 @@ class MultiKeyDict(dict):
     ... {'a': 1, 'b': ['a', 'b', 'c'], 'c': {'a': 1}}
     >>> z['a'] = 2
     >>> print(z)
-    ... {'a': set(['1', '2']), 'c': {'a': 1}, 'b': ['a', 'b', 'c']}
+    ... {'a': tuple(['1', '2']), 'c': {'a': 1}, 'b': ['a', 'b', 'c']}
     """
     def __setitem__(self, key, value):
         if key in self:
-            if isinstance(self[key], set):
+            if isinstance(self[key], tuple):
                 items = self[key]
-                items.add(str(value))
-                super(MultiKeyDict, self).__setitem__(key, items)
+                if str(value) not in items:
+                    items += tuple([str(value)])
+                    super(MultiKeyDict, self).__setitem__(key, items)
             else:
-                items = [str(value), str(self[key])]
-                super(MultiKeyDict, self).__setitem__(key, set(items))
+                if str(self[key]) != str(value):
+                    items = tuple([str(self[key]), str(value)])
+                    super(MultiKeyDict, self).__setitem__(key, items)
         else:
             return dict.__setitem__(self, key, value)
 
@@ -149,7 +150,7 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
             fp.write(entry)
 
     def _write_check(self, fp, key, value, section=False):
-        if isinstance(value, set):
+        if isinstance(value, (tuple, set)):
             for item in value:
                 item = str(item).replace('\n', '\n\t')
                 entry = "%s = %s\n" % (key, item)
@@ -211,7 +212,7 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
             if line[0].isspace() and cursect is not None and optname:
                 value = line.strip()
                 if value:
-                    if isinstance(cursect[optname], set):
+                    if isinstance(cursect[optname], (tuple, set)):
                         _temp_item = list(cursect[optname])
                         del cursect[optname]
                         cursect[optname] = _temp_item
@@ -351,11 +352,13 @@ class ActionModule(ActionBase):
     def _option_write(config, section, key, value):
         config.remove_option(str(section), str(key))
         try:
-            if not any(i for i in value.values()):
-                value = set(value)
+            if not any(list(value.values())):
+                value = tuple(value.keys())
         except AttributeError:
             pass
-        if isinstance(value, set):
+        if isinstance(value, (tuple, set)):
+            config.set(str(section), str(key), value)
+        elif isinstance(value, set):
             config.set(str(section), str(key), value)
         elif isinstance(value, list):
             config.set(str(section), str(key), ','.join(str(i) for i in value))
@@ -432,6 +435,13 @@ class ActionModule(ActionBase):
             elif isinstance(value, list):
                 if isinstance(base_items.get(key), list) and list_extend:
                     base_items[key].extend(value)
+                else:
+                    base_items[key] = value
+            elif isinstance(value, (tuple, set)):
+                if isinstance(base_items.get(key), tuple) and list_extend:
+                    base_items[key] += tuple(value)
+                elif isinstance(base_items.get(key), list) and list_extend:
+                    base_items[key].extend(list(value))
                 else:
                     base_items[key] = value
             else:
