@@ -318,7 +318,7 @@ class Connection(SSH.Connection):
         elif self._play_context.remote_user:
             self.container_user = self._play_context.remote_user
         else:
-            self.container_user = 'root'
+            self.container_user = None
 
         # Store the container pid for multi-use
         self.container_pid = None
@@ -369,11 +369,17 @@ class Connection(SSH.Connection):
                 _pad = ns_cmd.format(path=pid_path)
 
             if _pad:
-                cmd = '%s -- su - %s -c %s' % (
-                    _pad,
-                    self.container_user,
-                    SSH.shlex_quote(cmd)
-                )
+                if self.container_user:
+                    cmd = '%s -- su - %s -c %s' % (
+                        _pad,
+                        self.container_user,
+                        SSH.shlex_quote(cmd)
+                    )
+                else:
+                    cmd = '%s -- %s' % (
+                        _pad,
+                        SSH.shlex_quote(cmd)
+                    )
 
         elif self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
