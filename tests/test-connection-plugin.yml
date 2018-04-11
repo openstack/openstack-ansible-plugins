@@ -56,6 +56,22 @@
       failed_when: delegated.stdout != 'container2'
       changed_when: false
 
+# Test for conditional delegation Ief2fecbc266adcc816336b601253d3e90c39c32b
+- name: Test conditional delegation
+  hosts: container1
+  gather_facts: no
+  user: root
+  become: True
+  vars:
+    delegate_control: "target-host"
+  tasks:
+    - name: Test conditional delegation
+      command: cat /etc/hostname
+      register: delegated
+      failed_when: delegated.stdout != 'container1'
+      changed_when: false
+      delegate_to: "{{ (delegate_control == 'deployment-host') | ternary('localhost', inventory_hostname) }}"
+
 # Test for If594914df53efacc6d5bba148f4f46280f5a117d
 - name: Test delegation between container physical_hosts
   hosts: fakecontainer
