@@ -34,7 +34,6 @@ GIT_PACKAGE_DEFAULT_PARTS = dict()
 
 
 # Role based package indexes
-ROLE_DISTRO_BREAKOUT_PACKAGES = dict()
 ROLE_BREAKOUT_REQUIREMENTS = dict()
 ROLE_PACKAGES = dict()
 ROLE_REQUIREMENTS = dict()
@@ -58,12 +57,6 @@ BUILT_IN_PIP_PACKAGE_VARS = [
     'pip_packages'
 ]
 
-BUILT_IN_DISTRO_PACKAGE_VARS = [
-    'distro_packages',
-    'apt_packages',
-    'yum_packages'
-]
-
 
 PACKAGE_MAPPING = {
     'packages': set(),
@@ -71,7 +64,6 @@ PACKAGE_MAPPING = {
     'remote_package_parts': list(),
     'role_packages': dict(),
     'role_project_groups': dict(),
-    'distro_packages': set()
 }
 
 
@@ -569,19 +561,6 @@ class DependencyFileProcessor(object):
                     role_name=role_name,
                     project_group=project_group
                 )
-                # Process distro packages
-                self._process_packages(
-                    pkg_constant=BUILT_IN_DISTRO_PACKAGE_VARS,
-                    pkg_breakout_index=ROLE_DISTRO_BREAKOUT_PACKAGES,
-                    pkg_role_index=dict(),  # this is not used here
-                    pkg_var_name=key,
-                    packages=values,
-                    role_name=role_name,
-                    project_group=project_group,
-                    role_index=False,
-                    var_file_name=file_name,
-                    pip_packages=False
-                )
 
     def _process_packages(self, pkg_constant, pkg_breakout_index,
                           pkg_role_index, pkg_var_name, packages, role_name,
@@ -750,10 +729,6 @@ class LookupModule(LookupBase):
                         return_data[key] = value
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
-            _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
-            for k, v in PACKAGE_MAPPING['role_project_groups'].items():
-                if k in _dp:
-                    _dp[k]['project_group'] = v
             return [return_data]
 
 # Used for testing and debuging usage: `python plugins/lookups/py_pkgs.py ../`
