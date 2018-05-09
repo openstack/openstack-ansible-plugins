@@ -40,10 +40,7 @@ ROLE_REQUIREMENTS = dict()
 
 
 REQUIREMENTS_FILE_TYPES = [
-    'test-requirements.txt',
-    'dev-requirements.txt',
     'requirements.txt',
-    'global-requirements.txt',
     'global-requirement-pins.txt'
 ]
 
