@@ -652,6 +652,9 @@ class DependencyFileProcessor(object):
                 return_list.insert(index, file_name)
         else:
             for file_name in return_list:
+                print(file_name)
+                if file_name.endswith('doc/requirements.txt'):
+                    continue
                 if file_name.endswith('other-requirements.txt'):
                     continue
                 elif file_name.endswith('bindep.txt'):
