@@ -732,10 +732,6 @@ class LookupModule(BASECLASS):
                     return_data[key] = sorted(value)
             return_data['role_requirement_files'] = ROLE_REQUIREMENTS
             return_data['role_requirements'] = ROLE_BREAKOUT_REQUIREMENTS
-            _dp = return_data['role_distro_packages'] = ROLE_DISTRO_BREAKOUT_PACKAGES
-            for k, v in PACKAGE_MAPPING['role_project_groups'].items():
-                if k in _dp:
-                    _dp[k]['project_group'] = v
             return [return_data]
 
     def run_v1(self, terms, inject=None, **kwargs):
