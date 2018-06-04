@@ -7,7 +7,7 @@ container2
 
 # This is used to test I75f9d0f55ecd875caa1bf608a77c92f950b679a1
 [hosts]
-localhost_alt ansible_host=localhost
+localhost_alt
 [all_containers]
 container3 physical_host=localhost_alt
 
