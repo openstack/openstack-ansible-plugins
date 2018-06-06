@@ -93,16 +93,16 @@ Example
    #            "fragment": null,
    #            "name": "spice-html5",
    #            "original":
-   #               "git+https://github.com/SPICE/spice-html5@master#egg=spice_html5&gitname=spice-html5&projectgroup=all",
+   #               "git+https://gitlab.freedesktop.org/spice/spice-html5.git@master#egg=spice_html5&gitname=spice-html5&projectgroup=all",
    #            "project_group": "all",
-   #            "url": "https://github.com/SPICE/spice-html5",
+   #            "url": "https://gitlab.freedesktop.org/spice/spice-html5.git",
    #            "version": "master"
    #        }
    #    ],
    #    "remote_packages": [
    #        "git+https://git.openstack.org/openstack/nova-lxd@stable/newton#egg=nova_lxd&gitname=nova-lxd&projectgroup=all",
    #        "git+https://git.openstack.org/openstack/nova@stable/newton#egg=nova&gitname=nova&projectgroup=all",
-   #        "git+https://github.com/SPICE/spice-html5@master#egg=spice_html5&gitname=spice-html5&projectgroup=all",
+   #        "git+https://gitlab.freedesktop.org/spice/spice-html5.git@master#egg=spice_html5&gitname=spice-html5&projectgroup=all",
    #        "git+https://github.com/kanaka/novnc@master#egg=novnc&gitname=novnc&projectgroup=all"
    #    ],
    #    "role_packages": {
