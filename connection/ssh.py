@@ -25,8 +25,8 @@ DOCUMENTATION = '''
       container_name:
           description: Hostname of a container
           vars:
-               - name: inventory_hostname
                - name: container_name
+               - name: inventory_hostname
       container_tech:
           description: Container technology used by a container host
           default: lxc
@@ -311,22 +311,8 @@ class Connection(SSH.Connection):
             #                  revise this in the future.
             self.container_tech = 'lxc'
 
-        # Check to see if container_user is setup first, if so use that value.
-        # Remote user is normally set, but if it isn't, then default to 'root'
-        if hasattr(self._play_context, 'container_user'):
-            self.container_user = self._play_context.container_user
-        elif self._play_context.remote_user:
-            self.container_user = self._play_context.remote_user
-        else:
-            self.container_user = 'root'
-
         # Store the container pid for multi-use
         self.container_pid = None
-
-    def set_host_overrides(self, host, hostvars=None, templar=None):
-        if self._container_check() or self._chroot_check():
-            physical_host_addrs = host.get_vars().get('physical_host_addrs', {})
-            self._set_physical_host_addr(physical_host_addrs)
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
 
@@ -338,6 +324,16 @@ class Connection(SSH.Connection):
                self.container_name = self.get_option('container_name')
         self.physical_host = self.get_option('physical_host')
         self.container_tech = self.get_option('container_tech')
+
+        # Check to see if container_user is setup first, if so use that value.
+        # If it isn't, then default to 'root'
+        # The connection's shell plugin also needs to be initialized here and
+        # updated to use a system writable temp directory to avoid requiring
+        # that container_user have sudo privileges.
+        self.container_user = self.get_option('container_user') or 'root'
+        if self.container_user != 'root':
+            self._shell.set_options(var_options={})
+            self._shell.set_option('remote_tmp', self._shell.get_option('system_tmpdirs')[0])
 
         if self._container_check() or self._chroot_check():
             physical_host_addrs = self.get_option('physical_host_addrs') or {}
@@ -402,7 +398,8 @@ class Connection(SSH.Connection):
                 SSH.display.vvv(
                     u'physical_host: "%s"' % self.physical_host
                 )
-                if self.container_name != self.physical_host:
+                if self.container_name != self.physical_host and \
+                   self.container_name != self.host:
                     SSH.display.vvv(u'Container confirmed')
                     SSH.display.vvv(u'Container type "{}"'.format(
                         self.container_tech)

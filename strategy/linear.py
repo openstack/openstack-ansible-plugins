@@ -136,7 +136,7 @@ class StrategyModule(LINEAR.StrategyModule):
             physical_host_addr = physical_host_vars.get('ansible_host',
                                                         physical_host)
             physical_host_addrs[physical_host] = physical_host_addr
-        host.set_variable('physical_host_addrs', physical_host_addrs)
+        task_vars['physical_host_addrs'] = physical_host_addrs
 
         if task.delegate_to:
             # If a task uses delegation change the play_context
