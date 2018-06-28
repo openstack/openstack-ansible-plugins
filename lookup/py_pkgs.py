@@ -635,8 +635,7 @@ class DependencyFileProcessor(object):
                 elif file_name.endswith('bindep.txt'):
                     continue
                 elif 'roles' in file_name:
-                    _role_name = file_name.split('roles%s' % os.sep)[-1]
-                    role_name = _role_name.split(os.sep)[0]
+                    continue
                 else:
                     role_name = 'default'
                 with open(file_name, 'r') as f:
