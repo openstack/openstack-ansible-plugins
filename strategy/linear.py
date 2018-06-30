@@ -135,8 +135,11 @@ class StrategyModule(LINEAR.StrategyModule):
             physical_host_vars = self._variable_manager.get_vars(
                 host=self._inventory.get_host(physical_host)
             )
-            physical_host_addr = physical_host_vars.get('ansible_host',
-                                                        physical_host)
+            physical_host_templar = LINEAR.Templar(loader=self._loader,
+                                                   variables=physical_host_vars)
+            physical_host_addr = physical_host_templar.template(
+                                     physical_host_vars.get('ansible_host',
+                                                            physical_host))
             physical_host_addrs[physical_host] = physical_host_addr
         task_vars['physical_host_addrs'] = physical_host_addrs
 
