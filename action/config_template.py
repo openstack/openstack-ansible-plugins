@@ -41,6 +41,8 @@ from ansible.module_utils._text import to_bytes, to_text
 from ansible import constants as C
 from ansible import errors
 from ansible.parsing.yaml.dumper import AnsibleDumper
+from distutils.version import LooseVersion
+from ansible import __version__ as __ansible_version__
 
 CONFIG_TYPES = {
     'ini': 'return_config_overrides_ini',
@@ -629,14 +631,24 @@ class ActionModule(ActionBase):
             self._connection._shell.join_path(tmp, 'source'),
             resultant
         )
-        new_module_args.update(
-            dict(
-                src=transferred_data,
-                dest=_vars['dest'],
-                original_basename=os.path.basename(source),
-                follow=True,
-            ),
-        )
+        if LooseVersion(__ansible_version__) < LooseVersion("2.6"):
+            new_module_args.update(
+                dict(
+                    src=transferred_data,
+                    dest=_vars['dest'],
+                    original_basename=os.path.basename(source),
+                    follow=True,
+                ),
+            )
+        else:
+            new_module_args.update(
+                dict(
+                    src=transferred_data,
+                    dest=_vars['dest'],
+                    _original_basename=os.path.basename(source),
+                    follow=True,
+                ),
+            )
 
         # Remove data types that are not available to the copy module
         new_module_args.pop('config_overrides', None)
