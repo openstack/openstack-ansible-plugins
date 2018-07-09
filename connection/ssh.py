@@ -226,6 +226,22 @@ DOCUMENTATION = '''
         - {key: usetty, section: ssh_connection}
         type: boolean
         yaml: {key: connection.usetty}
+      sftp_executable:
+        default: sftp
+        description:
+          - This defines the location of the sftp binary. It defaults to `sftp` which will use the first binary available in $PATH.
+        env: [{name: ANSIBLE_SFTP_EXECUTABLE}]
+        ini:
+        - {key: sftp_executable, section: ssh_connection}
+        version_added: "2.6"
+      scp_executable:
+        default: scp
+        description:
+          - This defines the location of the scp binary. It defaults to `scp` which will use the first binary available in $PATH.
+        env: [{name: ANSIBLE_SCP_EXECUTABLE}]
+        ini:
+        - {key: scp_executable, section: ssh_connection}
+        version_added: "2.6"
 '''
 
 import imp
