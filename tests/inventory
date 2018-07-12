@@ -9,7 +9,7 @@ container2
 [hosts]
 localhost_alt
 [all_containers]
-container3 physical_host=localhost_alt
+container3
 
 # This is meant to test If594914df53efacc6d5bba148f4f46280f5a117d
 [fake_hosts]
