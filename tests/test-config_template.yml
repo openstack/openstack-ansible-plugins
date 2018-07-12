@@ -237,7 +237,7 @@
         config_type: "ini"
         config_overrides: "{{ item[1] }}"
       register: template_changed
-      failed_when: template_changed | changed
+      failed_when: template_changed  is changed
       with_nested:
         - [ 0, 1, 2 ]
         - [ "{{ test_config_ini_overrides }}" ]
