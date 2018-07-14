@@ -126,7 +126,7 @@ class StrategyModule(LINEAR.StrategyModule):
         _play_context = copy.deepcopy(play_context)
 
         pha = task_vars['physical_host_addrs'] = dict()
-        physical_host_item = host.vars.get('physical_host')
+        physical_host_item = task_vars.get('physical_host')
         if physical_host_item:
             LINEAR.display.verbose(
                 u'The "physical_host" variable was found.',

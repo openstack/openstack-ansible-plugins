@@ -16,3 +16,7 @@
 ansible_host: 10.100.100.4
 ansible_become: True
 ansible_user: root
+
+# Test case to validate I3798529cf2bf73afbff2d2ef0f3fe17d91123fbc
+# Ensure physical_host can be defined in group/host vars
+physical_host: localhost_alt
