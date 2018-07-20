@@ -69,6 +69,17 @@ EXAMPLES = """
 #     group_binds:
 #       - neutron_linuxbridge_agent
 # - network:
+#     container_bridge: "br-vxlan"
+#     container_type: "veth"
+#     container_interface: "eth10"
+#     ip_from_q: "tunnel"
+#     type: "geneve"
+#     range: "1:1000"
+#     net_name: "geneve"
+#     group_binds:
+#       - neutron_ovn_northd
+#       - neutron_ovn_controller
+# - network:
 #     container_bridge: "br-vlan"
 #     container_type: "veth"
 #     container_interface: "eth12"
@@ -135,11 +146,12 @@ EXAMPLES = """
 #             "physnet1:p1p1"
 #             "physnet1:p1p2"
 #         ],
-#         "network_types": "vxlan,flat,vlan",
+#         "network_types": "vxlan,flat,vlan,geneve",
 #         "network_types_list": [
 #             "vxlan",
 #             "flat",
-#             "vlan"
+#             "vlan",
+#             "geneve"
 #         ],
 #         "network_vlan_ranges": "vlan:1:1,vlan:1024:1025",
 #         "network_vlan_ranges_list": [
@@ -148,6 +160,10 @@ EXAMPLES = """
 #         ],
 #         "network_vxlan_ranges": "1:1000",
 #         "network_vxlan_ranges_list": [
+#             "1:1000"
+#         ]
+#         "network_geneve_ranges": "1:1000",
+#         "network_geneve_ranges_list": [
 #             "1:1000"
 #         ]
 # }
@@ -164,6 +180,7 @@ class ProviderNetworksParsing(object):
         self.module = module
         self.network_vlan_ranges = list()
         self.network_vxlan_ranges = list()
+        self.network_geneve_ranges = list()
         self.network_flat_networks = list()
         self.network_mappings = list()
         self.network_types = list()
@@ -203,6 +220,10 @@ class ProviderNetworksParsing(object):
                 if "vxlan" not in self.network_types:
                     self.network_types.append('vxlan')
                     self.network_vxlan_ranges.append(net['network']['range'])
+            elif net['network']['type'] == "geneve":
+                if "geneve" not in self.network_types:
+                    self.network_types.append('geneve')
+                    self.network_geneve_ranges.append(net['network']['range'])
             elif net['network']['type'] == "flat":
                 if (
                     set(
@@ -217,7 +238,7 @@ class ProviderNetworksParsing(object):
                     )
 
             # Create the network mappings
-            if net['network']['type'] not in ['raw', 'vxlan']:
+            if net['network']['type'] not in ['raw', 'vxlan', 'geneve']:
                 if (
                     set(
                         net["network"]["group_binds"]
@@ -300,6 +321,8 @@ def main():
             'network_vlan_ranges_list': pnp.network_vlan_ranges,
             'network_vxlan_ranges': ','.join(pnp.network_vxlan_ranges),
             'network_vxlan_ranges_list': pnp.network_vxlan_ranges,
+            'network_geneve_ranges': ','.join(pnp.network_geneve_ranges),
+            'network_geneve_ranges_list': pnp.network_geneve_ranges,
             'network_flat_networks': ','.join(pnp.network_flat_networks),
             'network_flat_networks_list': pnp.network_flat_networks,
             'network_mappings': ','.join(pnp.network_mappings),
