@@ -126,13 +126,34 @@ class StrategyModule(LINEAR.StrategyModule):
         _play_context = copy.deepcopy(play_context)
 
         pha = task_vars['physical_host_addrs'] = dict()
-        physical_host_item = task_vars.get('physical_host')
-        if physical_host_item:
-            LINEAR.display.verbose(
-                u'The "physical_host" variable was found.',
-                host=host,
-                caplevel=0
-            )
+        physical_host_items = [task_vars.get('physical_host')]
+        if task.delegate_to:
+            # For delegated tasks, we also need the information from the delegated hosts
+            for delegated_host in task_vars.get('ansible_delegated_vars', dict()).keys():
+                LINEAR.display.verbose(
+                    u'Task is delegated to %s.' % delegated_host,
+                    host=host,
+                    caplevel=0
+                )
+                delegated_host_info = self._inventory.get_host(u'%s' % delegated_host)
+                # This checks if we are delegating to a host which does not exist
+                # in the inventory (possibly using its IP address)
+                if delegated_host_info is None:
+                    continue
+                physical_host_vars = delegated_host_info.get_vars()
+                physical_host_templar = LINEAR.Templar(loader=self._loader,
+                                                       variables=physical_host_vars)
+                delegated_physical_host = physical_host_templar.template(
+                    physical_host_vars.get('physical_host'))
+                if delegated_physical_host:
+                    physical_host_items.append(delegated_physical_host)
+                    LINEAR.display.verbose(
+                        u'Task is delegated to %s. Adding its physical host %s'
+                        % (delegated_host, delegated_physical_host),
+                        host=host,
+                        caplevel=0
+                    )
+        for physical_host_item in physical_host_items:
             ph = self._inventory.get_host(physical_host_item)
             if ph:
                 LINEAR.display.verbose(
