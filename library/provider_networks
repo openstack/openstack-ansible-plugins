@@ -170,7 +170,7 @@ class ProviderNetworksParsing(object):
         self.network_sriov_mappings = list()
 
     def load_networks(self, provider_networks, is_metal=False,
-                      bind_prefix=None):
+                      bind_prefix=None, group_names=None):
         """Load the lists of network and network data types.
 
         :param provider_networks: list of networks defined in user_config
@@ -179,60 +179,82 @@ class ProviderNetworksParsing(object):
         :type is_metal: ``bol``
         :param bind_prefix: Pre-interface prefix forced within the network map
         :type bind_prefix: ``str``
+        :param group_names: list of groups associated with node
+        :type group_names: ``list``
         """
 
         for net in provider_networks:
             if net['network']['type'] == "vlan":
-                if "vlan" not in self.network_types:
-                    self.network_types.append('vlan')
-                for vlan_range in net['network']['range'].split(','):
-                    self.network_vlan_ranges.append(
-                        '%s:%s' % (
-                            net['network']['net_name'], vlan_range.strip()
+                if (
+                    set(
+                        net["network"]["group_binds"]
+                    ).intersection(group_names) or
+                    "neutron_server" in group_names
+                ):
+                    if "vlan" not in self.network_types:
+                        self.network_types.append('vlan')
+                    for vlan_range in net['network']['range'].split(','):
+                        self.network_vlan_ranges.append(
+                            '%s:%s' % (
+                                net['network']['net_name'], vlan_range.strip()
+                            )
                         )
-                    )
             elif net['network']['type'] == "vxlan":
                 if "vxlan" not in self.network_types:
                     self.network_types.append('vxlan')
                     self.network_vxlan_ranges.append(net['network']['range'])
             elif net['network']['type'] == "flat":
-                if "flat" not in self.network_types:
-                    self.network_types.append('flat')
-                self.network_flat_networks.append(
-                    net['network']['net_name']
-                )
+                if (
+                    set(
+                        net["network"]["group_binds"]
+                    ).intersection(group_names) or
+                    "neutron_server" in group_names
+                ):
+                    if "flat" not in self.network_types:
+                        self.network_types.append('flat')
+                    self.network_flat_networks.append(
+                        net['network']['net_name']
+                    )
 
             # Create the network mappings
             if net['network']['type'] not in ['raw', 'vxlan']:
-                if 'net_name' in net['network']:
-                    if is_metal:
-                        if 'host_bind_override' in net['network']:
-                            bind_device = net['network']['host_bind_override']
+                if (
+                    set(
+                        net["network"]["group_binds"]
+                    ).intersection(group_names) or
+                    "neutron_server" in group_names
+                ):
+                    if 'net_name' in net['network']:
+                        if is_metal:
+                            if 'host_bind_override' in net['network']:
+                                bind_device = \
+                                    net['network']['host_bind_override']
+                            else:
+                                bind_device = \
+                                    net['network']['container_bridge']
                         else:
-                            bind_device = net['network']['container_bridge']
-                    else:
-                        bind_device = net['network']['container_interface']
+                            bind_device = net['network']['container_interface']
 
-                    if bind_prefix:
-                        bind_device = '%s-%s' % (bind_prefix, bind_device)
+                        if bind_prefix:
+                            bind_device = '%s-%s' % (bind_prefix, bind_device)
 
-                    self.network_mappings.append(
-                        '%s:%s' % (
-                            net['network']['net_name'],
-                            bind_device
-                        )
-                    )
-
-                    if 'sriov_host_interfaces' in net['network']:
-                        host_interfaces = \
-                            net['network']['sriov_host_interfaces']
-                        for interface in host_interfaces.split(','):
-                            self.network_sriov_mappings.append(
-                                '%s:%s' % (
-                                    net['network']['net_name'],
-                                    interface
-                                )
+                        self.network_mappings.append(
+                            '%s:%s' % (
+                                net['network']['net_name'],
+                                bind_device
                             )
+                        )
+
+                        if 'sriov_host_interfaces' in net['network']:
+                            host_interfaces = \
+                                net['network']['sriov_host_interfaces']
+                            for interface in host_interfaces.split(','):
+                                self.network_sriov_mappings.append(
+                                    '%s:%s' % (
+                                        net['network']['net_name'],
+                                        interface
+                                    )
+                                )
 
 
 def main():
@@ -251,6 +273,11 @@ def main():
                 type='str',
                 required=False,
                 default=None
+            ),
+            group_names=dict(
+                type='list',
+                required=False,
+                default=None
             )
         ),
         supports_check_mode=False
@@ -261,7 +288,8 @@ def main():
         pnp.load_networks(
             provider_networks=module.params.get('provider_networks'),
             is_metal=module.params.get('is_metal'),
-            bind_prefix=module.params.get('bind_prefix')
+            bind_prefix=module.params.get('bind_prefix'),
+            group_names=module.params.get('group_names')
         )
 
         # Response dictionary, this adds commas to all list items in string
