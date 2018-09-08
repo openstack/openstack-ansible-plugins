@@ -17,14 +17,14 @@
   hosts: hosts:!fake_hosts
   gather_facts: yes
 
-- include: common/test-setup-host.yml
+- import_playbook: common/test-setup-host.yml
 
-- include: test-config_template.yml
+- import_playbook: test-config_template.yml
 
-- include: test-filters.yml
+- import_playbook: test-filters.yml
 
-- include: test-lookups.yml
+- import_playbook: test-lookups.yml
 
-- include: test-strategy-tagfilter.yml
+- import_playbook: test-strategy-tagfilter.yml
 
-- include: test-connection-plugin.yml
+- import_playbook: test-connection-plugin.yml
