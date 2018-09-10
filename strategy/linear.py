@@ -118,18 +118,41 @@ class StrategyModule(LINEAR.StrategyModule):
 
         _play_context = copy.deepcopy(play_context)
 
-        try:
-            groups = self._inventory.get_groups_dict()
-        except AttributeError:
-            groups = self._inventory.get_group_dict()
-        physical_hosts = groups.get('hosts', groups.get('all', {}))
-        physical_host_addrs = {}
-        for physical_host in physical_hosts:
-            physical_host_vars = self._inventory.get_host(physical_host).vars
-            physical_host_addr = physical_host_vars.get('ansible_host',
-                                                        physical_host)
-            physical_host_addrs[physical_host] = physical_host_addr
-        host.set_variable('physical_host_addrs', physical_host_addrs)
+        pha = task_vars['physical_host_addrs'] = dict()
+        physical_host_item = task_vars.get('physical_host')
+        if physical_host_item:
+            LINEAR.display.verbose(
+                u'The "physical_host" variable was found.',
+                host=host,
+                caplevel=0
+            )
+            ph = self._inventory.get_host(physical_host_item)
+            if ph:
+                LINEAR.display.verbose(
+                    u'The "physical_host" variable of "%s" has been found to'
+                    u' have a corresponding host entry in inventory.'
+                    % physical_host_item,
+                    host=host,
+                    caplevel=0
+                )
+                physical_host_vars = self._variable_manager.get_vars(host=ph)
+                for item in ['ansible_host', 'container_address', 'address']:
+                    addr = ph.vars.get(item)
+                    if addr:
+                        LINEAR.display.verbose(
+                            u'The "physical_host" variable of "%s" terminates'
+                            u' at "%s" using the host variable "%s".' % (
+                                physical_host_item,
+                                addr,
+                                item
+                            ),
+                            host=host,
+                            caplevel=0
+                        )
+                        pha[ph.name] = addr
+                        host.set_variable('physical_host_addrs', pha)
+                        break
+
 
         if task.delegate_to:
             # If a task uses delegation change the play_context
