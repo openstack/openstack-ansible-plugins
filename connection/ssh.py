@@ -26,7 +26,6 @@ DOCUMENTATION = '''
           description: Hostname of a container
           vars:
                - name: container_name
-               - name: inventory_hostname
       container_tech:
           description: Container technology used by a container host
           default: lxc
@@ -371,11 +370,9 @@ class Connection(SSH.Connection):
         super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
 
         self.chroot_path = self.get_option('chroot_path')
-        if var_options and \
-           self.get_option('container_name') == var_options.get('inventory_hostname'):
-               self.container_name = self.get_option('container_name')
-        self.physical_host = self.get_option('physical_host')
+        self.container_name = self.get_option('container_name')
         self.container_tech = self.get_option('container_tech')
+        self.physical_host = self.get_option('physical_host')
 
         # Check to see if container_user is setup first, if so use that value.
         # If it isn't, then default to 'root'
@@ -389,7 +386,10 @@ class Connection(SSH.Connection):
 
         if self._container_check() or self._chroot_check():
             physical_host_addrs = self.get_option('physical_host_addrs') or {}
-            self._set_physical_host_addr(physical_host_addrs)
+            if self.host in physical_host_addrs.values():
+                self.container_name = None
+            else:
+                self._set_physical_host_addr(physical_host_addrs)
 
     def _set_physical_host_addr(self, physical_host_addrs):
         physical_host_addr = physical_host_addrs.get(self.physical_host,

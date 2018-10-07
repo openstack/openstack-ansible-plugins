@@ -139,6 +139,7 @@ class StrategyModule(LINEAR.StrategyModule):
                 # This checks if we are delegating to a host which does not exist
                 # in the inventory (possibly using its IP address)
                 if delegated_host_info is None:
+                    task_vars['container_name'] = None
                     continue
                 physical_host_vars = delegated_host_info.get_vars()
                 physical_host_templar = LINEAR.Templar(loader=self._loader,
