@@ -24,8 +24,7 @@
         - openstack-ansible-functional-opensuse-423
         - openstack-ansible-functional-ubuntu-bionic
         - openstack-ansible-functional-ubuntu-xenial
-        # TODO(evrardjp): uncomment this when the job is in the tests repo
-        #- openstack-ansible-python3-ubuntu-xenial-nv
+        - openstack-ansible-python3-ubuntu-xenial
     experimental:
       jobs:
         - openstack-ansible-integrated-deploy-aio

@@ -16,16 +16,18 @@
 import itertools
 import os
 
-import linear
+from .linear import StrategyModule as LinearStrategyModule
 
 
-class StrategyModule(linear.StrategyModule):
+class StrategyModule(LinearStrategyModule):
     def _queue_task(self, host, task, task_vars, play_context):
         """Wipe the notification system and return for config tasks."""
         skip_handlers = task_vars.get('skip_handlers', True)
         if skip_handlers:
             task.notify = None
         skip_tags = task_vars.get('skip_tags')
+        if isinstance(skip_tags, str):
+            skip_tags = [skip_tags]
         if skip_tags:
             if not hasattr(skip_tags, '__iter__'):
                 skip_tags = (skip_tags,)
