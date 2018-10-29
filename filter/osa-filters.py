@@ -183,8 +183,14 @@ def get_netloc_no_port(url):
     :type url: ``str``
     :returns: ``str``
     """
-    return get_netloc(url=url).split(':')[0]
-
+    try:
+        hostname = urlparse(url).hostname
+    except Exception as exp:
+        raise errors.AnsibleFilterError(
+            'Failed to return the hostname of: "%s"' % str(exp)
+        )
+    else:
+        return hostname
 
 def get_netorigin(url):
     """Return the netloc from a URL.
