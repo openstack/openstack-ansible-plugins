@@ -425,6 +425,9 @@ class Connection(SSH.Connection):
                     SSH.shlex_quote(cmd)
                 )
 
+            if self._play_context.become:
+                cmd = ' '.join((self._play_context.become_method, cmd))
+
         elif self._chroot_check():
             chroot_command = 'chroot %s' % self.chroot_path
             cmd = '%s %s' % (chroot_command, cmd)

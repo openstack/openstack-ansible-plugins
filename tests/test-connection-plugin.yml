@@ -16,7 +16,6 @@
 - name: Fail if sshd is running in the containers
   hosts: all_containers:alt_containers
   gather_facts: no
-  user: root
   become: True
   tasks:
     - name: Ensure sshd is not running
@@ -29,7 +28,6 @@
 - name: Test the connection plugin container awareness functions
   hosts: all_containers:alt_containers
   gather_facts: no
-  user: root
   become: True
   tasks:
     - name: Test container ping
@@ -40,7 +38,6 @@
 - name: Test delegation in the container aware connection plugin
   hosts: localhost
   gather_facts: no
-  user: root
   become: True
   tasks:
     - name: Test container delegation without templating
@@ -60,7 +57,6 @@
 - name: Test conditional delegation
   hosts: container1
   gather_facts: no
-  user: root
   become: True
   vars:
     delegate_control: "target-host"
@@ -76,7 +72,6 @@
 - name: Test delegation between container physical_hosts
   hosts: fakecontainer
   gather_facts: no
-  user: root
   become: True
   tasks:
     - name: Test delegation between containers on different hosts
@@ -86,6 +81,7 @@
 
 - name: Test container_user attribute
   hosts: container1
+  user: root
   tasks:
     - name: Ensure container alt user
       user:
