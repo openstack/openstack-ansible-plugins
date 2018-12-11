@@ -14,7 +14,6 @@
 #
 
 import itertools
-import os
 
 from .linear import StrategyModule as LinearStrategyModule
 
