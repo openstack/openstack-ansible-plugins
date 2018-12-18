@@ -1060,7 +1060,7 @@ class ManageKeystone(object):
         Returns the endpoint details for an endpoint matching
         region, service id and interface.
 
-        :param interface: ``str`` ‘public’, ‘admin’ or ‘internal’ network
+        :param interface: ``str`` 'public', 'admin' or 'internal' network
                                   interface
         :param service_id: service to which the endpoint belongs
         :param region: geographic location of the endpoint
