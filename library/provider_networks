@@ -23,7 +23,7 @@ from ansible.module_utils.basic import *
 DOCUMENTATION = """
 ---
 module: provider_networks
-version_added: "1.8.5"
+version_added: "1.8.6"
 short_description:
     - Parse a list of networks and return data that Ansible can use
 description:
@@ -99,6 +99,16 @@ EXAMPLES = """
 #     net_name: "vlan"
 #     group_binds:
 #       - neutron_linuxbridge_agent
+# - network:
+#     container_bridge: "br-provider"
+#     container_type: "veth"
+#     container_interface: "eth11"
+#     network_interface: "bond1"
+#     type: "vlan"
+#     range: "1:1, 101:101"
+#     net_name: "physnet1"
+#     group_binds:
+#       - neutron_openvswitch_agent
 # - network:
 #     container_bridge: "br-storage"
 #     container_type: "veth"
@@ -185,6 +195,7 @@ class ProviderNetworksParsing(object):
         self.network_mappings = list()
         self.network_types = list()
         self.network_sriov_mappings = list()
+        self.network_interface_mappings = list()
 
     def load_networks(self, provider_networks, is_metal=False,
                       bind_prefix=None, group_names=None):
@@ -266,6 +277,18 @@ class ProviderNetworksParsing(object):
                             )
                         )
 
+                        # Builds a list of provider bridge to physical
+                        # interface mappings and is used when adding OVS
+                        # ports to bridges
+                        if 'network_interface' in net['network']:
+                            self.network_interface_mappings.append(
+                                '%s:%s' % (
+                                    net['network']['container_bridge'],
+                                    net['network']['network_interface']
+                                )
+                            )
+
+                        # SR-IOV interface mappings
                         if 'sriov_host_interfaces' in net['network']:
                             host_interfaces = \
                                 net['network']['sriov_host_interfaces']
@@ -329,7 +352,11 @@ def main():
             'network_mappings_list': pnp.network_mappings,
             'network_types': ','.join(pnp.network_types),
             'network_sriov_mappings': ','.join(pnp.network_sriov_mappings),
-            'network_sriov_mappings_list': pnp.network_sriov_mappings
+            'network_sriov_mappings_list': pnp.network_sriov_mappings,
+            'network_interface_mappings': ','.join(
+                pnp.network_interface_mappings
+            ),
+            'network_interface_mappings_list': pnp.network_interface_mappings
         }
 
         module.exit_json(changed=True, **resp)
