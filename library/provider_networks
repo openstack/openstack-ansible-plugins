@@ -348,7 +348,7 @@ def main():
             'network_geneve_ranges_list': pnp.network_geneve_ranges,
             'network_flat_networks': ','.join(pnp.network_flat_networks),
             'network_flat_networks_list': pnp.network_flat_networks,
-            'network_mappings': ','.join(pnp.network_mappings),
+            'network_mappings': ','.join(list(set(pnp.network_mappings))),
             'network_mappings_list': pnp.network_mappings,
             'network_types': ','.join(pnp.network_types),
             'network_sriov_mappings': ','.join(pnp.network_sriov_mappings),
