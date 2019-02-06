@@ -253,8 +253,7 @@ class ProviderNetworksParsing(object):
                 if (
                     set(
                         net["network"]["group_binds"]
-                    ).intersection(group_names) or
-                    "neutron_server" in group_names
+                    ).intersection(group_names)
                 ):
                     if 'net_name' in net['network']:
                         if is_metal:
