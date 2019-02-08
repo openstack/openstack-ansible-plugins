@@ -19,8 +19,6 @@
 
 - import_playbook: common/test-setup-host.yml
 
-- import_playbook: test-config_template.yml
-
 - import_playbook: test-filters.yml
 
 - import_playbook: test-lookups.yml
