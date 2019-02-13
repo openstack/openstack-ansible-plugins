@@ -25,7 +25,7 @@
         - openstack-ansible-functional-opensuse-423
         - openstack-ansible-functional-ubuntu-bionic
         - openstack-ansible-functional-ubuntu-xenial
-        - openstack-ansible-python3-ubuntu-xenial
+        - openstack-ansible-python3-ubuntu-bionic
     experimental:
       jobs:
         - openstack-ansible-integrated-deploy-aio
@@ -36,3 +36,4 @@
         - openstack-ansible-functional-opensuse-423
         - openstack-ansible-functional-ubuntu-bionic
         - openstack-ansible-functional-ubuntu-xenial
+        - openstack-ansible-python3-ubuntu-bionic
