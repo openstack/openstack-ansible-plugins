@@ -227,6 +227,8 @@
         that:
           - "(lookup('ini', 'new_key section=DEFAULT file=/tmp/test_with_comments.ini')) == 'new_value'"
           - "(lookup('ini', 'baz section=foo file=/tmp/test_with_comments.ini')) == 'bar'"
+          - "{{ ini_file.content | b64decode | search('# This comment tests bug 1755821')}}"
+          - "{{ not(ini_file.content | b64decode | search(' # This comment tests bug 1755821'))}}"
           - "{{ ini_file.content | b64decode | search('#This is a comment')}}"
           - "{{ ini_file.content | b64decode | search('# A default section comment\n# broken into multiple lines\n\\[DEFAULT\\]')}}"
 

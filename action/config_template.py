@@ -203,8 +203,8 @@ class ConfigTemplateParser(ConfigParser.RawConfigParser):
                     comments.append('')
                 continue
 
-            if line[0] in '#;':
-                comments.append(line)
+            if line.lstrip()[0] in '#;':
+                comments.append(line.lstrip())
                 continue
 
             if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":
