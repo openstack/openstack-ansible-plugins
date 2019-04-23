@@ -152,68 +152,6 @@ def bit_length_power_of_2(value):
     """
     return 2**(int(value)-1).bit_length()
 
-
-def get_netloc(url):
-    """Return the netloc from a URL.
-
-    If the input value is not a value URL the method will raise an Ansible
-    filter exception.
-
-    :param url: the URL to parse
-    :type url: ``str``
-    :returns: ``str``
-    """
-    try:
-        netloc = urlparse(url).netloc
-    except Exception as exp:
-        raise errors.AnsibleFilterError(
-            'Failed to return the netloc of: "%s"' % str(exp)
-        )
-    else:
-        return netloc
-
-
-def get_netloc_no_port(url):
-    """Return the netloc without a port from a URL.
-
-    If the input value is not a value URL the method will raise an Ansible
-    filter exception.
-
-    :param url: the URL to parse
-    :type url: ``str``
-    :returns: ``str``
-    """
-    try:
-        hostname = urlparse(url).hostname
-    except Exception as exp:
-        raise errors.AnsibleFilterError(
-            'Failed to return the hostname of: "%s"' % str(exp)
-        )
-    else:
-        return hostname
-
-def get_netorigin(url):
-    """Return the netloc from a URL.
-
-    If the input value is not a value URL the method will raise an Ansible
-    filter exception.
-
-    :param url: the URL to parse
-    :type url: ``str``
-    :returns: ``str``
-    """
-    try:
-        parsed_url = urlparse(url)
-        netloc = parsed_url.netloc
-        scheme = parsed_url.scheme
-    except Exception as exp:
-        raise errors.AnsibleFilterError(
-            'Failed to return the netorigin of: "%s"' % str(exp)
-        )
-    else:
-        return '%s://%s' % (scheme, netloc)
-
-
 def string_2_int(string):
     """Return the an integer from a string.
 
@@ -331,9 +269,6 @@ class FilterModule(object):
     def filters():
         return {
             'bit_length_power_of_2': bit_length_power_of_2,
-            'netloc': get_netloc,
-            'netloc_no_port': get_netloc_no_port,
-            'netorigin': get_netorigin,
             'string_2_int': string_2_int,
             'pip_requirement_names': pip_requirement_names,
             'pip_constraint_update': pip_constraint_update,
