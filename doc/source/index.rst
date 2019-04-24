@@ -7,7 +7,6 @@ OpenStack-Ansible plugins
 
    actions.rst
    filters.rst
-   lookups.rst
 
 Example ansible.cfg file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -21,8 +21,6 @@
 
 - import_playbook: test-filters.yml
 
-- import_playbook: test-lookups.yml
-
 - import_playbook: test-strategy-tagfilter.yml
 
 - import_playbook: test-connection-plugin.yml
