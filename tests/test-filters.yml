@@ -26,20 +26,6 @@
           - "{{ 1024 | bit_length_power_of_2 }} == 1024"
           - "{{ 9600 | bit_length_power_of_2 }} == 16384"
 
-    - name: Set net filter facts
-      set_fact:
-         url_netloc: "{{ 'http://review.openstack.org:29418/something' | netloc }}"
-         url_netloc_no_port: "{{ 'http://review.openstack.org:29418/something' | netloc_no_port }}"
-         url_netloc_no_port_with_auth: "{{ 'http://user:secrete@review.openstack.org:29418/something' | netloc_no_port }}"
-         url_netorigin: "{{ 'http://review.openstack.org:29418/something' | netorigin }}"
-    - name: Validate net filters
-      assert:
-        that:
-          - "url_netloc == 'review.openstack.org:29418'"
-          - "url_netloc_no_port == 'review.openstack.org'"
-          - "url_netloc_no_port_with_auth == 'review.openstack.org'"
-          - "url_netorigin == 'http://review.openstack.org:29418'"
-
     - name: Validate string_2_int filter
       assert:
         that:

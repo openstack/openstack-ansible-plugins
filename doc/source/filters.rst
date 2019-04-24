@@ -80,33 +80,6 @@ user after removing any duplicates found within the second list.
    {{ ['a', 'b'] | filtered_list(['b', 'c']) }}
    # => [ "a" ]
 
-netloc
-~~~~~~
-This filter will return the netloc from a given URL.
-
-.. code-block:: yaml
-
-    {{ 'https://172.29.236.100:5000/v3/auth/tokens' | netloc }}
-    # => "172.29.236.100:5000"
-
-netloc_no_port
-~~~~~~~~~~~~~~
-This filter will return the netloc, without a port, from a given URL.
-
-.. code-block:: yaml
-
-    {{ 'https://172.29.236.100:5000/v3/auth/tokens' | netloc_no_port }}
-    # => "172.29.236.100"
-
-netorigin
-~~~~~~~~~
-This filter will return the scheme and netloc from a given URL.
-
-.. code-block:: yaml
-
-    {{ 'https://172.29.236.100:5000/v3/auth/tokens' | netorigin }}
-    # => "https://172.29.236.100:5000"
-
 pip_constraint_update
 ~~~~~~~~~~~~~~~~~~~~~
 This filter will return a merged list from a given list of pip packages and a
