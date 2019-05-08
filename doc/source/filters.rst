@@ -2,16 +2,6 @@
 Filters
 =======
 
-bit_length_power_of_2
-~~~~~~~~~~~~~~~~~~~~~
-This filter will return the smallest power of 2 greater than a given numeric
-value.
-
-.. code-block:: yaml
-
-   {{ 1000 | bit_length_power_of_2 }}
-   # => 1024
-
 deprecated
 ~~~~~~~~~~
 This filter will return the old_var value, if defined, along with a

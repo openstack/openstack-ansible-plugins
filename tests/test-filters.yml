@@ -20,12 +20,6 @@
   connection: local
   gather_facts: no
   tasks:
-    - name: Validate bit_length_power_of_2 filter
-      assert:
-        that:
-          - "{{ 1024 | bit_length_power_of_2 }} == 1024"
-          - "{{ 9600 | bit_length_power_of_2 }} == 16384"
-
     - name: Validate string_2_int filter
       assert:
         that:
