@@ -537,6 +537,12 @@ class Connection(SSH.Connection):
 
         res = super(Connection, self).put_file(in_path, _out_path)
 
+        # NOTE(mnaser): If we're running without a container, we break out
+        #               here to avoid the extra round-trip for the unnecessary
+        #               chown.
+        if not self._container_check():
+            return res
+
         # NOTE(pabelanger): Because we put_file as remote_user, it is possible
         # that user doesn't exist inside the container, so use the root user to
         # chown the file to container_user.
