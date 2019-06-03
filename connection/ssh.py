@@ -257,14 +257,6 @@ SSH = imp.load_source(
     os.path.join(os.path.dirname(conn.__file__), 'ssh.py')
 )
 
-if not hasattr(SSH, 'shlex_quote'):
-    # NOTE(cloudnull): Later versions of ansible has this attribute already
-    #                  however this is not set in all versions. Because we use
-    #                  this method the attribute will set within the plugin
-    #                  if it's not found.
-    from ansible.compat.six.moves import shlex_quote
-    setattr(SSH, 'shlex_quote', shlex_quote)
-
 
 def retry(ExceptionToCheck, tries=3, delay=1, backoff=2):
     """Retry calling the decorated function using an exponential backoff.
