@@ -551,15 +551,3 @@ class Connection(SSH.Connection):
             self.container_user = 'root'
             self.exec_command('chown %s %s' % (_user, out_path))
             self.container_user = _user
-
-    def close(self):
-        # If we have a persistent ssh connection (ControlPersist), we can ask it
-        # to stop listening. Otherwise, there's nothing to do here.
-        if self._connected and self._persistent:
-            cmd = self._build_command('ssh', '-O', 'stop', self.host)
-            cmd = map(SSH.to_bytes, cmd)
-            p = SSH.subprocess.Popen(cmd,
-                                     stdin=SSH.subprocess.PIPE,
-                                     stdout=SSH.subprocess.PIPE,
-                                     stderr=SSH.subprocess.PIPE)
-            p.communicate()
