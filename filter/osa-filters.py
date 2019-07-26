@@ -171,24 +171,6 @@ def string_2_int(string):
     return int(hashed_name, 36) % 10240
 
 
-def pip_requirement_names(requirements):
-    """Return a ``str`` of requirement name and list of versions.
-    :param requirement: Name of a requirement that may have versions within
-                        it. This will use the constant,
-                        VERSION_DESCRIPTORS.
-    :type requirement: ``str``
-    :return: ``str``
-    """
-
-    named_requirements = list()
-    for requirement in requirements:
-        name = _pip_requirement_split(requirement)[0]
-        if name and not name.startswith('#'):
-            named_requirements.append(name.lower())
-
-    return sorted(set(named_requirements))
-
-
 def pip_constraint_update(list_one, list_two):
 
     _list_one, _list_two = _lower_set_lists(list_one, list_two)
@@ -270,7 +252,6 @@ class FilterModule(object):
         return {
             'bit_length_power_of_2': bit_length_power_of_2,
             'string_2_int': string_2_int,
-            'pip_requirement_names': pip_requirement_names,
             'pip_constraint_update': pip_constraint_update,
             'splitlines': splitlines,
             'filtered_list': filtered_list,
