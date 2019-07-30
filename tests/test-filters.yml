@@ -31,10 +31,6 @@
            - pip==8.1.2
            - setuptools==25.1.0
            - wheel==0.29.0
-         pip_package_list_1_names:
-           - pip
-           - setuptools
-           - wheel
          pip_package_list_2:
            - babel==2.3.4
            - pip==8.1.0
@@ -45,12 +41,10 @@
            - wheel==0.29.0
     - name: Set pip package filter facts
       set_fact:
-        pip_package_list_1_names_filtered: "{{ pip_package_list_1 | pip_requirement_names }}"
         pip_package_list_constraint_filtered: "{{ pip_package_list_1 | pip_constraint_update(pip_package_list_2) }}"
     - name: Validate pip requirement filters
       assert:
         that:
-          - "pip_package_list_1_names_filtered == pip_package_list_1_names"
           - "pip_package_list_constraint_filtered == pip_package_list_merged"
 
     - name: Set splitlines string facts

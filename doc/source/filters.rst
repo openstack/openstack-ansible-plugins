@@ -88,21 +88,6 @@ list of pip package constraints to a apply to that list.
     {{ pip_package_list | pip_constraint_update(pip_package_constraint_list) }}
     # => [ "babel==2.3.4", "pip==8.1.0", "setuptools==25.1.0", "wheel==0.29.0" ]
 
-pip_requirement_names
-~~~~~~~~~~~~~~~~~~~~~
-This filter will return of list of package names from a given list of pip
-packages.
-
-.. code-block:: yaml
-
-   pip_package_list:
-     - pip==8.1.2
-     - setuptools==25.1.0
-     - wheel==0.29.0
-
-   {{ pip_package_list | pip_requirement_names }}
-   # => [ "pip", "setuptools", "wheel" ]
-
 splitlines
 ~~~~~~~~~~
 This filter will return of list from a string with line breaks.
