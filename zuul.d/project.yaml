@@ -21,7 +21,6 @@
       jobs:
         - openstack-ansible-linters
         - openstack-ansible-functional-centos-7
-        - openstack-ansible-functional-opensuse-423
         - openstack-ansible-functional-ubuntu-bionic
         - openstack-ansible-functional-ubuntu-xenial
         # TODO(evrardjp): uncomment this when the job is in the tests repo
@@ -33,6 +32,5 @@
       jobs:
         - openstack-ansible-linters
         - openstack-ansible-functional-centos-7
-        - openstack-ansible-functional-opensuse-423
         - openstack-ansible-functional-ubuntu-bionic
         - openstack-ansible-functional-ubuntu-xenial
