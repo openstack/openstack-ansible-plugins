@@ -162,77 +162,10 @@ def string_2_int(string):
     return int(hashed_name, 36) % 10240
 
 
-def pip_constraint_update(list_one, list_two):
-
-    _list_one, _list_two = _lower_set_lists(list_one, list_two)
-    _list_one, _list_two = list(_list_one), list(_list_two)
-    for item2 in _list_two:
-        item2_name, item2_versions, _ = _pip_requirement_split(item2)
-        if item2_versions:
-            for item1 in _list_one:
-                if item2_name == _pip_requirement_split(item1)[0]:
-                    item1_index = _list_one.index(item1)
-                    _list_one[item1_index] = item2
-                    break
-            else:
-                _list_one.append(item2)
-
-    return sorted(_list_one)
-
-
 def splitlines(string_with_lines):
     """Return a ``list`` from a string with lines."""
 
     return string_with_lines.splitlines()
-
-
-def filtered_list(list_one, list_two):
-
-    _list_one, _list_two = _lower_set_lists(list_one, list_two)
-    return list(_list_one-_list_two)
-
-
-def git_link_parse(repo):
-    """Return a dict containing the parts of a git repository.
-
-    :param repo: git repo string to parse.
-    :type repo: ``str``
-    :returns: ``dict``
-    """
-
-    if 'git+' in repo:
-        _git_url = repo.split('git+', 1)[-1]
-    else:
-        _git_url = repo
-
-    if '@' in _git_url:
-        url, branch = _git_url.split('@', 1)
-    else:
-        url = _git_url
-        branch = 'master'
-
-    name = os.path.basename(url.rstrip('/'))
-    _branch = branch.split('#')
-    branch = _branch[0]
-
-    plugin_path = None
-    # Determine if the package is a plugin type
-    if len(_branch) > 1 and 'subdirectory=' in _branch[-1]:
-        plugin_path = _branch[-1].split('subdirectory=')[-1].split('&')[0]
-
-    return {
-        'name': name.split('.git')[0].lower(),
-        'version': branch,
-        'plugin_path': plugin_path,
-        'url': url,
-        'original': repo
-    }
-
-
-def git_link_parse_name(repo):
-    """Return the name of a git repo."""
-
-    return git_link_parse(repo)['name']
 
 
 class FilterModule(object):
@@ -242,10 +175,6 @@ class FilterModule(object):
     def filters():
         return {
             'string_2_int': string_2_int,
-            'pip_constraint_update': pip_constraint_update,
             'splitlines': splitlines,
-            'filtered_list': filtered_list,
-            'git_link_parse': git_link_parse,
-            'git_link_parse_name': git_link_parse_name,
             'deprecated': _deprecated
         }

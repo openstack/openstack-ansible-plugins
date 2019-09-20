@@ -39,13 +39,6 @@
            - pip==8.1.0
            - setuptools==25.1.0
            - wheel==0.29.0
-    - name: Set pip package filter facts
-      set_fact:
-        pip_package_list_constraint_filtered: "{{ pip_package_list_1 | pip_constraint_update(pip_package_list_2) }}"
-    - name: Validate pip requirement filters
-      assert:
-        that:
-          - "pip_package_list_constraint_filtered == pip_package_list_merged"
 
     - name: Set splitlines string facts
       set_fact:
@@ -76,15 +69,6 @@
           plugin_path: null
           url: "https://git.openstack.org/openstack/nova"
           original: "git+https://git.openstack.org/openstack/nova@2bc8128d7793cc72ca2e146de3a092e1fef5033b#egg=nova&gitname=nova"
-    - name: Set git link parse filter facts
-      set_fact:
-        git_repo_link_parse_filtered: "{{ git_repo | git_link_parse }}"
-        git_repo_link_parse_name_filtered: "{{ git_repo | git_link_parse_name }}"
-    - name: Validate git link parse filters
-      assert:
-        that:
-          - "git_repo_link_parse_filtered == git_repo_link_parts"
-          - "git_repo_link_parse_name_filtered == git_repo_name"
 
     - name: Set deprecation variable facts
       set_fact:
