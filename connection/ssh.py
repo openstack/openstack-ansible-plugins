@@ -523,7 +523,7 @@ class Connection(SSH.Connection):
 
     def put_file(self, in_path, out_path):
         """transfer a file from local to remote."""
-        _out_path = out_path
+        _out_path = os.path.expanduser(out_path)
         if self._container_check():
             _out_path = self._container_path_pad(path=_out_path)
 
