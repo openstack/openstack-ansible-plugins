@@ -52,7 +52,7 @@ string_2_int
 This filter will hash a given string, convert it to a base36 int, and return
 the modulo of 10240.
 
-.. code-block:: yaml
+.. code-block::
 
    {{ 'openstack-ansible' | string_2_int }}
    # => 3587
