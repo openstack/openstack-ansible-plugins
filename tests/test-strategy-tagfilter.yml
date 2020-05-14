@@ -53,7 +53,7 @@
       assert:
         that:
           - "skipped_task is not defined"
-          - "run_task | changed"
+          - "run_task is changed"
           - "skipped_handler is not defined"
 
 - name: Test the tagfilter execution strategy with a string skip tag
@@ -86,7 +86,7 @@
       assert:
         that:
           - "skipped_task is not defined"
-          - "run_task | changed"
+          - "run_task is changed"
           - "skipped_handler is not defined"
 
 - name: Test the tagfilter execution strategy with handlers enabled
@@ -124,6 +124,6 @@
       assert:
         that:
           - "skipped_task is not defined"
-          - "run_task | changed"
+          - "run_task is changed"
           - "skipped_handler is not defined"
-          - "run_handler | changed"
+          - "run_handler is changed"
