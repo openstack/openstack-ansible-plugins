@@ -60,12 +60,6 @@ class StrategyModule(LINEAR.StrategyModule):
     execution of playbooks this optimisation will only be used if there are no
     lookups used with the task which is to guarantee proper task execution.
 
-    To optimize transport reliability if a task is using a "delegate_to" stanza
-    the connection method will change to paramiko if the connection option has
-    been set at "smart", the Ansible 2.x default. Regardless of the connection
-    method if a "delegate_to" is used the task will have pipelining disabled
-    for the duration of that specific task.
-
     Container context will be added to the ``playbook_context`` which is used
     to further optimise connectivity by only ever SSH'ing into a given host
     machine instead of attempting an SSH connection into a container.
@@ -116,14 +110,10 @@ class StrategyModule(LINEAR.StrategyModule):
         Set a host variable, 'physical_host_addrs', containing a dictionary of
         each physical host and its 'ansible_host' variable.
 
-        Modify the playbook_context to disable pipelining and use the paramiko
-        transport method when a task is being delegated.
         """
         templar = LINEAR.Templar(loader=self._loader, variables=task_vars)
         if not self._check_when(host, task, templar, task_vars):
             return
-
-        _play_context = copy.deepcopy(play_context)
 
         pha = task_vars['physical_host_addrs'] = dict()
         physical_host_items = [task_vars.get('physical_host')]
@@ -181,36 +171,9 @@ class StrategyModule(LINEAR.StrategyModule):
                         pha[ph.name] = addr
                         break
 
-        if task.delegate_to:
-            # If a task uses delegation change the play_context
-            #  to use paramiko with pipelining disabled for this
-            #  one task on its collection of hosts.
-            if _play_context.pipelining:
-                _play_context.pipelining = False
-                LINEAR.display.verbose(
-                    u'Because this is a task using "delegate_to"'
-                    u' pipelining has been disabled. but will be'
-                    u' restored upon completion of this task.',
-                    host=host,
-                    caplevel=0
-                )
-
-            if _play_context.connection == 'smart':
-                _play_context.connection = 'paramiko'
-                LINEAR.display.verbose(
-                    u'Delegated task transport changing from'
-                    u' "%s" to "%s". The context will be restored'
-                    u' once the task has completed.' % (
-                        _play_context.connection,
-                        _play_context.connection
-                    ),
-                    host=host,
-                    caplevel=0
-                )
-
         return super(StrategyModule, self)._queue_task(
             host,
             task,
             task_vars,
-            _play_context
+            play_context
         )
