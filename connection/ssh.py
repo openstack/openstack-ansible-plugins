@@ -35,10 +35,6 @@ DOCUMENTATION = '''
           description: Username used when running command inside a container
           vars:
                - name: container_user
-      chroot_path:
-          description: Path of a chroot host
-          vars:
-               - name: chroot_path
       physical_host_addrs:
           description: Dictionary mapping of physical hostnames and their ip addresses
           vars:
@@ -316,10 +312,6 @@ class Connection(SSH.Connection):
         super(Connection, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
-        if hasattr(self._play_context, 'chroot_path'):
-            self.chroot_path = self._play_context.chroot_path
-        else:
-            self.chroot_path = None
         if hasattr(self._play_context, 'container_name'):
             self.container_name = self._play_context.container_name
         else:
@@ -368,7 +360,6 @@ class Connection(SSH.Connection):
 
         super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
 
-        self.chroot_path = self.get_option('chroot_path')
         self.container_name = self.get_option('container_name')
         self.container_tech = self.get_option('container_tech')
         self.physical_host = self.get_option('physical_host')
@@ -383,7 +374,7 @@ class Connection(SSH.Connection):
             self._shell.set_options(var_options={})
             self._shell.set_option('remote_tmp', self._shell.get_option('system_tmpdirs')[0])
 
-        if self._container_check() or self._chroot_check():
+        if self._container_check():
             physical_host_addrs = self.get_option('physical_host_addrs') or {}
             if self.host in physical_host_addrs.values():
                 self.container_name = None
@@ -428,23 +419,7 @@ class Connection(SSH.Connection):
             if self._play_context.become:
                 cmd = ' '.join((self._play_context.become_method, cmd))
 
-        elif self._chroot_check():
-            chroot_command = 'chroot %s' % self.chroot_path
-            cmd = '%s %s' % (chroot_command, cmd)
-
         return super(Connection, self).exec_command(cmd, in_data, sudoable)
-
-    def _chroot_check(self):
-        if self.chroot_path is not None:
-            SSH.display.vvv(u'chroot_path: "%s"' % self.chroot_path)
-            if self.physical_host is not None:
-                SSH.display.vvv(
-                    u'physical_host: "%s"' % self.physical_host
-                )
-                SSH.display.vvv(u'chroot confirmed')
-                return True
-
-        return False
 
     def _container_check(self):
         if self.container_name is not None:

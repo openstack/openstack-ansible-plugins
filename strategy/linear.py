@@ -48,7 +48,6 @@ try:
     MAGIC_VARIABLE_MAPPING.update({
         'physical_host': ('physical_host',),
         'container_name': ('inventory_hostname',),
-        'chroot_path': ('chroot_path',),
         'container_tech': ('container_tech',),
         'container_user': ('container_user',),
     })
