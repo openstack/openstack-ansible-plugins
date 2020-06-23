@@ -164,7 +164,7 @@ class StrategyModule(LINEAR.StrategyModule):
                     host=host,
                     caplevel=0
                 )
-                physical_host_vars = self._variable_manager.get_vars(host=ph)
+                physical_host_vars = ph.get_vars()
                 for item in ['ansible_host', 'container_address', 'address']:
                     addr = physical_host_vars.get(item)
                     if addr:
