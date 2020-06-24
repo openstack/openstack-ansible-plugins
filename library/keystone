@@ -157,6 +157,11 @@ options:
             - Set whether a remote identity provider is enabled
         required: False
         default: True
+    idp_domain_id:
+        description:
+            - The id of the domain to add the identity provider to
+        required: False
+        default: None
     sp_name:
         description:
             - A name for the service provider
@@ -418,7 +423,8 @@ COMMAND_MAP = {
         'variables': [
             'idp_name',
             'idp_remote_ids',
-            'idp_enabled'
+            'idp_enabled',
+            'idp_domain_id'
         ]
     },
     'ensure_service_provider': {
@@ -1246,11 +1252,18 @@ class ManageKeystone(object):
 
     def ensure_identity_provider(self, variables):
         self._authenticate()
+        required_vars = {'idp_name': 'id',
+                         'idp_remote_ids': 'remote_ids',
+                         'idp_enabled': 'enabled'}
+
+        if self.module.params.get('idp_domain_id') is not None:
+            required_vars['idp_domain_id'] = 'domain_id'
+        else:
+            variables.remove('idp_domain_id')
+
         return self._ensure_generic(
             manager=self.keystone.federation.identity_providers,
-            required_vars={'idp_name': 'id',
-                           'idp_remote_ids': 'remote_ids',
-                           'idp_enabled': 'enabled'},
+            required_vars=required_vars,
             variables=variables
         )
 
@@ -1400,6 +1413,10 @@ def main():
             idp_enabled=dict(
                 type='bool',
                 default=True,
+                required=False,
+            ),
+            idp_domain_id=dict(
+                type='str',
                 required=False,
             ),
             sp_name=dict(
