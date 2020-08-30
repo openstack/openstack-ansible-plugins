@@ -244,15 +244,22 @@ DOCUMENTATION = '''
 '''
 
 import functools
-import imp
+import importlib.util
 import os
 import time
 
+def load_module(name, path):
+    module_spec = importlib.util.spec_from_file_location(
+        name, path
+    )
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    return module
 
 # NOTICE(cloudnull): The connection plugin imported using the full path to the
 #                    file because the ssh connection plugin is not importable.
 import ansible.plugins.connection as conn
-SSH = imp.load_source(
+SSH = load_module(
     'ssh',
     os.path.join(os.path.dirname(conn.__file__), 'ssh.py')
 )

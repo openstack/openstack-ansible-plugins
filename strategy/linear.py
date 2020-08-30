@@ -15,13 +15,22 @@
 # (c) 2016, Kevin Carter <kevin.carter@rackspace.com>
 
 import copy
-import imp
+import importlib.util
 import os
+
+def load_module(name, path):
+
+    module_spec = importlib.util.spec_from_file_location(
+        name, path
+    )
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    return module
 
 # NOTICE(cloudnull): The connection plugin imported using the full path to the
 #                    file because the linear strategy plugin is not importable.
 import ansible.plugins.strategy as strategy
-LINEAR = imp.load_source(
+LINEAR = load_module(
     'ssh',
     os.path.join(os.path.dirname(strategy.__file__), 'linear.py')
 )
