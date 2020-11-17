@@ -216,8 +216,8 @@ class ProviderNetworksParsing(object):
                 if (
                     set(
                         net["network"]["group_binds"]
-                    ).intersection(group_names) or
-                    "neutron_server" in group_names
+                    ).intersection(group_names)
+                    or "neutron_server" in group_names
                 ):
                     if "vlan" not in self.network_types:
                         self.network_types.append('vlan')
@@ -239,8 +239,8 @@ class ProviderNetworksParsing(object):
                 if (
                     set(
                         net["network"]["group_binds"]
-                    ).intersection(group_names) or
-                    "neutron_server" in group_names
+                    ).intersection(group_names)
+                    or "neutron_server" in group_names
                 ):
                     if "flat" not in self.network_types:
                         self.network_types.append('flat')
@@ -362,6 +362,7 @@ def main():
     except Exception as exp:
         resp = {'stderr': exp}
         module.fail_json(msg='Failed Process', **resp)
+
 
 if __name__ == '__main__':
     main()

@@ -566,8 +566,8 @@ class ManageKeystone(object):
         endpoint = variables_dict.pop('endpoint')
         login_user = variables_dict.pop('login_user')
         login_password = variables_dict.pop('login_password')
-        login_project_name = (variables_dict.pop('login_project_name', None) or
-                              variables_dict.pop('login_tenant_name'))
+        login_project_name = (variables_dict.pop('login_project_name', None)
+                              or variables_dict.pop('login_tenant_name'))
         user_domain_name = variables_dict.pop('login_user_domain_name',
                                               'Default')
         project_domain_name = variables_dict.pop('login_project_domain_name',
@@ -667,8 +667,8 @@ class ManageKeystone(object):
         """
         self._authenticate()
         variables_dict = self._get_vars(variables)
-        project_name = (variables_dict.pop('project_name', None) or
-                        variables_dict.pop('tenant_name'))
+        project_name = (variables_dict.pop('project_name', None)
+                        or variables_dict.pop('tenant_name'))
         project = self._get_project(name=project_name)
         if project is None:
             self.failure(
@@ -692,8 +692,8 @@ class ManageKeystone(object):
         """
         self._authenticate()
         variables_dict = self._get_vars(variables)
-        project_name = (variables_dict.pop('project_name', None) or
-                        variables_dict.pop('tenant_name'))
+        project_name = (variables_dict.pop('project_name', None)
+                        or variables_dict.pop('tenant_name'))
         project_description = variables_dict.pop('description')
         if project_description is None:
             project_description = 'Project %s' % project_name
@@ -757,8 +757,8 @@ class ManageKeystone(object):
         self._authenticate()
         required_vars = ['user_name', 'password']
         variables_dict = self._get_vars(variables, required=required_vars)
-        project_name = (variables_dict.pop('project_name', None) or
-                        variables_dict.pop('tenant_name'))
+        project_name = (variables_dict.pop('project_name', None)
+                        or variables_dict.pop('tenant_name'))
         password = variables_dict.pop('password')
         user_name = variables_dict.pop('user_name')
         email = variables_dict.pop('email')
@@ -933,8 +933,8 @@ class ManageKeystone(object):
         # NOTE(sigmavirus24): Try to get the project_name, but
         # don't error out on it. This will change when the playbooks are
         # updated to use project_name instead of tenant_name
-        project_name = (variables_dict.pop('project_name', None) or
-                        variables_dict.pop('tenant_name'))
+        project_name = (variables_dict.pop('project_name', None)
+                        or variables_dict.pop('tenant_name'))
         role_name = variables_dict.pop('role_name')
 
         if project_name is not None:
