@@ -19,3 +19,7 @@
   src: https://git.openstack.org/openstack/openstack-ansible-lxc_container_create
   scm: git
   version: master
+- name: pki
+  src: https://opendev.org/openstack/ansible-role-pki
+  scm: git
+  version: master
