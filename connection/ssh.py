@@ -108,7 +108,7 @@ DOCUMENTATION = '''
           description: Extra exclusive to the 'ssh' CLI
           vars:
               - name: ansible_ssh_extra_args
-      retries:
+      reconnection_retries:
           # constant: ANSIBLE_SSH_RETRIES
           description: Number of attempts to connect.
           default: 3
@@ -237,6 +237,39 @@ DOCUMENTATION = '''
         ini:
         - {key: scp_executable, section: ssh_connection}
         version_added: "2.6"
+      ssh_transfer_method:
+        description:
+            - "Preferred method to use when transferring files over ssh"
+            - Setting to 'smart' (default) will try them in order, until one succeeds or they all fail
+            - Using 'piped' creates an ssh pipe with ``dd`` on either side to copy the data
+        choices: ['sftp', 'scp', 'piped', 'smart']
+        env: [{name: ANSIBLE_SSH_TRANSFER_METHOD}]
+        ini:
+            - {key: transfer_method, section: ssh_connection}
+        vars:
+            - name: ansible_ssh_transfer_method
+              version_added: '2.12'
+      timeout:
+        default: 10
+        description:
+            - This is the default amount of time we will wait while establishing an ssh connection
+            - It also controls how long we can wait to access reading the connection once established (select on the socket)
+        env:
+            - name: ANSIBLE_TIMEOUT
+            - name: ANSIBLE_SSH_TIMEOUT
+              version_added: '2.11'
+        ini:
+            - key: timeout
+              section: defaults
+            - key: timeout
+              section: ssh_connection
+              version_added: '2.11'
+        vars:
+          - name: ansible_ssh_timeout
+            version_added: '2.11'
+        cli:
+          - name: timeout
+        type: integer
 '''
 
 import functools
@@ -452,7 +485,8 @@ class Connection(SSH.Connection):
             return 1, ''
 
         if not self.container_pid:
-            args = ('ssh', self.host, lookup_command)
+            ssh_executable = self.get_option('ssh_executable')
+            args = (ssh_executable, 'ssh', self.host, lookup_command)
             returncode, stdout, _ = self._run(
                 self._build_command(*args),
                 in_data=None,
