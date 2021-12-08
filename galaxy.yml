@@ -1,0 +1,21 @@
+---
+namespace: "osa"
+description: |-
+  Utility roles, modules and filters user internally in
+  openstack-ansible.
+name: "plugins"
+version: "1.0.0"
+readme: "README.rst"
+authors:
+    - Dmitriy Rabotyagov <noonedeadpunk@ya.ru>
+    - Jonathan Rosser <jonathan.rosser@rd.bbc.co.uk>
+    - Kevin Carter <kevin.carter@rackspace.com>
+    - Jimmy McCrory <jimmy.mccrory@gmail.com>
+    - Jesse Pretorius <jesse.pretorius@rackspace.co.uk>
+    - Logan V <logan2211@gmail.com>
+    - Jean-Philippe Evrard <jean-philippe@evrard.me>
+license:
+    - "Apache-2.0"
+tags:
+    - openstack
+repository: "https://github.com/openstack/openstack-ansible-plugins"
