@@ -13,13 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# WARNING:
-# This file is maintained in the openstack-ansible-tests repository.
-# https://opendev.org/openstack/openstack-ansible-tests/src/sync/tasks/service_setup.yml
-# If you need to modify this file, update the one in the openstack-ansible-tests
-# repository. Once it merges there, the changes will automatically be proposed to
-# all the repositories which use it.
-
 - name: Setup the OS service
   delegate_to: "{{ _service_setup_host }}"
   vars:
