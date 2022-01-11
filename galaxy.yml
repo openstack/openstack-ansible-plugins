@@ -1,9 +1,9 @@
 ---
-namespace: "osa"
+namespace: "openstack"
 description: |-
   Utility roles, modules and filters user internally in
   openstack-ansible.
-name: "plugins"
+name: "osa"
 version: "1.0.0"
 readme: "README.rst"
 authors:
