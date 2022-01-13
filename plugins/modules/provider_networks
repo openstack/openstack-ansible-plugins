@@ -17,13 +17,13 @@
 
 
 # import module snippets
-from ansible.module_utils.basic import *
+from ansible.module_utils.basic import AnsibleModule
 
 
 DOCUMENTATION = """
 ---
 module: provider_networks
-version_added: "1.8.6"
+version_added: "1.8.7"
 short_description:
     - Parse a list of networks and return data that Ansible can use
 description:
@@ -100,10 +100,32 @@ EXAMPLES = """
 #     group_binds:
 #       - neutron_linuxbridge_agent
 # - network:
+#     host_bind_override: "bond1"
+#     type: "vlan"
+#     net_name: "physnet1"
+#     group_binds:
+#       - neutron_linuxbridge_agent
+# - network:
 #     container_bridge: "br-provider"
 #     container_type: "veth"
 #     container_interface: "eth11"
 #     network_interface: "bond1"
+#     type: "vlan"
+#     range: "1:1, 101:101"
+#     net_name: "physnet1"
+#     group_binds:
+#       - neutron_openvswitch_agent
+# - network:
+#     container_bridge: "br-provider"
+#     container_type: "veth"
+#     container_interface: "eth11"
+#     network_bond_interfaces:
+#       - "0000:02:00.0"
+#       - "0000:02:00.1"
+#     bond_mode: balance-tcp
+#     bond_updelay: 100
+#     bond_downdelay: 100
+#     lacp: active
 #     type: "vlan"
 #     range: "1:1, 101:101"
 #     net_name: "physnet1"
@@ -151,6 +173,14 @@ EXAMPLES = """
 #             "flat:brx-eth12",
 #             "vlan:brx-eth11"
 #         ],
+#         "network_bond_interfaces_mappings": [{
+#             'bridge': 'br-provider',
+#             'interfaces': ['0000:02:00.0', '0000:02:00.1'],
+#             'bond_mode': 'balance-tcp',
+#             'lacp': 'active',
+#             'bond_updelay': 100,
+#             'bond_downdelay': 100
+#         }],
 #         "network_sriov_mappings": "physnet1:p1p1,physnet1:p1p2",
 #         "network_sriov_mappings_list": [
 #             "physnet1:p1p1"
@@ -196,6 +226,7 @@ class ProviderNetworksParsing(object):
         self.network_types = list()
         self.network_sriov_mappings = list()
         self.network_interface_mappings = list()
+        self.network_bond_interfaces_mappings = list()
 
     def load_networks(self, provider_networks, is_metal=False,
                       bind_prefix=None, group_names=None):
@@ -217,15 +248,21 @@ class ProviderNetworksParsing(object):
                     set(
                         net["network"]["group_binds"]
                     ).intersection(group_names)
-                    or "neutron_server" in group_names
+                    or "neutron_server" in group_names    # noqa W503
                 ):
                     if "vlan" not in self.network_types:
                         self.network_types.append('vlan')
-                    for vlan_range in net['network']['range'].split(','):
-                        self.network_vlan_ranges.append(
-                            '%s:%s' % (
-                                net['network']['net_name'], vlan_range.strip()
+                    if "range" in net['network']:
+                        for vlan_range in net['network']['range'].split(','):
+                            self.network_vlan_ranges.append(
+                                '%s:%s' % (
+                                    net['network']['net_name'],
+                                    vlan_range.strip()
+                                )
                             )
+                    else:
+                        self.network_vlan_ranges.append(
+                            net['network']['net_name']
                         )
             elif net['network']['type'] == "vxlan":
                 if "vxlan" not in self.network_types:
@@ -240,7 +277,7 @@ class ProviderNetworksParsing(object):
                     set(
                         net["network"]["group_binds"]
                     ).intersection(group_names)
-                    or "neutron_server" in group_names
+                    or "neutron_server" in group_names  # noqa W503
                 ):
                     if "flat" not in self.network_types:
                         self.network_types.append('flat')
@@ -286,6 +323,29 @@ class ProviderNetworksParsing(object):
                                     net['network']['network_interface']
                                 )
                             )
+
+                        # Builds a list of provider bridge to physical
+                        # interface (bond member) mappings and is used
+                        # when constructing OVS bonds
+                        if 'network_bond_interfaces' in net['network']:
+                            self.network_bond_interfaces_mappings.append({
+                                'bridge': net['network'][
+                                    'container_bridge'
+                                ],
+                                'interfaces': net['network'][
+                                    'network_bond_interfaces'
+                                ],
+                                'bond_mode': net['network'].get(
+                                    'bond_mode', 'active-backup'
+                                ),
+                                'lacp': net['network'].get('lacp', 'off'),
+                                'bond_updelay': net['network'].get(
+                                    'bond_updelay', 100
+                                ),
+                                'bond_downdelay': net['network'].get(
+                                    'bond_downdelay', 100
+                                )
+                            })
 
                         # SR-IOV interface mappings
                         if 'sriov_host_interfaces' in net['network']:
@@ -355,7 +415,12 @@ def main():
             'network_interface_mappings': ','.join(
                 pnp.network_interface_mappings
             ),
-            'network_interface_mappings_list': pnp.network_interface_mappings
+            'network_interface_mappings_list': pnp.network_interface_mappings,
+            'network_bond_interfaces_mappings': ','.join(
+                map(str, pnp.network_bond_interfaces_mappings)
+            ),
+            'network_bond_interfaces_mappings_list':
+                pnp.network_bond_interfaces_mappings
         }
 
         module.exit_json(changed=True, **resp)
