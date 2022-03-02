@@ -35,7 +35,7 @@ _journald_remote_target_services:
     masked: "{{ (ansible_host in journald_remote_targets) | ternary('no', 'yes') }}"
     execstarts: >-
       {{ journald_remote_systemd_prefix }}/systemd-journal-remote
-      --listen-{{ journald_remote_target_listen_proto }}={{ (journald_remote_target_listen_address | ansible.netcommon.ipaddr is string) | ternary([journald_remote_target_listen_address, journald_remote_target_listen_port] | join(':'), '-3') }}
+      --listen-{{ journald_remote_target_listen_proto }}={{ (journald_remote_target_listen_address | ansible.utils.ipaddr is string) | ternary([journald_remote_target_listen_address, journald_remote_target_listen_port] | join(':'), '-3') }}
       --split-mode=host
       --compress
       --seal
