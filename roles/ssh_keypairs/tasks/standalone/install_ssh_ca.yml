@@ -58,7 +58,7 @@
   with_items:
     - "TrustedUserCAKeys {{ ssh_keypairs_trusted_ca_file }}"
     - "AuthorizedPrincipalsFile {{ ssh_keypairs_authorized_principals_file }}"
-  when: (ansible_facts['distribution'] == 'CentOS' and ansible_facts['distribution_version'] == '8')
+  when: (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_version'] == '8')
   notify:
     - Reload sshd
 
