@@ -58,7 +58,7 @@
   with_items:
     - "TrustedUserCAKeys {{ ssh_keypairs_trusted_ca_file }}"
     - "AuthorizedPrincipalsFile {{ ssh_keypairs_authorized_principals_file }}"
-  when: (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_version'] == '8')
+  when: (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_major_version'] == '8')
   notify:
     - Reload sshd
 
@@ -66,7 +66,7 @@
   template:
     src: ssh_ca_config.j2
     dest: "/etc/ssh/sshd_config.d/{{ ssh_keypairs_trusted_ca_config_file }}"
-  when: not (ansible_facts['distribution'] == 'CentOS' and ansible_facts['distribution_version'] == '8')
+  when: not (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_major_version'] == '8')
   notify:
     - Reload sshd
 
