@@ -414,7 +414,7 @@ class Connection(SSH.Connection):
     def _set_physical_host_addr(self, physical_host_addrs):
         physical_host_addr = physical_host_addrs.get(self.physical_host,
                                                      self.physical_host)
-        self.host = self._play_context.remote_addr = physical_host_addr
+        self.host = self._options['host'] = self._play_context.remote_addr = physical_host_addr
 
     @retry(ExceptionToCheck=Exception)
     def exec_command(self, cmd, in_data=None, sudoable=True):
