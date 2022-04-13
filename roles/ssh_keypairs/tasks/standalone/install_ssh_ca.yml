@@ -27,12 +27,14 @@
   when:
     - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
   loop: "{{ ssh_keypairs_install_ca }}"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create sshd trusted certificate config files
   template:
     src: "ssh_ca.j2"
     dest: "/etc/ssh/trusted_ca.d/{{ item.item.name }}"
   with_items: "{{ _ssh_ca_slurp.results }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   when:
     - item.item.state is not defined or item.item.state != 'absent'
   notify:
@@ -43,6 +45,7 @@
     path: "/etc/sshd/trusted_ca.d/{{ item.item.name }}"
     state: absent
   with_items: "{{ _ssh_ca_slurp.results }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   when:
       - item.item.state is defined
       - item.item.state == 'absent'

@@ -30,6 +30,7 @@
         - "{{ ssh_keypairs_dirs }}"
       delegate_to: "{{ ssh_keypairs_setup_host }}"
       run_once: yes
+      check_mode: no
 
     - name: Create keypairs
       include_tasks: "{{ ssh_keypairs_method }}/create_keypair.yml"

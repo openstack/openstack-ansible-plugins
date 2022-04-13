@@ -22,6 +22,7 @@
   when:
     - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
   loop: "{{ _ssh_keypairs_install_keys_expanded }}"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy ssh keys to target
   copy:
@@ -33,4 +34,4 @@
   register: ca_copy
   loop: "{{ _ssh_key_slurp.results | default([]) }}"
   when: item.skipped is not defined
-
+  ignore_errors: "{{ ansible_check_mode }}"
