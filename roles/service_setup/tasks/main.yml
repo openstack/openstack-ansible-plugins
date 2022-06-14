@@ -65,25 +65,6 @@
       retries: 5
       delay: 10
 
-    - name: Add keystone roles
-      openstack.cloud.identity_role:
-        cloud: default
-        state: present
-        name: "{{ item.role }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      when:
-        - not (_service_in_ldap | default(False) | bool)
-        - _service_users is defined
-        - "'role' in item"
-        - (item.condition | default(True)) | bool
-      until: add_service is success
-      with_items: "{{ _service_users }}"
-      retries: 5
-      delay: 10
-      no_log: True
-
     - name: Add service users
       openstack.cloud.identity_user:
         cloud: default
@@ -108,28 +89,16 @@
       delay: 10
       no_log: True
 
-    - name: Add service users to the role
-      openstack.cloud.role_assignment:
-        cloud: default
-        state: present
-        user: "{{ item.name }}"
-        role: "{{ item.role }}"
-        project: "{{ item.project | default(_service_project_name) }}"
-        domain: "{{ item.domain | default(omit) }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
+    - name: Include task for role assignment
+      include_tasks: setup_roles.yml
       when:
         - not (_service_in_ldap | default(False) | bool)
         - _service_users is defined
-        - "'name' in item"
-        - "'role' in item"
-        - (item.condition | default(True)) | bool
-      until: add_service is success
-      with_items: "{{ _service_users }}"
-      retries: 5
-      delay: 10
-      no_log: True
+        - "'role' in user"
+        - (user.condition | default(True)) | bool
+      loop: "{{ _service_users }}"
+      loop_control:
+        loop_var: user
 
     - name: Add endpoints to keystone endpoint catalog
       openstack.cloud.endpoint:
