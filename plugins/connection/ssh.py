@@ -288,6 +288,8 @@ import importlib
 import os
 import time
 
+from ansible.module_utils.six.moves import shlex_quote
+
 SSH = importlib.import_module('ansible.plugins.connection.ssh')
 
 
@@ -443,7 +445,7 @@ class Connection(SSH.Connection):
                 cmd = '%s -- su - %s -c %s' % (
                     _pad,
                     self.container_user,
-                    SSH.shlex_quote(cmd)
+                    shlex_quote(cmd)
                 )
 
             if self._play_context.become:
