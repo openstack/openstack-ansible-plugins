@@ -69,6 +69,23 @@
     name: "{{ glusterfs_server_distro_packages }}"
     state: "{{ glusterfs_package_state }}"
 
+- name: Drop glusterfs-wait.sh script
+  copy:
+    src: glusterfs-wait.sh
+    dest: /usr/local/sbin
+    mode: 0744
+
+- name: Add glusterd.service overrides
+  import_role:
+    name: systemd_service
+  vars:
+    systemd_services:
+      - service_name: glusterd
+        systemd_overrides_only: true
+        systemd_overrides:
+          Service:
+            ExecStartPost: "/usr/local/sbin/glusterfs-wait.sh"
+
 - name: Configure systemd-tmpfiles to create /dev/fuse at boot
   copy:
     content: "c /dev/fuse 0600 - - - 10:229"
