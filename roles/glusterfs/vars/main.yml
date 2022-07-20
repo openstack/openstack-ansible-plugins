@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-_glusterfs_is_last_play_host: "{{ (inventory_hostname == (ansible_play_hosts | last)) | bool }}"
+_glusterfs_is_first_play_host: "{{ (inventory_hostname == (ansible_play_hosts | first)) | bool }}"

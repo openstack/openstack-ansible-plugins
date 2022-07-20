@@ -111,7 +111,7 @@
 - name: Create gluster peers
   gluster.gluster.gluster_peer:
     nodes: "{{ glusterfs_server_cluster_members }}"
-  when: _glusterfs_is_last_play_host
+  when: _glusterfs_is_first_play_host
 
 - name: Ensure glusterfs backing directory exists
   file:
@@ -151,5 +151,5 @@
     replicas: "{{ cluster_has_replicas | ternary(num_cluster_members, omit) }}"
     cluster: "{{ glusterfs_server_cluster_members | map('regex_replace', '_', '-') | list }}"
     force: true
-  when: _glusterfs_is_last_play_host
+  when: _glusterfs_is_first_play_host
 
