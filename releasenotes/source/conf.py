@@ -212,8 +212,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'OpenStackAnsibleReleaseNotes.tex', u'OpenStack-Ansible Release Notes Documentation',
-     u'OpenStack-Ansible Developers', 'manual'),
+    ('index', 'OpenStackAnsibleReleaseNotes.tex', 'OpenStack-Ansible Release Notes Documentation',
+     'OpenStack-Ansible Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -242,8 +242,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'openstackansiblereleasenotes', u'OpenStack-Ansible Release Notes Documentation',
-     [u'OpenStack-Ansible Developers'], 1)
+    ('index', 'openstackansiblereleasenotes', 'OpenStack-Ansible Release Notes Documentation',
+     ['OpenStack-Ansible Developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,8 +256,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'OpenStackAnsibleReleaseNotes', u'OpenStack-Ansible Release Notes Documentation',
-     u'OpenStack-Ansible Developers', 'OpenStackAnsibleReleaseNotes',
+    ('index', 'OpenStackAnsibleReleaseNotes', 'OpenStack-Ansible Release Notes Documentation',
+     'OpenStack-Ansible Developers', 'OpenStackAnsibleReleaseNotes',
      'One line description of project.',
      'Miscellaneous'),
 ]
