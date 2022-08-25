@@ -20,7 +20,7 @@ _journald_remote_source_services:
     state: "{{ (ansible_host in journald_remote_targets) | ternary('stopped', 'started') }}"
     masked: "{{ (ansible_host in journald_remote_targets) | ternary('yes', 'no') }}"
     execstarts: >-
-      {{ systemd_utils_prefix }}/systemd-journal-upload
+      {{ journald_remote_systemd_prefix }}/systemd-journal-upload
       --save-state
       --merge
       --url={{ journald_remote_target_listen_proto }}://%i
