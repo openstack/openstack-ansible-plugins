@@ -41,17 +41,6 @@
       package:
         name: "{{ glusterfs_server_dnf_sig_packages }}"
 
-    # NOTE(jrosser) this task ensures that the release version is always 8-stream to support
-    # Rocky Linux as well as Centos-8-Stream. Remove this task when the repo itself supports both.
-    - name: Fix repo mirrorlist
-      lineinfile:
-        path: /etc/yum.repos.d/CentOS-Gluster-8.repo
-        regexp: '^mirrorlist'
-        line: 'mirrorlist=http://mirrorlist.centos.org?arch=$basearch&release=8-stream&repo=storage-gluster-8'
-      when:
-        - ansible_facts['distribution'] == "Rocky"
-        - ansible_facts['distribution_major_version'] == "8"
-
     - name: Apply systemctl overrides
       import_role:
         name: systemd_service
