@@ -41,13 +41,13 @@
   become: True
   tasks:
     - name: Test container delegation without templating
-      command: cat /etc/hostname
+      command: hostnamectl --transient
       delegate_to: container1
       register: delegated
       failed_when: delegated.stdout != 'container1'
       changed_when: false
     - name: Test container delegation using templating
-      command: cat /etc/hostname
+      command: hostnamectl --transient
       delegate_to: "{{ groups['all_containers'][1] }}"
       register: delegated
       failed_when: delegated.stdout != 'container2'
@@ -62,7 +62,7 @@
     delegate_control: "target-host"
   tasks:
     - name: Test conditional delegation
-      command: cat /etc/hostname
+      command: hostnamectl --transient
       register: delegated
       failed_when: delegated.stdout != 'container1'
       changed_when: false
@@ -121,7 +121,7 @@
   remote_user: root
   tasks:
     - name: Test container delegation without using inventory name
-      command: cat /etc/hostname
+      command: hostnamectl --transient
       delegate_to: 10.100.100.4
       register: delegated
       failed_when: delegated.stdout != 'container3'
