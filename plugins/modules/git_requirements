@@ -74,6 +74,12 @@ options:
       multithreading. For example, on a 2 core
       machine, a multiplier of 4 would use 8
       threads. Defaults to 4. Not required.
+  core_maximum:
+    description:
+      Integer maximum number of cores that should be
+      used for multithreading. Use of too many cores
+      simultaneously will cause file decscriptors
+      to be exhausted. Defaults to 16. Not required.
 """
 
 EXAMPLES = r"""
@@ -280,7 +286,9 @@ def main():
         "core_multiplier": {"required": False,
                             "type": "int",
                             "default": 4},
-
+        "core_maximum": {"required": False,
+                          "type": "int",
+                          "default": 16},
     }
 
     # Pull in module fields and pass into variables
@@ -298,7 +306,8 @@ def main():
         "retries": module.params["retries"],
         "delay": module.params["delay"],
         "force": module.params["force"],
-        "core_multiplier": module.params["core_multiplier"]
+        "core_multiplier": module.params["core_multiplier"],
+        "core_maximum": module.params["core_maximum"]
     }
 
     # Set up defaults
@@ -312,6 +321,7 @@ def main():
     # Define varibles
     failures = multiprocessing.Manager().list()
     core_count = multiprocessing.cpu_count() * config["core_multiplier"]
+    core_count = min(core_count, config["core_maximum"])
 
     # Load up process and pass in interrupt and core process count
     p = multiprocessing.Pool(core_count, init_signal)
