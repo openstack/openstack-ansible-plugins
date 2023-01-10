@@ -14,12 +14,12 @@
 # limitations under the License.
 
 glusterfs_server_dnf_sig_packages:
-  - centos-release-gluster8
+  - centos-release-gluster9
 
-glusterfs_server_dnf_enable:
-  - powertools
+glusterfs_server_dnf_enable: []
 
 glusterfs_server_distro_packages:
   - systemd-udev
   - glusterfs-server
   - glusterfs-fuse
+
