@@ -26,7 +26,7 @@
         login_host: "{{ _oslodb_setup_endpoint | default(omit) }}"
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
       loop: "{{ _oslodb_databases }}"
-      no_log: true
+      no_log: _oslodb_setup_nolog | default(True)
       when: item.condition | default(True)
 
     - name: Grant access to the database for the service
@@ -40,4 +40,4 @@
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
       loop: "{{ _oslodb_databases | subelements('users') }}"
       when: item.0.condition | default(True)
-      no_log: true
+      no_log: _oslodb_setup_nolog | default(True)
