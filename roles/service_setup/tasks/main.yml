@@ -87,7 +87,7 @@
       with_items: "{{ _service_users }}"
       retries: 5
       delay: 10
-      no_log: True
+      no_log: "{{ _service_setup_nolog | default(True) }}"
 
     - name: Include task for role assignment
       include_tasks: setup_roles.yml
