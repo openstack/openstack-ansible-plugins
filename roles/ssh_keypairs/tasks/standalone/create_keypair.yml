@@ -28,6 +28,8 @@
           size: "{{ kp.size | default(omit) }}"
           type: "{{ kp.type | default(omit) }}"
           path: "{{ kp_dir ~ '/' ~ kp['name'] }}"
+          mode: "{{ kp.mode | default(omit) }}"
+          backend: cryptography
         register: kp_keys
 
       - name: Generate an OpenSSH user certificate for {{ kp['name'] }}
