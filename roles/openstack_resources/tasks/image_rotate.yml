@@ -1,0 +1,44 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Hide all old images
+  when:
+    - "'hide_method' in image"
+  openstack.cloud.image:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    id: "{{ item['id'] }}"
+    name: "{{ image['name'] }}"
+    state: present
+    visibility: "{{ image['hide_method'] }}"
+    is_protected: false
+  loop: "{{ images_to_rotate[image['name']] }}"
+  loop_control:
+    label: "{{ item.id }}"
+
+- name: Remove outdated images
+  when:
+    - "'keep_copies' in image"
+    - item
+    - not item['is_protected']
+    - item['visibility'] == image['hide_method']
+  openstack.cloud.image:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_interface }}"
+    id: "{{ item['id'] }}"
+    name: "{{ item['name'] }}"
+    state: absent
+  loop: "{{ images_to_rotate[image['name']][:-(image['keep_copies'])] }}"
+  ignore_errors: true  # noqa: ignore-errors

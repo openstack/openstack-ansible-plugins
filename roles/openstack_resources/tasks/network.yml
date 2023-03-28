@@ -1,0 +1,74 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Create network
+  openstack.cloud.network:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ network['name'] }}"
+    state: "{{ network['state'] | default(omit) }}"
+    external: "{{ network['external'] | default(omit) }}"
+    shared: "{{ network['shared'] | default(omit) }}"
+    project: "{{ network['project'] | default(omit) }}"
+    mtu_size: "{{ network['mtu'] | default(omit) }}"
+    provider_network_type: "{{ network['network_type'] | default(omit) }}"
+    provider_physical_network: "{{ network['physical_network'] | default(omit) }}"
+    provider_segmentation_id: "{{ network['segmentation_id'] | default(omit) }}"
+  loop: "{{ openstack_resources_network['networks'] | default([]) }}"
+  register: _provisioned_networks
+  loop_control:
+    loop_var: "network"
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
+      name: "{{ network['name'] }}"
+      state: "{{ network['state'] | default('present') }}"
+      external: "{{ network['external'] | default('false') }}"
+      shared: "{{ network['shared'] | default('false') }}"
+
+- name: Creating subnets for each network
+  ansible.builtin.include_tasks:
+    file: network_subnets.yml
+  loop: "{{ openstack_resources_network['networks'] | default([]) | selectattr('subnets', 'defined') }}"
+  loop_control:
+    loop_var: network
+
+- name: Creating routers
+  openstack.cloud.router:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ router['name'] }}"
+    network: "{{ router['network'] | default(omit) }}"
+    interfaces: "{{ router['interfaces'] | default(omit) }}"
+    enable_snat: "{{ router['snat'] | default(omit) }}"
+    external_fixed_ips: "{{ router['fixed_ips'] | default(omit) }}"
+    project: "{{ router['project'] | default(omit) }}"
+    state: "{{ router['state'] | default(omit) }}"
+  loop: "{{ openstack_resources_network['routers'] | default([]) }}"
+  loop_control:
+    loop_var: router
+
+- name: Creating security groups
+  openstack.cloud.security_group:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ security_group['name'] }}"
+    description: "{{ security_group['description'] | default(omit) }}"
+    project: "{{ security_group['project'] | default(omit) }}"
+    state: "{{ security_group['state'] | default('present') }}"
+    security_group_rules: "{{ security_group['security_group_rules'] | default(omit) }}"
+  loop: "{{ openstack_resources_network['security_groups'] | default([]) }}"
+  loop_control:
+    loop_var: security_group

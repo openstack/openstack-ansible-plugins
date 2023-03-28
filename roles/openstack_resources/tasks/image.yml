@@ -1,0 +1,56 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Upload images
+  ansible.builtin.include_tasks:
+    file: image_upload.yml
+  loop: "{{ openstack_resources_image['images'] | batch(openstack_resources_image['image_upload_batch'] | default(3)) }}"
+  loop_control:
+    loop_var: images
+    label: "{{ openstack_resources_image['images'] | map(attribute='name') | to_json }}"
+
+- name: Retrieve all available Openstack images
+  openstack.cloud.image_info:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    filters:
+      'name': "{{ image['name'] }}"
+  register: available_images
+  loop: "{{ openstack_resources_image['images'] | rejectattr('checksum', 'undefined') }}"
+  loop_control:
+    loop_var: image
+    label: "name={{ image['name'] }}"
+
+- name: Define images to rotate
+  ansible.builtin.set_fact:
+    images_to_rotate: |-
+      {% set image_rotate = {} %}
+      {% for image_result in available_images['results'] %}
+      {%   set _ = image_rotate.update({
+             image_result['image']['name']: image_result['images'] | rejectattr('checksum', 'eq', image_result['image']['checksum'])
+           })
+      %}
+      {% endfor %}
+      {{ image_rotate }}
+
+- name: Looping over images to rotate
+  ansible.builtin.include_tasks:
+    file: image_rotate.yml
+  loop: "{{ available_images['results'] | map(attribute='image') }}"
+  loop_control:
+    loop_var: image
+    label: "{{ image['name'] }}"
+  when:
+    - images_to_rotate[image['name']] | length > 0

@@ -1,0 +1,136 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Ensuring image has required properties set
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - "'url' in image or 'filename' in image"
+      - "'name' in image"
+  loop: "{{ images }}"
+  loop_control:
+    loop_var: image
+
+- name: Downloading image from remote url
+  vars:
+    images_for_download: "{{ images | selectattr('url', 'defined') }}"
+  when: images_for_download
+  block:
+    - name: Create temporary dir for the image download
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: osa-images
+      register: tempdir
+      when: "'image_download_path' not in openstack_resources_image"
+
+    - name: Download image artifact file
+      vars:
+        loop_label:
+          name: "{{ image['name'] }}"
+          url: "{{ image['url'] }}"
+      ansible.builtin.get_url:
+        url: "{{ image['url'] }}"
+        dest: "{{ openstack_resources_image['image_download_path'] | default(tempdir['path']) }}/{{ image['url'] | basename }}"
+        mode: '0644'
+        checksum: "{{ ('checksum' in image) | ternary('md5:' ~ image['checksum'] | default(), omit) }}"
+      loop: "{{ images_for_download }}"
+      loop_control:
+        loop_var: image
+        label: "{{ loop_label | to_json }}"
+      async: "{{ openstack_resources_image['image_async_timeout'] | default(600) }}"
+      poll: 0
+      register: get_image_results
+
+    - name: Register get_image watch variable
+      ansible.builtin.set_fact:
+        fetch_status: []
+
+    - name: Register get_image watch variable
+      when: item.changed  # noqa: no-handler
+      ansible.builtin.set_fact:
+        fetch_status: "{{ fetch_status + [item.ansible_job_id] }}"
+      loop: "{{ get_image_results.results }}"
+      loop_control:
+        label: "{{ item['image']['name'] }}"
+
+    # Try to sync an async tasks
+    - name: Waiting for image download to complete
+      ansible.builtin.async_status:
+        jid: "{{ item }}"
+      register: job_result
+      until: job_result.finished
+      retries: "{{ openstack_resources_image['image_async_retries'] | default(200) }}"
+      delay: "{{ openstack_resources_image['image_async_delay'] | default(10) }}"
+      loop: "{{ fetch_status }}"
+
+- name: "Uploading images"
+  vars:
+    loop_label:
+      name: "{{ image['name'] }}"
+      state: "{{ image['state'] | default('present') }}"
+  openstack.cloud.image:
+    checksum: "{{ image['checksum'] | default(omit) }}"
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    container_format: "{{ image['container_format'] | default('bare') }}"
+    disk_format: "{{ image['disk_format'] | default(omit) }}"
+    filename: "{{ image['filename'] | default(tempdir.path ~ '/' ~ image['url'] | basename) }}"
+    is_protected: "{{ image['is_protected'] | default(omit) }}"
+    kernel: "{{ image['kernel'] | default(omit) }}"
+    name: "{{ image['name'] }}"
+    owner: "{{ image['owner'] | default(omit) }}"
+    owner_domain: "{{ image['owner_domain'] | default(omit) }}"
+    min_disk: "{{ image['min_disk'] | default(omit) }}"
+    min_ram: "{{ image['min_ram'] | default(omit) }}"
+    properties: "{{ image['properties'] | default(omit) }}"
+    ramdisk: "{{ image['ramdisk'] | default(omit) }}"
+    state: "{{ image['state'] | default('present') }}"
+    tags: "{{ image['tags'] | default(omit) }}"
+    timeout: "{{ openstack_resources_image['image_async_timeout'] | default(600) }}"
+    visibility: "{{ image['visibility'] | default('private') }}"
+  loop: "{{ images }}"
+  loop_control:
+    loop_var: image
+    label: "{{ loop_label | to_json }}"
+  async: "{{ openstack_resources_image['image_async_timeout'] | default(600) }}"
+  poll: 0
+  register: upload_results
+
+- name: Register watch variable
+  ansible.builtin.set_fact:
+    upload_status: []
+
+- name: Register watch variable
+  when: item.changed  # noqa: no-handler
+  ansible.builtin.set_fact:
+    upload_status: "{{ upload_status + [item.ansible_job_id] }}"
+  loop: "{{ upload_results.results }}"
+  loop_control:
+    label: "{{ item['image']['name'] }}"
+
+# Try to sync an async tasks
+- name: Waiting for upload to complete
+  ansible.builtin.async_status:
+    jid: "{{ item }}"
+  register: job_result
+  until: job_result.finished
+  retries: "{{ openstack_resources_image['image_async_retries'] | default(200) }}"
+  delay: "{{ openstack_resources_image['image_async_delay'] | default(10) }}"
+  loop: "{{ upload_status }}"
+
+- name: Removing tmpdir
+  file:
+    path: "{{ tempdir.path }}"
+    state: absent

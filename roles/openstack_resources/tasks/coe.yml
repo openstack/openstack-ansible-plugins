@@ -1,0 +1,86 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Creating coe cluster template
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    state: "{{ template.state | default('present') }}"
+    coe: "{{ template.coe | default('kubernetes') }}"
+    dns_nameserver: "{{ template.dns_nameserver | default(omit) }}"
+    docker_storage_driver: "{{ template.docker_storage_driver | default(omit) }}"
+    docker_volume_size: "{{ template.docker_volume_size | default(omit) }}"
+    external_network_id: "{{ template.external_network_id | default(omit) }}"
+    fixed_network: "{{ template.fixed_network | default(omit) }}"
+    fixed_subnet: "{{ template.fixed_subnet | default(omit) }}"
+    flavor_id: "{{ template.flavor_id }}"
+    is_floating_ip_enabled: "{{ template.floating_ip_enabled | default(omit) }}"
+    http_proxy: "{{ template.http_proxy | default(omit) }}"
+    https_proxy: "{{ template.https_proxy | default(omit) }}"
+    image_id: "{{ template.image_id }}"
+    keypair: "{{ template.keypair_id | default(omit) }}"
+    labels: "{{ template.labels | default(omit) }}"
+    master_flavor_id: "{{ template.master_flavor_id | default(omit) }}"
+    is_master_lb_enabled: "{{ template.master_lb_enabled | default(omit) }}"
+    name: "{{ template.name }}"
+    network_driver: "{{ template.network_driver | default(omit) }}"
+    no_proxy: "{{ template.no_proxy | default(omit) }}"
+    is_public: "{{ template.public | default(omit) }}"
+    is_registry_enabled: "{{ template.registry_enabled | default(omit) }}"
+    server_type: "{{ template.server_type | default(omit) }}"
+    is_tls_disabled: "{{ template.tls_disabled | default(omit) }}"
+    volume_driver: "{{ template.volume_driver | default(omit) }}"
+  loop: "{{ openstack_resources_coe['templates'] | default([]) }}"
+  loop_control:
+    loop_var: "template"
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
+      name: "{{ template['name'] }}"
+      state: "{{ template['state'] | default('present') }}"
+  register: _coe_cluster_templates
+
+- name: Creating coe clusters from defined templates
+  ansible.builtin.include_tasks:
+    file: coe_cluster.yml
+  loop: "{{ openstack_resources_coe['templates'] | default([]) | selectattr('clusters', 'defined') }}"
+  loop_control:
+    loop_var: template
+
+- name: Create extra coe clusters
+  openstack.cloud.coe_cluster:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ cluster['name'] }}"
+    cluster_template_id: "{{ cluster['template_uuid'] | default(omit) }}"
+    state: "{{ cluster['state'] | default('present') }}"
+    discovery_url: "{{ cluster['discovery_url'] | default(omit) }}"
+    flavor_id: "{{ cluster['flavor_id'] | default(omit) }}"
+    floating_ip_enabled: "{{ cluster['is_floating_ip_enabled'] | default(omit) }}"
+    keypair: "{{ cluster['keypair'] | default(omit) }}"
+    labels: "{{ cluster['labels'] | default(omit) }}"
+    master_count: "{{ cluster['master_count'] | default(omit) }}"
+    node_count: "{{ cluster['node_count'] | default(omit) }}"
+    timeout: "{{ cluster['timeout'] | default(omit) }}"
+    wait: "{{ cluster['wait'] | default(false) }}"
+  loop: "{{ openstack_resources_coe['clusters'] | default([]) }}"
+  loop_control:
+    loop_var: "cluster"
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
+      name: "{{ cluster['name'] }}"
+      template_id: "{{ cluster['template_uuid'] | default('') }}"
+      state: "{{ cluster['state'] | default('present') }}"

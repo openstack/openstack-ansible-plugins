@@ -1,0 +1,80 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Add identity resources
+  ansible.builtin.include_tasks:
+    file: identity.yml
+    apply:
+      tags:
+        - common-service
+  when: openstack_resources_identity
+  tags:
+    - common-service
+
+- name: Block including tasks for resource creation
+  delegate_to: "{{ openstack_resources_setup_host }}"
+  run_once: true
+  block:
+    - name: Add compute resources
+      ansible.builtin.include_tasks:
+        file: compute.yml
+        apply:
+          tags:
+            - compute-resources
+      vars:
+        ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+      tags:
+        - compute-resources
+      when:
+        - openstack_resources_compute
+
+    - name: Add network resources
+      ansible.builtin.include_tasks:
+        file: network.yml
+        apply:
+          tags:
+            - network-resources
+      vars:
+        ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+      tags:
+        - network-resources
+      when:
+        - openstack_resources_network
+
+    - name: Add image resources
+      ansible.builtin.include_tasks:
+        file: image.yml
+        apply:
+          tags:
+            - image-resources
+      vars:
+        ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+      tags:
+        - image-resources
+      when:
+        - openstack_resources_image
+
+    - name: Add coe resources
+      ansible.builtin.include_tasks:
+        file: coe.yml
+        apply:
+          tags:
+            - coe-resources
+      vars:
+        ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+      tags:
+        - coe-resources
+      when:
+        - openstack_resources_coe

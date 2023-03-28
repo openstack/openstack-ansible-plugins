@@ -1,0 +1,42 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Create Compute Flavors
+  openstack.cloud.compute_flavor:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    state: "{{ item.state | default('present') }}"
+    name: "{{ item.name }}"
+    vcpus: "{{ item.vcpus }}"
+    ram: "{{ item.ram }}"
+    swap: "{{ item.swap | default(omit) }}"
+    disk: "{{ item.disk | default(0) }}"
+    ephemeral: "{{ item.ephemeral | default(omit) }}"
+    flavorid: "{{ item.id | default(omit) }}"
+    is_public: "{{ item.public | default(omit) }}"
+    description: "{{ item.description | default(omit) }}"
+    rxtx_factor: "{{ item.rxtx_factor | default(omit) }}"
+    extra_specs: "{{ item.extra_specs | default(flavor['extra_specs'] | default(omit)) }}"
+  loop: "{{ flavor['specs'] | default([]) }}"
+
+- name: Sharing private flavors with required projects
+  ansible.builtin.include_tasks:
+    file: compute_flavors_access.yml
+  loop: "{{ flavor['specs'] | default([]) | selectattr('public', 'false') | map(attribute='name') }}"
+  loop_control:
+    loop_var: flavor_name
+  when:
+    - "'access' in flavor"
+    - flavor['access'] | length > 0

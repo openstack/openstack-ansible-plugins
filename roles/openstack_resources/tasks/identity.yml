@@ -1,0 +1,84 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Creating domains
+  ansible.builtin.include_role:
+    name: openstack.osa.service_setup
+  vars:
+    _service_cloud_name: "{{ openstack_resources_cloud_name }}"
+    _service_setup_host: "{{ openstack_resources_setup_host }}"
+    _service_setup_host_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+    _domain_name: "{{ item.name }}"
+    _domain_name_description: "{{ item.description | default('') }}"
+  loop: "{{ openstack_resources_identity['domains'] | default([]) }}"
+
+- name: Creating projects
+  ansible.builtin.include_role:
+    name: openstack.osa.service_setup
+  vars:
+    _service_cloud_name: "{{ openstack_resources_cloud_name }}"
+    _service_setup_host: "{{ openstack_resources_setup_host }}"
+    _service_setup_host_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+    _project_name: "{{ item.name }}"
+    _project_description: "{{ item.description | default('') }}"
+    _project_domain: "{{ item.domain | default('default') }}"
+  loop: "{{ openstack_resources_identity['projects'] | default([]) }}"
+
+- name: Creating roles, users and endpoints
+  ansible.builtin.include_role:
+    name: openstack.osa.service_setup
+  vars:
+    _service_cloud_name: "{{ openstack_resources_cloud_name }}"
+    _service_setup_host: "{{ openstack_resources_setup_host }}"
+    _service_setup_host_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+    _service_users: "{{ openstack_resources_identity['users'] | default([]) }}"
+    _service_catalog: "{{ openstack_resources_identity['catalog'] | default([]) }}"
+    _service_endpoints: "{{ openstack_resources_identity['endpoints'] | default([]) }}"
+
+- name: Setting up quotas
+  delegate_to: "{{ openstack_resources_setup_host }}"
+  vars:
+    ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
+  openstack.cloud.quota:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ quota['name'] }}"
+    floating_ips: "{{ quota['floating_ips'] | default(omit) }}"
+    networks: "{{ quota['networks'] | default(omit) }}"
+    ports: "{{ quota['ports'] | default(omit) }}"
+    rbac_policies: "{{ quota['rbac_policies'] | default(omit) }}"
+    routers: "{{ quota['routers'] | default(omit) }}"
+    subnets: "{{ quota['subnets'] | default(omit) }}"
+    subnet_pools: "{{ quota['subnet_pools'] | default(omit) }}"
+    security_group_rules: "{{ quota['security_group_rules'] | default(omit) }}"
+    security_groups: "{{ quota['security_groups'] | default(omit) }}"
+    backup_gigabytes: "{{ quota['backup_gigabytes'] | default(omit) }}"
+    backups: "{{ quota['backups'] | default(omit) }}"
+    gigabytes: "{{ quota['gigabytes'] | default(omit) }}"
+    groups: "{{ quota['groups'] | default(omit) }}"
+    pools: "{{ quota['pools'] | default(omit) }}"
+    per_volume_gigabytes: "{{ quota['per_volume_gigabytes'] | default(omit) }}"
+    snapshots: "{{ quota['snapshots'] | default(omit) }}"
+    volumes: "{{ quota['volumes'] | default(omit) }}"
+    cores: "{{ quota['cores'] | default(omit) }}"
+    instances: "{{ quota['instances'] | default(omit) }}"
+    key_pairs: "{{ quota['key_pairs'] | default(omit) }}"
+    metadata_items: "{{ quota['metadata_items'] | default(omit) }}"
+    ram: "{{ quota['ram'] | default(omit) }}"
+    server_groups: "{{ quota['server_groups'] | default(omit) }}"
+    server_group_members: "{{ quota['server_group_members'] | default(omit) }}"
+  loop: "{{ openstack_resources_identity['quotas'] | default([]) }}"
+  loop_control:
+    loop_var: quota

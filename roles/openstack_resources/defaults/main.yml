@@ -1,0 +1,201 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+openstack_resources_cloud_name: default
+openstack_resources_interface: internal
+
+openstack_resources_setup_host: "{{ openstack_service_setup_host | default('localhost') }}"
+openstack_resources_python_interpreter: >-
+  {{
+    openstack_service_setup_host_python_interpreter | default((openstack_resources_setup_host == 'localhost') | ternary(
+      ansible_playbook_python, ansible_facts['python']['executable']))
+  }}
+
+# Define this variable to provide mappings that needs to be created
+# It will be iterated over and supplied to openstack.osa.service_setup role
+# Example:
+# openstack_resources_identity:
+#   domains:
+#     - name: MyDomain
+#       description: Custom domain
+#   projects:
+#     - name: someproject
+#       description: My project
+#       domain: Default
+#   users:
+#     - name: "tempest"
+#       password: "{{ tempest_service_password }}"
+#       project: service
+#       role:
+#         - "member"
+#   catalog:
+#     - name: "myservice"
+#       type: "billing"
+#       description: "our internal service"
+#   endpoints:
+#     - interface: "public"
+#       url: "{{ myservice_service_publicurl }}"
+#       service: "myservice"
+#   quotas:
+#     - name: some_project
+#       cores: 100
+#       gigabytes: 1000
+#       instances: 50
+#       networks: 10
+#       volumes: 20
+openstack_resources_identity: {}
+
+# Define this variable to provide mappings to manage compute resources
+# openstack_resources_compute:
+#   aggregates:
+#     - name: az1
+#       availability_zone: "az1"
+#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, 'ansible_hostname') }}"
+#       exclusive: "no"
+#     - name: otheraggregate
+#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, 'ansible_hostname') }}"
+#   flavors:
+#     - specs:
+#         - name: b.1c0.5gb
+#           vcpus: 1
+#           ram: 500
+#         - name: b.1c1gb
+#           vcpus: 1
+#           ram: 1024
+#           state: present
+#         - name: b.1c2gb
+#           vcpus: 1
+#           ram: 2048
+#           public: false
+#       extra_specs:
+#         quota:disk_total_iops_sec: '5000'
+#       access:
+#         - project: tenant1
+#           project_domain: Default
+#           state: present
+#   keypairs:
+#     - name: octavia_key
+#       path: /root/.ssh/octavia_rsa # path on the localhost, where keypair will be placed
+#       key_format: ssh
+#       size: 4096
+#       state: present
+#       type: rsa
+openstack_resources_compute: {}
+
+# Define this variable to provide mappings to manage network resources
+# openstack_resources_network:
+#   networks:
+#     - name: tenant_network
+#       state: present
+#       external: true
+#       shared: false
+#       network_type: vlan
+#       segmentation_id: 200
+#       subnets:
+#         - name: vlan-subnet
+#           cidr: 192.168.20.0/24
+#           gateway_ip: 192.168.20.254
+#   routers:
+#     - name: my_router
+#       network: public
+#       interfaces:
+#       - vlan-subnet
+#   security_groups:
+#     - name: my_group
+#       state: present
+#       description: My security group
+#       security_group_rules:
+#         - direction: ingress
+#           port_range_min: 80
+#           port_range_max: 80
+#           protocol: tcp
+#           remote_ip_prefix: 192.168.0.0/16
+openstack_resources_network: {}
+
+# Define this variable to manage OpenStack images
+# openstack_resources_image:
+#   image_upload_batch: 3
+#   image_async_timeout: 600
+#   image_async_retries: 200
+#   images:
+#     - name: cirros
+#       # Either `url` or `filename` is required.
+#       url: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+#       # filename:
+#       # checksum: # md5 only is supported. Required for image rotation.
+#       disk_format: qcow2
+#       visibility: private
+#       owner: service
+#       owner_domain: default
+#       # Attempt to delete "rotated", except last kept copies.
+#       keep_copies: 3
+#       # Supported hide methods: private, shared, community. Required if needed to hide old images.
+#       hide_method: community
+#       tags:
+#         - managed_by_OSA
+#       properties:
+#         architecture: x86_64
+#         hypervisor_type: qemu
+#         os_distro: Cirros
+openstack_resources_image: {}
+
+# Define this variable to manage OpenStack COE cluster templates and clusters
+# openstack_resources_coe:
+#   clusters:
+#     - template_uuid:
+#       discovery_url:
+#       flavor_id:
+#       floating_ip_enabled:
+#       keypair:
+#       labels:
+#       master_count:
+#       node_count:
+#   templates:
+#     - state: present
+#       coe: kubernetes
+#       dns_nameserver: "8.8.8.8"
+#       docker_storage_driver: "devicemapper"
+#       docker_volume_size: "10"
+#       external_network_id: "public"
+#       fixed_network: "private"
+#       fixed_subnet: "subnet"
+#       flavor_id: "s1.big"
+#       floating_ip_enabled: True
+#       http_proxy: "{{ http_proxy }}"
+#       https_proxy: "{{ https_proxy }}"
+#       image_id: "cirros"
+#       keypair: "key"
+#       labels:
+#         kube_tag: v1.25.9
+#         cinder_csi_enabled: true
+#       master_flavor_id: "s1.normal"
+#       master_lb_enabled: "True"
+#       name: "Template"
+#       network_driver: "calico"
+#       no_proxy: "{{ no_proxy }}"
+#       public: "True"
+#       registry_enabled: "True"
+#       server_type: "vm"
+#       tls_disabled: "False"
+#       volume_driver: "cinder"
+#       clusters:
+#         - discovery_url:
+#           flavor_id:
+#           floating_ip_enabled:
+#           keypair:
+#           labels:
+#           master_count:
+#           node_count:
+openstack_resources_coe: {}

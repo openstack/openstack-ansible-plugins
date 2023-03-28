@@ -1,0 +1,42 @@
+---
+# Copyright 2023, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Creating subnets
+  openstack.cloud.subnet:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ subnet['name'] }}"
+    network: "{{ network_uuid }}"
+    cidr: "{{ subnet['cidr'] | default(omit) }}"
+    allocation_pool_start: "{{ subnet['allocation_start'] | default(omit) }}"
+    allocation_pool_end: "{{ subnet['allocation_end'] | default(omit) }}"
+    dns_nameservers: "{{ subnet['nameservers'] | default(omit) }}"
+    enable_dhcp: "{{ subnet['dhcp'] | default(omit) }}"
+    gateway_ip: "{{ subnet['gateway'] | default(omit) }}"
+    ip_version: "{{ subnet['ip_version'] | default(omit) }}"
+    project: "{{ network['project'] | default(omit) }}"
+    state: "{{ subnet['state'] | default(omit) }}"
+  loop: "{{ network['subnets'] }}"
+  loop_control:
+    loop_var: subnet
+    label: "{{ loop_label | to_json }}"
+  vars:
+    network_uuid: "{{ _provisioned_networks['results'] | selectattr('network.name', 'eq', network['name']) | map(attribute='id') | first }}"
+    loop_label:
+      name: "{{ subnet['name'] }}"
+      network_name: "{{ network['name'] }}"
+      network_uuid: "{{ network_uuid }}"
+      cidr: "{{ subnet['cidr'] | default('omit') }}"
+      gateway_ip: "{{ subnet['gateway'] | default('omit') }}"
