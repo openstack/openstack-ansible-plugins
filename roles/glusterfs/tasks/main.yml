@@ -41,22 +41,23 @@
       package:
         name: "{{ glusterfs_server_dnf_sig_packages }}"
 
-    - name: Apply systemctl overrides
-      import_role:
-        name: systemd_service
-      vars:
-        systemd_services:
-          - service_name: systemd-tmpfiles-setup-dev
-            load: false
-            systemd_overrides_only: true
-            systemd_overrides:
-              Unit:
-                ConditionCapability: ""
-
 - name: Install glusterfs server packages
   package:
     name: "{{ glusterfs_server_distro_packages }}"
     state: "{{ glusterfs_package_state }}"
+
+- name: Apply systemctl overrides
+  include_role:
+    name: systemd_service
+  vars:
+    systemd_services:
+      - service_name: systemd-tmpfiles-setup-dev
+        load: false
+        systemd_overrides_only: true
+        systemd_overrides:
+          Unit:
+            ConditionCapability: ""
+  when: ansible_facts['pkg_mgr'] == 'dnf'
 
 - name: Drop glusterfs-wait.sh script
   copy:
