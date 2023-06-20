@@ -75,7 +75,7 @@
         default_project: "{{ item.project | default(_service_project_name) }}"
         endpoint_type: admin
         validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-        update_password: always
+        update_password: "{{ (service_update_password | default(False) | bool) | ternary('always', omit) }}"
       register: add_service
       when:
         - not (_service_in_ldap | default(False) | bool)
