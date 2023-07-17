@@ -18,11 +18,18 @@ galaxy_info:
   company: Rackspace
   description: Co-ordinating /etc/crontab times across multiple hosts
   license: Apache 2.0
-  min_ansible_version: 1.9
+  min_ansible_version: "2.10"
   platforms:
-  - name: Ubuntu
-    versions:
-    - bionic
+    - name: Debian
+      versions:
+        - bullseye
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: EL
+      versions:
+        - "9"
   galaxy_tags:
     - cloud
     - openstack

@@ -62,7 +62,7 @@
   copy:
     src: glusterfs-wait.sh
     dest: /usr/local/sbin
-    mode: 0744
+    mode: "0744"
 
 - name: Add glusterd.service overrides
   import_role:
@@ -79,6 +79,7 @@
   copy:
     content: "c /dev/fuse 0600 - - - 10:229"
     dest: "/etc/tmpfiles.d/openstack-ansible-glusterfs-server.conf"
+    mode: "0644"
   when: not (is_metal | default(False))
   register: _glusterfs_server_tmpfiles
 
@@ -106,21 +107,23 @@
   file:
     path: "{{ glusterfs_server_backing_dir }}"
     state: directory
+    mode: "0755"
   register: _backing_dir_create
 
 - name: Check brick status
   throttle: 1
-  command: gluster volume status {{ glusterfs_server_volume_name }} {{ inventory_hostname| regex_replace('_', '-') }}:{{ glusterfs_server_bricks }} detail
+  command: gluster volume status {{ glusterfs_server_volume_name }} {{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks }} detail
   register: _brick_online_status
   changed_when: false
   failed_when: false
 
-#NOTE (jrosser) run this task if we just created the data dir, the volume exists (status was available)
-#               and the brick on this node is offline. This covers a destroy/create of an existing host
+# NOTE (jrosser) run this task if we just created the data dir, the volume exists (status was available)
+#                and the brick on this node is offline. This covers a destroy/create of an existing host
 - name: Reset brick for a replaced node
   vars:
     brick: "{{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks }}"
   command: "{{ item }}"
+  changed_when: false
   when:
     - _backing_dir_create is changed
     - _brick_online_status.rc == 0
@@ -141,4 +144,3 @@
     cluster: "{{ glusterfs_server_cluster_members | map('regex_replace', '_', '-') | list }}"
     force: true
   when: _glusterfs_is_first_play_host
-

@@ -27,5 +27,6 @@
     state: "directory"
     owner: "{{ journald_remote_system_user }}"
     group: "{{ journald_remote_system_group }}"
+    mode: "0755"
   when:
     - (ansible_host in journald_remote_targets)

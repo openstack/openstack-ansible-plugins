@@ -22,6 +22,7 @@
     option: "{{ item.key }}"
     value: "{{ item.value }}"
     backup: yes
+    mode: "0644"
   with_items: "{{ journald_remote_config_options }}"
   when:
     - (ansible_host in journald_remote_targets)
@@ -34,8 +35,8 @@
   vars:
     systemd_tempd_prefix: "openstack"
     systemd_slice_name: "{{ journald_remote_system_slice_name }}"
-    systemd_CPUAccounting: true
-    systemd_BlockIOAccounting: true
-    systemd_MemoryAccounting: true
-    systemd_TasksAccounting: true
+    systemd_service_cpu_accounting: true
+    systemd_service_block_io_accounting: true
+    systemd_service_memory_accounting: true
+    systemd_service_tasks_accounting: true
     systemd_services: "{{ journald_remote_services }}"

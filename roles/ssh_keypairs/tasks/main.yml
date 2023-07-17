@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Include {{ ssh_keypairs_method }} keypair variables
+- name: Include keypair variables for {{ ssh_keypairs_method }}
   include_vars:
     file: "{{ ssh_keypairs_method ~ '_keypair.yml' }}"
 

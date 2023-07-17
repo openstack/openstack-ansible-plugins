@@ -106,3 +106,4 @@
     - name: Add RPC Qdrouterd user
       shell: "echo {{ _oslomsg_rpc_password }} | saslpasswd2 -c -p -f /var/lib/qdrouterd/qdrouterd.sasldb -u AMQP {{ _oslomsg_rpc_userid }}"
       no_log: "{{ _oslomsg_nolog | default(True) }}"
+      changed_when: false

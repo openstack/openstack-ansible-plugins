@@ -33,6 +33,7 @@
   template:
     src: "ssh_ca.j2"
     dest: "/etc/ssh/trusted_ca.d/{{ item.item.name }}"
+    mode: "0644"
   with_items: "{{ _ssh_ca_slurp.results }}"
   ignore_errors: "{{ ansible_check_mode }}"
   when:
@@ -47,8 +48,8 @@
   with_items: "{{ _ssh_ca_slurp.results }}"
   ignore_errors: "{{ ansible_check_mode }}"
   when:
-      - item.item.state is defined
-      - item.item.state == 'absent'
+    - item.item.state is defined
+    - item.item.state == 'absent'
   notify:
     - Regenerate trusted_ca file
 
@@ -69,6 +70,7 @@
   template:
     src: ssh_ca_config.j2
     dest: "/etc/ssh/sshd_config.d/{{ ssh_keypairs_trusted_ca_config_file }}"
+    mode: "0644"
   when: not (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_major_version'] == '8')
   notify:
     - Reload sshd
@@ -83,6 +85,7 @@
   template:
     src: "ssh_principal.j2"
     dest: "{{ (ssh_keypairs_authorized_principals_file | dirname) ~ '/' ~ item.user ~ '_principals' }}"
+    mode: "0644"
   with_items: "{{ ssh_keypairs_principals }}"
   when:
     - item.state is not defined or item.state != 'absent'
@@ -96,6 +99,6 @@
     state: absent
   with_items: "{{ ssh_keypairs_principals }}"
   when:
-      - item.item.state is defined
-      - item.item.state == 'absent'
-      - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
+    - item.item.state is defined
+    - item.item.state == 'absent'
+    - (item.condition is defined and item.condition | bool) or (item.condition is not defined)

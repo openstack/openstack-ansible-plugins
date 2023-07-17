@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Slurp up SSH keys from ssh keypairs setup host ({{ ssh_keypairs_setup_host }})
-  vars:
+- name: Slurp up SSH keys from ssh keypairs setup host {{ ssh_keypairs_setup_host }}
   delegate_to: "{{ ssh_keypairs_setup_host }}"
   slurp:
     src: "{{ item.src | default(ssh_keypairs_dir ~ item.name | default('')) }}"

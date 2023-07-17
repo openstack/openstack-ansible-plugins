@@ -20,37 +20,38 @@
   delegate_to: "{{ ssh_keypairs_setup_host }}"
   block:
 
-      - name: Generate key pair for {{ kp['name'] }}
-        community.crypto.openssh_keypair:
-          comment: "{{ kp.comment | default(omit) }}"
-          passphrase: "{{ kp.passphrase | default(omit) }}"
-          regenerate: "{{ kp.regenerate | default(omit) }}"
-          size: "{{ kp.size | default(omit) }}"
-          type: "{{ kp.type | default(omit) }}"
-          path: "{{ kp_dir ~ '/' ~ kp['name'] }}"
-          mode: "{{ kp.mode | default(omit) }}"
-          backend: cryptography
-        register: kp_keys
+    - name: Generate key pair for {{ kp['name'] }}
+      community.crypto.openssh_keypair:
+        comment: "{{ kp.comment | default(omit) }}"
+        passphrase: "{{ kp.passphrase | default(omit) }}"
+        regenerate: "{{ kp.regenerate | default(omit) }}"
+        size: "{{ kp.size | default(omit) }}"
+        type: "{{ kp.type | default(omit) }}"
+        path: "{{ kp_dir ~ '/' ~ kp['name'] }}"
+        mode: "{{ kp.mode | default(omit) }}"
+        backend: cryptography
+      register: kp_keys
 
-      - name: Generate an OpenSSH user certificate for {{ kp['name'] }}
-        community.crypto.openssh_cert:
-          identifier: "{{ kp.cert.identifier | default(omit) }}"
-          options: "{{ ssh_keypairs_cert_base_options | union(kp.cert.options | default([])) }}"
-          principals: "{{ kp.cert.principals | default(omit) }}"
-          regenerate: "{{ kp.cert.regenerate | default('full_idempotence') }}"
-          signature_algorithm: "{{ kp.cert.signature_algorithm | default(omit) }}"
-          signing_key: "{{ _ca_file }}"
-          type: "{{ kp.cert.type | default('user') }}"
-          public_key: "{{ kp_keys['filename'] ~ '.pub' }}"
-          path: "{{ kp_keys['filename'] ~ '-cert.pub' }}"
-          valid_from: "{{ kp.cert.valid_from }}"
-          valid_to: "{{ kp.cert.valid_to }}"
-        when:
-          - kp.cert is defined
-        register: kp_cert
+    - name: Generate an OpenSSH user certificate for {{ kp['name'] }}
+      community.crypto.openssh_cert:
+        identifier: "{{ kp.cert.identifier | default(omit) }}"
+        options: "{{ ssh_keypairs_cert_base_options | union(kp.cert.options | default([])) }}"
+        principals: "{{ kp.cert.principals | default(omit) }}"
+        regenerate: "{{ kp.cert.regenerate | default('full_idempotence') }}"
+        signature_algorithm: "{{ kp.cert.signature_algorithm | default(omit) }}"
+        signing_key: "{{ _ca_file }}"
+        type: "{{ kp.cert.type | default('user') }}"
+        public_key: "{{ kp_keys['filename'] ~ '.pub' }}"
+        path: "{{ kp_keys['filename'] ~ '-cert.pub' }}"
+        valid_from: "{{ kp.cert.valid_from }}"
+        valid_to: "{{ kp.cert.valid_to }}"
+      when:
+        - kp.cert is defined
+      register: kp_cert
 
-      - name: Save certificate info for signed key {{ kp['name'] }}
-        copy:
-          content: "{{ kp_cert['info'] | to_nice_yaml }}"
-          dest: "{{ kp_keys['filename'] ~ '-cert.info' }}"
-        when: kp_cert is changed
+    - name: Save certificate info for signed key {{ kp['name'] }}
+      copy:
+        content: "{{ kp_cert['info'] | to_nice_yaml }}"
+        dest: "{{ kp_keys['filename'] ~ '-cert.info' }}"
+        mode: "0644"
+      when: kp_cert is changed

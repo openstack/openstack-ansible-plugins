@@ -22,4 +22,3 @@ glusterfs_server_distro_packages:
   - systemd-udev
   - glusterfs-server
   - glusterfs-fuse
-

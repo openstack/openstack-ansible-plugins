@@ -29,13 +29,13 @@ _ssh_keypairs_install_keys_expanded: |-
   {%       set _ = _kps.extend([_kp]) %}
   {%   elif _kp.keypair is defined %}
   {%       set _src_keypair = ssh_keypairs_dir + '/' + kp.keypair %}
-  {%       set _ = _kps.extend( [{'src': _src_keypair, 'dest': _kp.dest, 'mode':'0600', 'owner': _owner, 'group': _group }] ) %}
-  {%       set _ = _kps.extend( [{'src': _src_keypair + '.pub', 'dest': _kp.dest + '.pub', 'owner': _owner, 'group': _group }] ) %}
+  {%       set _ = _kps.extend([{'src': _src_keypair, 'dest': _kp.dest, 'mode': '0600', 'owner': _owner, 'group': _group}]) %}
+  {%       set _ = _kps.extend([{'src': _src_keypair + '.pub', 'dest': _kp.dest + '.pub', 'owner': _owner, 'group': _group}]) %}
   {%   elif _kp.cert is defined %}
   {%       set _src_cert = ssh_keypairs_dir + '/' + _kp.cert %}
-  {%       set _ = _kps.extend( [{'src': _src_cert, 'dest': _kp.dest, 'mode':'0600', 'owner': _owner, 'group': _group }] ) %}
-  {%       set _ = _kps.extend( [{'src': _src_cert + '.pub', 'dest': _kp.dest + '.pub', 'owner': _owner, 'group': _group }] ) %}
-  {%       set _ = _kps.extend( [{'src': _src_cert + '-cert.pub', 'dest': _kp.dest + '-cert.pub', 'owner': _owner, 'group': _group }] ) %}
+  {%       set _ = _kps.extend([{'src': _src_cert, 'dest': _kp.dest, 'mode': '0600', 'owner': _owner, 'group': _group}]) %}
+  {%       set _ = _kps.extend([{'src': _src_cert + '.pub', 'dest': _kp.dest + '.pub', 'owner': _owner, 'group': _group}]) %}
+  {%       set _ = _kps.extend([{'src': _src_cert + '-cert.pub', 'dest': _kp.dest + '-cert.pub', 'owner': _owner, 'group': _group}]) %}
   {%   endif %}
   {% endfor %}
   {{ _kps }}

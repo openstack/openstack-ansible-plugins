@@ -17,7 +17,8 @@
 ssh_keypairs_setup_host: localhost
 
 # Python interpreter that will be used during keypair generation
-ssh_keypairs_setup_host_python_interpreter: "{{ (ssh_keypairs_setup_host == 'localhost') | ternary(ansible_playbook_python, ansible_facts['python']['executable']) }}"
+ssh_keypairs_setup_host_python_interpreter: >-
+  {{ (ssh_keypairs_setup_host == 'localhost') | ternary(ansible_playbook_python, ansible_facts['python']['executable']) }}
 
 # base directory on the ssh keypair setup host for storing keypairs
 ssh_keypairs_dir: "/etc/ssh_keypairs"

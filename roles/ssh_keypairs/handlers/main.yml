@@ -16,6 +16,7 @@
   assemble:
     src: "/etc/ssh/trusted_ca.d/"
     dest: "{{ ssh_keypairs_trusted_ca_file }}"
+    mode: "0644"
   notify: Reload sshd
 
 - name: Reload sshd
