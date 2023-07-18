@@ -19,7 +19,7 @@ glusterfs_server_dnf_sig_packages:
 glusterfs_server_dnf_enable: []
 
 glusterfs_server_distro_packages:
-  - systemd-udev
+  - systemd-udev-252-*
   - glusterfs-server
   - glusterfs-fuse
 
