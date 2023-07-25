@@ -17,7 +17,7 @@
   block:
     - name: Add a keystone role
       openstack.cloud.identity_role:
-        cloud: default
+        cloud: "{{ _service_cloud_name }}"
         state: present
         name: "{{ user.role }}"
         endpoint_type: admin
@@ -30,7 +30,7 @@
 
     - name: Add service users to the role
       openstack.cloud.role_assignment:
-        cloud: default
+        cloud: "{{ _service_cloud_name }}"
         state: present
         user: "{{ user.name }}"
         role: "{{ user.role }}"
@@ -52,7 +52,7 @@
   block:
     - name: Add keystone roles
       openstack.cloud.identity_role:
-        cloud: default
+        cloud: "{{ _service_cloud_name }}"
         state: present
         name: "{{ role }}"
         endpoint_type: admin
@@ -68,7 +68,7 @@
 
     - name: Add service users to multiple roles
       openstack.cloud.role_assignment:
-        cloud: default
+        cloud: "{{ _service_cloud_name }}"
         state: present
         user: "{{ user.name }}"
         role: "{{ role }}"
