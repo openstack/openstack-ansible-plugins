@@ -26,7 +26,7 @@
         description: "{{ _domain_name_description | default(omit) }}"
         name: "{{ _domain_name }}"
         endpoint_type: admin
-        verify: "{{ not _service_adminuri_insecure }}"
+        verify: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
       register: add_domain
       when: _domain_name is defined
       until: add_domain is success
