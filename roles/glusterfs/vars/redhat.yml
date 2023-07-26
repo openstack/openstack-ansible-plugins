@@ -20,6 +20,6 @@ glusterfs_server_dnf_enable:
   - powertools
 
 glusterfs_server_distro_packages:
-  - systemd-udev
+  - systemd-udev-252-*
   - glusterfs-server
   - glusterfs-fuse
