@@ -15,38 +15,29 @@
 
 - name: Setup RPC MQ Service (RabbitMQ)
   delegate_to: "{{ _oslomsg_rpc_setup_host }}"
+  block:
+    - name: Setup RPC vhost and policies
+      vars:
+        __mq_policies: "{{ _oslomsg_rpc_policies | default([]) + oslomsg_rpc_policies }}"
+      include_tasks: rabbit_vhost_setup.yml
+      loop: "{{ __resolved_oslomsg_rpc_vhost }}"
+      loop_control:
+        loop_var: __mq_vhost
+
+    - name: Setup RPC user
+      vars:
+        __mq_nolog: "{{ _oslomsg_nolog | default(True) }}"
+        __mq_userid: "{{ _oslomsg_rpc_userid }}"
+        __mq_password: "{{ _oslomsg_rpc_password }}"
+      include_tasks: rabbit_user_setup.yml
+      loop: "{{ __resolved_oslomsg_rpc_vhost }}"
+      loop_control:
+        loop_var: __mq_vhost
   when:
     - "(_oslomsg_configure_rpc | default(_oslomsg_rpc_transport is defined))"
     - "(_oslomsg_rpc_transport is defined) and (_oslomsg_rpc_transport == 'rabbit')"
   tags:
     - common-rabbitmq
-  block:
-    - name: Add RPC RabbitMQ vhost
-      community.rabbitmq.rabbitmq_vhost:
-        name: "{{ _oslomsg_rpc_vhost }}"
-        state: "present"
-
-    - name: Apply RPC RabbitMQ vhost policies
-      community.rabbitmq.rabbitmq_policy:
-        name: "{{ item.name }}"
-        pattern: "{{ item.pattern }}"
-        priority: "{{ item.priority | default(0) }}"
-        tags: "{{ item.tags }}"
-        state: "{{ item.state | default(omit) }}"
-        vhost: "{{ _oslomsg_rpc_vhost }}"
-      loop: "{{ _oslomsg_rpc_policies | default([]) + oslomsg_rpc_policies }}"
-
-    - name: Add RPC RabbitMQ user
-      community.rabbitmq.rabbitmq_user:
-        user: "{{ _oslomsg_rpc_userid }}"
-        password: "{{ _oslomsg_rpc_password }}"
-        update_password: always
-        vhost: "{{ _oslomsg_rpc_vhost }}"
-        configure_priv: ".*"
-        read_priv: ".*"
-        write_priv: ".*"
-        state: "present"
-      no_log: "{{ _oslomsg_nolog | default(True) }}"
 
 - name: Setup Notify MQ Service (RabbitMQ)
   delegate_to: "{{ _oslomsg_notify_setup_host }}"
@@ -56,40 +47,27 @@
   tags:
     - common-rabbitmq
   block:
-    - name: Add Notify RabbitMQ vhost
-      community.rabbitmq.rabbitmq_vhost:
-        name: "{{ _oslomsg_notify_vhost }}"
-        state: "present"
+    - name: Setup Notify vhost and policies
+      vars:
+        __mq_policies: "{{ _oslomsg_notify_policies | default([]) + oslomsg_notify_policies }}"
+      include_tasks: rabbit_vhost_setup.yml
+      loop: "{{ __resolved_oslomsg_notify_vhost }}"
+      loop_control:
+        loop_var: __mq_vhost
       when:
         - (_oslomsg_rpc_vhost is undefined) or
           (_oslomsg_notify_vhost != _oslomsg_rpc_vhost) or
           (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host)
 
-    - name: Apply Notify RabbitMQ vhost policies
-      community.rabbitmq.rabbitmq_policy:
-        name: "{{ item.name }}"
-        pattern: "{{ item.pattern }}"
-        priority: "{{ item.priority | default(0) }}"
-        tags: "{{ item.tags }}"
-        state: "{{ item.state | default(omit) }}"
-        vhost: "{{ _oslomsg_notify_vhost }}"
-      loop: "{{ _oslomsg_notify_policies | default([]) + oslomsg_notify_policies }}"
-      when:
-        - (_oslomsg_rpc_vhost is undefined) or
-          (_oslomsg_notify_vhost != _oslomsg_rpc_vhost) or
-          (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host)
-
-    - name: Add Notify RabbitMQ user
-      community.rabbitmq.rabbitmq_user:
-        user: "{{ _oslomsg_notify_userid }}"
-        password: "{{ _oslomsg_notify_password }}"
-        update_password: always
-        vhost: "{{ _oslomsg_notify_vhost }}"
-        configure_priv: ".*"
-        read_priv: ".*"
-        write_priv: ".*"
-        state: "present"
-      no_log: "{{ _oslomsg_nolog | default(True) }}"
+    - name: Setup Notify user
+      vars:
+        __mq_nolog: "{{ _oslomsg_nolog | default(True) }}"
+        __mq_userid: "{{ _oslomsg_notify_userid }}"
+        __mq_password: "{{ _oslomsg_notify_password }}"
+      include_tasks: rabbit_user_setup.yml
+      loop: "{{ __resolved_oslomsg_notify_vhost }}"
+      loop_control:
+        loop_var: __mq_vhost
       when:
         - (_oslomsg_rpc_userid is undefined) or
           (_oslomsg_notify_userid != _oslomsg_rpc_userid) or
