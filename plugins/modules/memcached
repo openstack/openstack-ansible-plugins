@@ -302,7 +302,7 @@ class Memcached(object):
         """
 
         try:
-            b64_value = base64.encodestring(value)
+            b64_value = base64.encodebytes(value)
         except Exception as exp:
             self._failure(
                 error=str(exp),
