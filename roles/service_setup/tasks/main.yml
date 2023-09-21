@@ -93,6 +93,8 @@
 
     - name: Include task for role assignment
       include_tasks: setup_roles.yml
+      vars:
+        user_roles: "{{ (user.role is not string and user.role is iterable) | ternary(user.role, [ user.role ]) }}"
       when:
         - not (_service_in_ldap | default(False) | bool)
         - _service_users is defined
