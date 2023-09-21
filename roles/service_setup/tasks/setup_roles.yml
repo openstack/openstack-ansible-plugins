@@ -13,79 +13,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Setup role when it is a string
-  block:
-    - name: Add a keystone role
-      openstack.cloud.identity_role:
-        cloud: "{{ _service_cloud_name }}"
-        state: present
-        name: "{{ user.role }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      until: add_service is success
-      retries: 5
-      delay: 10
-      no_log: "{{ _service_setup_nolog | default(True) }}"
+- name: Add keystone roles
+  openstack.cloud.identity_role:
+    cloud: "{{ _service_cloud_name }}"
+    state: present
+    name: "{{ role }}"
+    endpoint_type: admin
+    validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
+  register: add_service
+  until: add_service is success
+  retries: 5
+  delay: 10
+  no_log: "{{ _service_setup_nolog | default(True) }}"
+  loop: "{{ user_roles }}"
+  loop_control:
+    loop_var: role
 
-    - name: Add service users to the role
-      openstack.cloud.role_assignment:
-        cloud: "{{ _service_cloud_name }}"
-        state: present
-        user: "{{ user.name }}"
-        role: "{{ user.role }}"
-        project: "{{ user.project | default(_service_project_name) }}"
-        domain: "{{ user.domain | default(omit) }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      until: add_service is success
-      retries: 5
-      delay: 10
-      no_log: "{{ _service_setup_nolog | default(True) }}"
-      when:
-        - "'name' in user"
+- name: Add service users to roles
+  openstack.cloud.role_assignment:
+    cloud: "{{ _service_cloud_name }}"
+    state: present
+    user: "{{ user.name }}"
+    role: "{{ role }}"
+    project: "{{ user.project | default(_service_project_name) }}"
+    domain: "{{ user.domain | default(omit) }}"
+    endpoint_type: admin
+    validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
+  register: add_service
+  until: add_service is success
+  retries: 5
+  delay: 10
+  no_log: "{{ _service_setup_nolog | default(True) }}"
+  loop: "{{ user_roles }}"
+  loop_control:
+    loop_var: role
   when:
-    - user.role is string
-
-- name: Setup roles when they are a list
-  block:
-    - name: Add keystone roles
-      openstack.cloud.identity_role:
-        cloud: "{{ _service_cloud_name }}"
-        state: present
-        name: "{{ role }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      until: add_service is success
-      retries: 5
-      delay: 10
-      no_log: "{{ _service_setup_nolog | default(True) }}"
-      loop: "{{ user.role }}"
-      loop_control:
-        loop_var: role
-
-    - name: Add service users to multiple roles
-      openstack.cloud.role_assignment:
-        cloud: "{{ _service_cloud_name }}"
-        state: present
-        user: "{{ user.name }}"
-        role: "{{ role }}"
-        project: "{{ user.project | default(_service_project_name) }}"
-        domain: "{{ user.domain | default(omit) }}"
-        endpoint_type: admin
-        validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      until: add_service is success
-      retries: 5
-      delay: 10
-      no_log: "{{ _service_setup_nolog | default(True) }}"
-      loop: "{{ user.role }}"
-      loop_control:
-        loop_var: role
-      when:
-        - "'name' in user"
-  when:
-    - user.role is iterable
-    - user.role is not string
+    - "'name' in user"
