@@ -97,6 +97,32 @@
         - whoami_output.stdout != 'testing'
 
 # Test for I69f2eed35859bdc149e5ed21441eab7c8a8352cf
+- name: Create SSH certificate keys
+  hosts: localhost
+  become: True
+  tags:
+    - always
+    - sshd-ca
+  tasks:
+    - name: "Create ssh certificates to auth with"
+      include_role:
+        name: openstack.osa.ssh_keypairs
+      vars:
+        ssh_keypairs_setup_host: localhost
+        ssh_keypairs_dir: /etc/openstack_deploy/ssh_keypairs/
+        ssh_keypairs:
+          - name: "plugins-{{ inventory_hostname }}"
+            cert:
+              signed_by: "OpenStack-Ansible-SSH-Signing-Key"
+              principals: "test-plugins"
+              valid_from: "always"
+              valid_to: "forever"
+        ssh_keypairs_install_keys:
+          keys:
+            - cert: "plugins-{{ inventory_hostname }}"
+              dest: "{{ lookup('env','HOME') }}/.ssh/id_rsa"
+        ssh_keypairs_install_authorities: False
+
 - name: Reinstall openssh-server for delegation to unknown inventory host
   hosts: container3
   tasks:
@@ -115,6 +141,19 @@
         masked: no
         daemon_reload: yes
         state: restarted
+    - name: Add SSH CA to the container
+      include_role:
+        name: openstack.osa.ssh_keypairs
+      vars:
+        ssh_keypairs_setup_host: localhost
+        ssh_keypairs_dir: /etc/openstack_deploy/ssh_keypairs/
+        ssh_keypairs_install_keypairs: false
+        ssh_keypairs_install_ca:
+          - name: "OpenStack-Ansible-SSH-Signing-Key"
+        ssh_keypairs_principals:
+          - user: "root"
+            principals:
+              - "test-plugins"
 
 - name: Test delegation to host not in inventory
   hosts: container1
