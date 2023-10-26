@@ -437,9 +437,6 @@ class Connection(SSH.Connection):
         so that a container lookup is not required on a subsequent
         command within the same task.
         """
-        if not self.is_container:
-          return 1, ''
-
         pid_path = """/proc/%s"""
         if not subdir:
             subdir = 'root'
