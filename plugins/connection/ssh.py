@@ -26,11 +26,6 @@ DOCUMENTATION = '''
           description: Hostname of a container
           vars:
                - name: container_name
-      container_tech:
-          description: Container technology used by a container host
-          default: lxc
-          vars:
-               - name: container_tech
       container_user:
           description: Username used when running command inside a container
           vars:
@@ -352,35 +347,6 @@ class Connection(SSH.Connection):
             self.physical_host = self._play_context.physical_host
         else:
             self.physical_host = None
-        if hasattr(self._play_context, 'container_namespaces'):
-            namespaces = self._play_context.namespaces
-            _namespaces = list()
-            if isinstance(namespaces, list):
-                pass
-            else:
-                namespaces = namespaces.split(',')
-            for ns in namespaces:
-                if ns == 'mnt':
-                    _namespaces.append('--mount={path}/%s' % ns)
-                else:
-                    _namespaces.append('--%s={path}/%s' % (ns, ns))
-        else:
-            _namespaces = [
-                '--mount={path}/mnt',
-                '--net={path}/net',
-                '--pid={path}/pid',
-                '--uts={path}/uts',
-                '--ipc={path}/ipc'
-            ]
-        # Create the namespace string
-        self.container_namespaces = ' '.join(_namespaces)
-
-        if hasattr(self._play_context, 'container_tech'):
-            self.container_tech = self._play_context.container_tech
-        else:
-            # NOTE(cloudnull): For now the default is "lxc" if undefined
-            #                  revise this in the future.
-            self.container_tech = 'lxc'
 
         if not hasattr(self._play_context, 'retries'):
             self._play_context.retries = 3
@@ -395,7 +361,6 @@ class Connection(SSH.Connection):
         super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
 
         self.container_name = self.get_option('container_name')
-        self.container_tech = self.get_option('container_tech')
         self.physical_host = self.get_option('physical_host')
 
         # Check to see if container_user is setup first, if so use that value.
@@ -437,20 +402,12 @@ class Connection(SSH.Connection):
             # do much since we are effectively passing a command to a command
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
-            _pad = None
-            if self.container_tech == 'lxc':
-                _pad = 'lxc-attach --clear-env --name %s' % self.container_name
-            elif self.container_tech == 'nspawn':
-                _, pid_path = self._pid_lookup(subdir='ns')
-                ns_cmd = 'nsenter ' + self.container_namespaces
-                _pad = ns_cmd.format(path=pid_path)
-
-            if _pad:
-                cmd = '%s -- su - %s -c %s' % (
-                    _pad,
-                    self.container_user,
-                    shlex_quote(cmd)
-                )
+            _pad = 'lxc-attach --clear-env --name %s' % self.container_name
+            cmd = '%s -- su - %s -c %s' % (
+                _pad,
+                self.container_user,
+                shlex_quote(cmd)
+            )
 
             if self._play_context.become:
                 cmd = ' '.join((self._play_context.become_method, cmd))
@@ -467,13 +424,8 @@ class Connection(SSH.Connection):
                 if self.container_name != self.physical_host and \
                    self.container_name != self.host:
                     SSH.display.vvv(u'Container confirmed')
-                    SSH.display.vvv(u'Container type "{}"'.format(
-                        self.container_tech)
-                    )
                     return True
 
-        # If the container check fails set the container_tech to None.
-        self.container_tech = None
         return False
 
     def _pid_lookup(self, subdir=None):
@@ -486,15 +438,7 @@ class Connection(SSH.Connection):
         command within the same task.
         """
         pid_path = """/proc/%s"""
-        if self.container_tech == 'nspawn':
-            lookup_command = (
-                u"machinectl show %s | awk -F'=' '/Leader/ {print $2}'"
-                % self.container_name
-            )
-
-            if not subdir:
-                subdir = 'cwd'
-        elif self.container_tech == 'lxc':
+        if self.is_container:
             lookup_command = (u"lxc-info -Hpn '%s'" % self.container_name)
             if not subdir:
                 subdir = 'root'
