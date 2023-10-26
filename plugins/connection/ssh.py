@@ -437,16 +437,16 @@ class Connection(SSH.Connection):
         so that a container lookup is not required on a subsequent
         command within the same task.
         """
+        if not self.is_container:
+          return 1, ''
+
         pid_path = """/proc/%s"""
-        if self.is_container:
-            lookup_command = (u"lxc-info -Hpn '%s'" % self.container_name)
-            if not subdir:
-                subdir = 'root'
-        else:
-            return 1, ''
+        if not subdir:
+            subdir = 'root'
 
         if not self.container_pid:
             ssh_executable = self.get_option('ssh_executable')
+            lookup_command = (u"lxc-info -Hpn '%s'" % self.container_name)
             args = (ssh_executable, 'ssh', self.host, lookup_command)
             returncode, stdout, _ = self._run(
                 self._build_command(*args),
