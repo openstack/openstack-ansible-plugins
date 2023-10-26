@@ -339,22 +339,15 @@ class Connection(SSH.Connection):
         super(Connection, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
-        if hasattr(self._play_context, 'container_name'):
-            self.container_name = self._play_context.container_name
-        else:
-            self.container_name = None
-        if hasattr(self._play_context, 'physical_host'):
-            self.physical_host = self._play_context.physical_host
-        else:
-            self.physical_host = None
+        self.container_name = None
+        self.physical_host = None
 
         if not hasattr(self._play_context, 'retries'):
             self._play_context.retries = 3
 
         # Store the container pid for multi-use
         self.container_pid = None
-
-        self.is_container = self._container_check()
+        self.is_container = None
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
 
