@@ -388,6 +388,8 @@ class Connection(SSH.Connection):
         # Store the container pid for multi-use
         self.container_pid = None
 
+        self.is_container = self._container_check()
+
     def set_options(self, task_keys=None, var_options=None, direct=None):
 
         super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
@@ -406,7 +408,9 @@ class Connection(SSH.Connection):
             self._shell.set_options(var_options={})
             self._shell.set_option('remote_tmp', self._shell.get_option('system_tmpdirs')[0])
 
-        if self._container_check():
+        self.is_container = self._container_check()
+
+        if self.is_container:
             physical_host_addrs = self.get_option('physical_host_addrs') or {}
             if self.host in physical_host_addrs.values():
                 self.container_name = None
@@ -422,7 +426,7 @@ class Connection(SSH.Connection):
     def exec_command(self, cmd, in_data=None, sudoable=True):
         """run a command on the remote host."""
 
-        if self._container_check():
+        if self.is_container:
             # NOTE(hwoarang): the shlex_quote method is necessary here because
             # we need to properly quote the cmd as it's being passed as argument
             # to the -c su option. The Ansible ssh class has already
@@ -534,7 +538,7 @@ class Connection(SSH.Connection):
 
     def fetch_file(self, in_path, out_path):
         """fetch a file from remote to local."""
-        if self._container_check():
+        if self.is_container:
             in_path = self._container_path_pad(path=in_path)
 
         return super(Connection, self).fetch_file(in_path, out_path)
@@ -542,7 +546,7 @@ class Connection(SSH.Connection):
     def put_file(self, in_path, out_path):
         """transfer a file from local to remote."""
         _out_path = os.path.expanduser(out_path)
-        if self._container_check():
+        if self.is_container:
             _out_path = self._container_path_pad(path=_out_path)
 
         res = super(Connection, self).put_file(in_path, _out_path)
@@ -550,7 +554,7 @@ class Connection(SSH.Connection):
         # NOTE(mnaser): If we're running without a container, we break out
         #               here to avoid the extra round-trip for the unnecessary
         #               chown.
-        if not self._container_check():
+        if not self.is_container:
             return res
 
         # NOTE(pabelanger): Because we put_file as remote_user, it is possible
