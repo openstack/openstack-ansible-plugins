@@ -25,6 +25,7 @@
         name: "{{ item.name }}"
         login_host: "{{ _oslodb_setup_endpoint | default(omit) }}"
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
+        check_hostname: true
       loop: "{{ _oslodb_databases }}"
       no_log: "{{ _oslodb_setup_nolog | default(True) }}"
       when: item.condition | default(True)
@@ -38,6 +39,7 @@
         append_privs: yes
         login_host: "{{ _oslodb_setup_endpoint | default(omit) }}"
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
+        check_hostname: true
       loop: "{{ _oslodb_databases | subelements('users') }}"
       when: item.0.condition | default(True)
       no_log: "{{ _oslodb_setup_nolog | default(True) }}"
