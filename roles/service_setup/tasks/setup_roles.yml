@@ -36,7 +36,7 @@
     user: "{{ user.name }}"
     role: "{{ role }}"
     project: "{{ user.project | default(_service_project_name) }}"
-    domain: "{{ user.domain | default(omit) }}"
+    domain: "{{ user.domain | default('default') }}"
     endpoint_type: admin
     validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
   register: add_service
