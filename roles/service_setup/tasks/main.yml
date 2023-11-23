@@ -102,6 +102,7 @@
         - "'role' in user"
         - (user.condition | default(True)) | bool
       loop: "{{ _service_users }}"
+      no_log: "{{ _service_setup_nolog | default(True) }}"
       loop_control:
         loop_var: user
 
