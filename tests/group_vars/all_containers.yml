@@ -30,3 +30,5 @@ physical_host: localhost
 
 openssh_server_package: openssh-server
 openssh_server_service: "{{ (ansible_facts['os_family'] == 'Debian') | ternary('ssh', 'sshd') }}"
+
+is_metal: False
