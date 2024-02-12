@@ -100,7 +100,7 @@
 - name: Create gluster peers
   gluster.gluster.gluster_peer:
     nodes: "{{ glusterfs_server_cluster_members }}"
-  when: _glusterfs_is_first_play_host
+  when: _glusterfs_is_bootstrap_host
 
 - name: Ensure glusterfs backing directory exists
   file:
@@ -129,16 +129,40 @@
     - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} start
     - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} {{ brick }} commit force
 
-- name: Create gluster volume
-  vars:
-    num_cluster_members: "{{ glusterfs_server_cluster_members | length }}"
-    cluster_has_replicas: "{{ (glusterfs_server_cluster_members | length) > 1 }}"
-  gluster.gluster.gluster_volume:
-    state: present
-    name: "{{ glusterfs_server_volume_name }}"
-    bricks: "{{ glusterfs_server_bricks }}"
-    replicas: "{{ cluster_has_replicas | ternary(num_cluster_members, omit) }}"
-    cluster: "{{ glusterfs_server_cluster_members | map('regex_replace', '_', '-') | list }}"
-    force: true
-  when: _glusterfs_is_first_play_host
+- name: Handle volume creation
+  block:
+    # NOTE: When first establishing a peer relationship, a reverse DNS lookup happens which can cause a
+    #       peer's active hostname not to match the one stored on disk. Restarting the service resolves
+    #       this and prevents failures upon calls to create volumes.
+    - name: Find existing peers' runtime hostnames
+      shell: "gluster peer status | grep Hostname: | cut -d ' ' -f 2"
+      changed_when: false
+      register: _existing_peer_hostnames
+      when: (glusterfs_server_cluster_members | length) > 1
 
+    - name: Restart glusterfs server
+      service:
+        name: "{{ glusterfs_server_service }}"
+        state: restarted
+      when:
+        - _existing_peer_hostnames is not skipped
+        - ((_existing_peer_hostnames.stdout_lines | intersect(glusterfs_server_cluster_members)) | length) != (_existing_peer_hostnames.stdout_lines | length)
+
+    # Retry as the service may have just restarted
+    - name: Create gluster volume
+      vars:
+        num_cluster_members: "{{ glusterfs_server_cluster_members | length }}"
+        cluster_has_replicas: "{{ (glusterfs_server_cluster_members | length) > 1 }}"
+      gluster.gluster.gluster_volume:
+        state: present
+        name: "{{ glusterfs_server_volume_name }}"
+        bricks: "{{ glusterfs_server_bricks }}"
+        replicas: "{{ cluster_has_replicas | ternary(num_cluster_members, omit) }}"
+        cluster: "{{ glusterfs_server_cluster_members | map('regex_replace', '_', '-') | list }}"
+        force: true
+      register: _volume_create
+      delay: 1
+      retries: 5
+      until: _volume_create is success
+
+  when: _glusterfs_is_bootstrap_host
