@@ -21,4 +21,6 @@ glusterfs_server_backing_dir: "/gluster/bricks/1"
 glusterfs_server_bricks: "{{ glusterfs_server_backing_dir }}"
 glusterfs_server_volume_name: "gfs"
 
+glusterfs_bootstrap_node: "{{ groups[glusterfs_server_group_name][0] }}"
+
 glusterfs_package_state: "{{ package_state | default('latest') }}"
