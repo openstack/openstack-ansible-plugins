@@ -35,3 +35,4 @@
   loop: "{{ _ssh_key_slurp.results | default([]) }}"
   when: item.skipped is not defined
   ignore_errors: "{{ ansible_check_mode }}"
+  no_log: "{{ ssh_keypairs_no_log | default(True) }}"
