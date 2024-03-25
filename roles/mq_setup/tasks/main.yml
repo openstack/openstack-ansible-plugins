@@ -18,7 +18,7 @@
   block:
     - name: Setup RPC vhost and policies
       vars:
-        __mq_policies: "{{ _oslomsg_rpc_policies | default([]) + oslomsg_rpc_policies }}"
+        __mq_policies: "{{ (_oslomsg_rpc_policies | default([]) + oslomsg_rpc_policies) | unique(attribute='name') }}"
       include_tasks: rabbit_vhost_setup.yml
       loop: "{{ __resolved_oslomsg_rpc_vhost }}"
       loop_control:
@@ -49,7 +49,7 @@
   block:
     - name: Setup Notify vhost and policies
       vars:
-        __mq_policies: "{{ _oslomsg_notify_policies | default([]) + oslomsg_notify_policies }}"
+        __mq_policies: "{{ (_oslomsg_notify_policies | default([]) + oslomsg_notify_policies) | unique(attribute='name') }}"
       include_tasks: rabbit_vhost_setup.yml
       loop: "{{ __resolved_oslomsg_notify_vhost }}"
       loop_control:
