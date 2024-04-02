@@ -22,6 +22,7 @@
   community.rabbitmq.rabbitmq_policy:
     name: "{{ policy.name }}"
     pattern: "{{ policy.pattern }}"
+    apply_to: "{{ policy.apply_to | default(omit) }}"
     priority: "{{ policy.priority | default(0) }}"
     tags: "{{ policy.tags }}"
     state: "{{ policy.state | default(omit) }}"
