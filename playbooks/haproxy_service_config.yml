@@ -31,6 +31,7 @@
         name: "{{ item }}"
         haproxy_service_configs: "{{ hostvars[inventory_hostname][service_variable] }}"
       with_items: "{{ groups['haproxy_all'] }}"
+      changed_when: False
 
 - hosts: haproxy_all
   serial: "{{ haproxy_serial | default('50%') }}"
