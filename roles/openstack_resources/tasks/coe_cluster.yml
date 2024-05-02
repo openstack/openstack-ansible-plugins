@@ -26,6 +26,7 @@
     keypair: "{{ cluster['keypair'] | default(omit) }}"
     labels: "{{ cluster['labels'] | default(omit) }}"
     master_count: "{{ cluster['master_count'] | default(omit) }}"
+    master_flavor_id: "{{ cluster['master_flavor_id'] | default(omit) }}"
     node_count: "{{ cluster['node_count'] | default(omit) }}"
     timeout: "{{ cluster['timeout'] | default(omit) }}"
     wait: "{{ cluster['wait'] | default(false) }}"
