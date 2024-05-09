@@ -34,7 +34,7 @@
       loop_control:
         loop_var: __mq_vhost
   when:
-    - "(_oslomsg_configure_rpc | default(_oslomsg_rpc_transport is defined))"
+    - "(_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))"
     - "(_oslomsg_rpc_transport is defined) and (_oslomsg_rpc_transport == 'rabbit')"
   tags:
     - common-rabbitmq
@@ -42,7 +42,7 @@
 - name: Setup Notify MQ Service (RabbitMQ)
   delegate_to: "{{ _oslomsg_notify_setup_host }}"
   when:
-    - "(_oslomsg_configure_notify | default(_oslomsg_notify_transport is defined))"
+    - "(_oslomsg_notify_configure | default(_oslomsg_notify_transport is defined))"
     - "(_oslomsg_notify_transport is defined) and (_oslomsg_notify_transport == 'rabbit')"
   tags:
     - common-rabbitmq
