@@ -57,7 +57,8 @@
       when:
         - (_oslomsg_rpc_vhost is undefined) or
           (_oslomsg_notify_vhost != _oslomsg_rpc_vhost) or
-          (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host)
+          (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host) or
+          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))
 
     - name: Setup Notify user
       vars:
@@ -71,7 +72,8 @@
       when:
         - (_oslomsg_rpc_userid is undefined) or
           (_oslomsg_notify_userid != _oslomsg_rpc_userid) or
-          (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host)
+          (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host) or
+          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))
 
 - name: Setup RPC MQ Service (Qdrouterd)
   delegate_to: "{{ _oslomsg_rpc_setup_host }}"
