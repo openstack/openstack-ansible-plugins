@@ -14,10 +14,12 @@
 # limitations under the License.
 
 - name: Add keystone roles
+  vars:
+    role_mapping: "{{ (role is string) | ternary({'name': role, 'state': 'present'}, role) }}"
   openstack.cloud.identity_role:
     cloud: "{{ _service_cloud_name }}"
     state: present
-    name: "{{ role }}"
+    name: "{{ role_mapping['name'] }}"
     endpoint_type: admin
     validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
   register: add_service
@@ -25,16 +27,20 @@
   retries: 5
   delay: 10
   no_log: "{{ _service_setup_nolog | default(True) }}"
+  when:
+    - role_mapping['state'] == 'present'
   loop: "{{ user_roles }}"
   loop_control:
     loop_var: role
 
 - name: Add service users to roles
+  vars:
+    role_mapping: "{{ (role is string) | ternary({'name': role, 'state': 'present'}, role) }}"
   openstack.cloud.role_assignment:
     cloud: "{{ _service_cloud_name }}"
-    state: present
+    state: "{{ role_mapping['state'] | default('present') }}"
     user: "{{ user.name }}"
-    role: "{{ role }}"
+    role: "{{ role_mapping['name'] }}"
     project: "{{ user.project | default(_service_project_name) }}"
     domain: "{{ user.domain | default('default') }}"
     endpoint_type: admin
