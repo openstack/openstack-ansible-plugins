@@ -247,11 +247,14 @@ DOCUMENTATION = '''
         - {key: scp_executable, section: ssh_connection}
         version_added: "2.6"
       ssh_transfer_method:
-        description:
-            - "Preferred method to use when transferring files over ssh"
-            - Setting to 'smart' (default) will try them in order, until one succeeds or they all fail
-            - Using 'piped' creates an ssh pipe with ``dd`` on either side to copy the data
-        choices: ['sftp', 'scp', 'piped', 'smart']
+        description: Preferred method to use when transferring files over ssh
+        choices:
+              sftp: This is the most reliable way to copy things with SSH.
+              scp: Deprecated in OpenSSH. For OpenSSH >=9.0 you must add an additional option to enable scp C(scp_extra_args="-O").
+              piped: Creates an SSH pipe with C(dd) on either side to copy the data.
+              smart: Tries each method in order (sftp > scp > piped), until one succeeds or they all fail.
+        default: smart
+        type: string
         env: [{name: ANSIBLE_SSH_TRANSFER_METHOD}]
         ini:
             - {key: transfer_method, section: ssh_connection}
