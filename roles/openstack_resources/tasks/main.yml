@@ -33,8 +33,6 @@
         apply:
           tags:
             - compute-resources
-      vars:
-        ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
       tags:
         - compute-resources
       when:

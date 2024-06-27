@@ -23,6 +23,9 @@ openstack_resources_python_interpreter: >-
       ansible_playbook_python, ansible_facts['python']['executable']))
   }}
 
+openstack_resources_deploy_host: localhost
+openstack_resources_deploy_python_interpreter: "{{ ansible_playbook_python }}"
+
 # Define this variable to provide mappings that needs to be created
 # It will be iterated over and supplied to openstack.osa.service_setup role
 # Example:

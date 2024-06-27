@@ -24,6 +24,9 @@
     state: "{{ keypair['state'] | default('present') }}"
     type: "{{ keypair['type'] | default(omit) }}"
   register: generated_keypair
+  delegate_to: "{{ openstack_resources_deploy_host }}"
+  vars:
+    ansible_python_interpreter: "{{ openstack_resources_deploy_python_interpreter }}"
 
 - name: "Import generated keypair to openstack: {{ keypair['name'] }}"
   openstack.cloud.keypair:
@@ -38,3 +41,5 @@
           generated_keypair['public_key'] | default() ~ ' ' ~ keypair['comment'] | default(), omit
         ) | trim
       }}
+  vars:
+    ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
