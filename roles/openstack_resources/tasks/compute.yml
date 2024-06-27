@@ -26,6 +26,8 @@
   loop: "{{ openstack_resources_compute['aggregates'] | default([]) }}"
   loop_control:
     loop_var: aggregate
+  vars:
+    ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
 
 - name: Iterating over set of required flavors
   ansible.builtin.include_tasks:
@@ -33,6 +35,8 @@
   loop: "{{ openstack_resources_compute['flavors'] | default([]) }}"
   loop_control:
     loop_var: flavor
+  vars:
+    ansible_python_interpreter: "{{ openstack_resources_python_interpreter }}"
 
 - name: Create and upload keypairs
   ansible.builtin.include_tasks:
