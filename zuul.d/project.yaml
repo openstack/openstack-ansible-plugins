@@ -21,3 +21,9 @@
       - openstack-ansible-role-jobs
       - openstack-ansible-upgrade-infra_lxc-jobs
       - openstack-ansible-deploy-infra_lxc-jobs
+    check:
+      jobs:
+        - openstack-ansible-deploy-infra_lxc-validate
+    gate:
+      jobs:
+        - openstack-ansible-deploy-infra_lxc-validate
