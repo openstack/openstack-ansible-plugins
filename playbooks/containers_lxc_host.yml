@@ -1,0 +1,62 @@
+---
+# Copyright 2014, Rackspace US, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Gather lxc hosts facts
+  hosts: "{{ lxc_host_group | default('lxc_hosts') }}"
+  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  tags:
+    - always
+
+- name: Basic lxc host setup
+  hosts: "{{ lxc_host_group | default('lxc_hosts') }}"
+  user: root
+  gather_facts: false
+  serial: "{{ lxc_hosts_serial | default(['100%']) }}"
+  environment: "{{ deployment_environment_variables | default({}) }}"
+  tags:
+    - lxc-hosts
+  pre_tasks:
+    - name: Setup installation variables
+      include_role:
+        name: openstack.osa.install_defaults
+        defaults_from: "{{ install_method }}"
+        public: true
+
+    - name: Check the state of the default LXC service log directory
+      stat:
+        path: "/var/log/lxc"
+      register: _lxc_log_dir
+    - name: Create the log aggregation parent directory
+      file:
+        path: "/openstack/log"
+        state: directory
+        mode: "0755"
+    - name: Move the existing folder to the log aggregation parent
+      command: "mv /var/log/lxc /openstack/log/{{ inventory_hostname }}-lxc" # noqa: no-changed-when
+      when:
+        - _lxc_log_dir.stat.isdir is defined
+        - _lxc_log_dir.stat.isdir | bool
+    - name: Create the new LXC service log directory
+      file:
+        path: "/openstack/log/{{ inventory_hostname }}-lxc"
+        state: directory
+        mode: "0755"
+    - name: Create the LXC service log aggregation link
+      file:
+        src: "/openstack/log/{{ inventory_hostname }}-lxc"
+        dest: "/var/log/lxc"
+        state: "link"
+  roles:
+    - role: "lxc_hosts"
