@@ -26,14 +26,14 @@
   gather_facts: false
   run_once: true
   tasks:
-    - name: "Temporarily copy haproxy_service_configs value from {{ service_group }} to haproxy_all"
+    - name: "Temporarily copy haproxy_service_configs value from {{ service_group }} to haproxy"
       add_host:
         name: "{{ item }}"
         haproxy_service_configs: "{{ hostvars[inventory_hostname][service_variable] }}"
-      with_items: "{{ groups['haproxy_all'] }}"
+      with_items: "{{ groups['haproxy'] }}"
       changed_when: False
 
-- hosts: haproxy_all
+- hosts: haproxy
   serial: "{{ haproxy_serial | default('50%') }}"
   tasks:
     - name: Configure haproxy for the service
