@@ -19,8 +19,12 @@
     mode: "0644"
 
 - name: Reload sshd
+  vars:
+    _sshd_service_name:
+      redhat: "sshd"
+      debian: "ssh"
   service:
-    name: "sshd"
+    name: "{{ _sshd_service_name[ansible_facts['os_family'] | lower] }}"
     state: reloaded
   listen:
     - Regenerate trusted_ca file
