@@ -15,3 +15,5 @@
 
 bridges:
   - "br-mgmt"
+
+ansible_connection: local

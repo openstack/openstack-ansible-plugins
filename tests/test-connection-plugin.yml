@@ -91,6 +91,7 @@
       command: whoami
       vars:
         container_user: testing
+        ansible_become: False
       register: whoami_output
       changed_when: false
       failed_when:

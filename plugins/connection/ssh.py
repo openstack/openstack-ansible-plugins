@@ -376,14 +376,12 @@ class Connection(SSH.Connection):
             # to a command etc... It's somewhat ugly but maybe it can be
             # improved somehow...
             _pad = 'lxc-attach --clear-env --name %s' % self.container_name
-            cmd = '%s -- su - %s -c %s' % (
+            cmd = '%s %s -- su - %s -c %s' % (
+                self._play_context.become_method,
                 _pad,
                 self.container_user,
                 shlex_quote(cmd)
             )
-
-            if self._play_context.become:
-                cmd = ' '.join((self._play_context.become_method, cmd))
 
         return super(Connection, self).exec_command(cmd, in_data, sudoable)
 
