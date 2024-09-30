@@ -1,0 +1,112 @@
+---
+# Copyright 2014, Rackspace US, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Importing pre hook playbook
+  import_playbook: "{{ pre_setup_openstack_hook | default('openstack.osa.hook_dummy') }}"
+
+- name: Importing keystone playbook
+  import_playbook: openstack.osa.keystone
+
+- name: Importing barbican playbook
+  import_playbook: openstack.osa.barbican
+
+- name: Importing  placement playbook
+  import_playbook: openstack.osa.placement
+
+- name: Importing glance playbook
+  import_playbook: openstack.osa.glance
+
+- name: Importing cinder playbook
+  import_playbook: openstack.osa.cinder
+
+- name: Importing nova playbook
+  import_playbook: openstack.osa.nova
+
+- name: Importing neutron playbook
+  import_playbook: openstack.osa.neutron
+
+- name: Importing heat playbook
+  import_playbook: openstack.osa.heat
+
+- name: Importing horizon playbook
+  import_playbook: openstack.osa.horizon
+
+- name: Importing designate playbook
+  import_playbook: openstack.osa.designate
+
+- name: Importing swift playbook
+  import_playbook: openstack.osa.swift
+
+- name: Importing adjutant playbook
+  import_playbook: openstack.osa.adjutant
+
+- name: Importing gnocchi playbook
+  import_playbook: openstack.osa.gnocchi
+
+- name: Importing ceilometer playbook
+  import_playbook: openstack.osa.ceilometer
+
+- name: Importing aodh playbook
+  import_playbook: openstack.osa.aodh
+
+- name: Importing cloudkitty playbook
+  import_playbook: openstack.osa.cloudkitty
+
+- name: Importing ironic playbook
+  import_playbook: openstack.osa.ironic
+
+- name: Importing magnum playbook
+  import_playbook: openstack.osa.magnum
+
+- name: Importing trove playbook
+  import_playbook: openstack.osa.trove
+
+- name: Importing octavia playbook
+  import_playbook: openstack.osa.octavia
+
+- name: Importing tacker playbook
+  import_playbook: openstack.osa.tacker
+
+- name: Importing blazar playbook
+  import_playbook: openstack.osa.blazar
+
+- name: Importing masakari playbook
+  import_playbook: openstack.osa.masakari
+
+- name: Importing manila playbook
+  import_playbook: openstack.osa.manila
+
+- name: Importing mistral playbook
+  import_playbook: openstack.osa.mistral
+
+- name: Importing zun playbook
+  import_playbook: openstack.osa.zun
+
+# This is not an OpenStack service, but integrates with Keystone and must be
+# deployed afterward.
+- name: Importing ceph-rgw-install playbook
+  import_playbook: openstack.osa.ceph_rgw_install
+
+- name: Importing skyline playbook
+  import_playbook: openstack.osa.skyline
+
+- name: Importing tempest playbook
+  import_playbook: openstack.osa.tempest
+
+- name: Importing rally playbook
+  import_playbook: openstack.osa.rally
+
+- name: Importing post hook playbook
+  import_playbook: "{{ post_setup_openstack_hook | default('openstack.osa.hook_dummy') }}"

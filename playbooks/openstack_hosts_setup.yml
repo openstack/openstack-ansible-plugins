@@ -40,7 +40,7 @@
       failed_when: "result.rc not in [0, 2]"
 
 - name: Gather host facts
-  hosts: "{{ openstack_host_group|default('hosts') }}"
+  hosts: "{{ openstack_host_group | default('hosts') }}"
   gather_facts: "{{ osa_gather_facts | default(True) }}"
   tags:
     - always
