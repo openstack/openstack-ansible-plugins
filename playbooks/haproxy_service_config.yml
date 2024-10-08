@@ -22,17 +22,6 @@
 # After haproxy is configured, refresh_inventory is triggered to restore the
 # original inventory state.
 
-- hosts: "{{ service_group }}"
-  gather_facts: false
-  run_once: true
-  tasks:
-    - name: "Temporarily copy haproxy_service_configs value from {{ service_group }} to haproxy"
-      add_host:
-        name: "{{ item }}"
-        haproxy_service_configs: "{{ hostvars[inventory_hostname][service_variable] }}"
-      with_items: "{{ groups['haproxy'] }}"
-      changed_when: False
-
 - hosts: haproxy
   serial: "{{ haproxy_serial | default('50%') }}"
   tasks:
@@ -40,3 +29,5 @@
       import_role:
         name: haproxy_server
         tasks_from: haproxy_service_config_external.yml
+      vars:
+        haproxy_service_configs: "{{ groups[service_group] | map('extract', hostvars, service_variable) | flatten | unique }}"
