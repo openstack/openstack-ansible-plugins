@@ -30,4 +30,8 @@
         name: haproxy_server
         tasks_from: haproxy_service_config_external.yml
       vars:
-        haproxy_service_configs: "{{ groups[service_group] | map('extract', hostvars, service_variable) | flatten | unique }}"
+        _service_configs: "{{ groups[service_group] | map('extract', hostvars, service_variable) | flatten | unique }}"
+        _unlimited_configs: "{{ _service_configs | rejectattr('haproxy_limit_hosts', 'defined') }}"
+        _filtered_configs: >-
+          {{ _service_configs | selectattr('haproxy_limit_hosts', 'defined') | selectattr('haproxy_limit_hosts', 'search', inventory_hostname) }}
+        haproxy_service_configs: "{{ (_unlimited_configs + _filtered_configs) }}"
