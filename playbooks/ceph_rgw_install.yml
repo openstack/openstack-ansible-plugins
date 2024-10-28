@@ -20,6 +20,10 @@
 - name: Gather ceph-rgw facts
   hosts: ceph-rgw
   gather_facts: "{{ osa_gather_facts | default(True) }}"
+  tasks:
+    - name: Define discovered_interpreter_python
+      set_fact:
+        discovered_interpreter_python: /usr/bin/python3
   tags:
     - always
 
