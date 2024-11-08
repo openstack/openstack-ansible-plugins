@@ -20,6 +20,10 @@
     - name: Refresh all_addresses facts
       setup:
         gather_subset: "all_ipv4_addresses,all_ipv6_addresses"
+
+    - name: Define discovered_interpreter_python
+      set_fact:
+        discovered_interpreter_python: /usr/bin/python3
   tags:
     - always
 
@@ -165,6 +169,10 @@
 - name: Gather ceph-osd facts
   hosts: ceph-osd
   gather_facts: "{{ osa_gather_facts | default(True) }}"
+  tasks:
+    - name: Define discovered_interpreter_python
+      set_fact:
+        discovered_interpreter_python: /usr/bin/python3
   tags:
     - always
 
@@ -257,6 +265,10 @@
 - name: Gather ceph-mds facts
   hosts: ceph-mds
   gather_facts: "{{ osa_gather_facts | default(True) }}"
+  tasks:
+    - name: Define discovered_interpreter_python
+      set_fact:
+        discovered_interpreter_python: /usr/bin/python3
   tags:
     - always
 
