@@ -31,9 +31,6 @@
 - name: Importing galera playbook
   import_playbook: openstack.osa.galera_server
 
-- name: Importing qdrouterd playbook
-  import_playbook: openstack.osa.qdrouterd_install.yml
-
 - name: Importing rabbitmq playbook
   import_playbook: openstack.osa.rabbitmq_server
 

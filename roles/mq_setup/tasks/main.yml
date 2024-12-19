@@ -75,15 +75,3 @@
           (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host) or
           not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))
 
-- name: Setup RPC MQ Service (Qdrouterd)
-  delegate_to: "{{ _oslomsg_rpc_setup_host }}"
-  when:
-    - "(_oslomsg_configure_rpc | default(_oslomsg_rpc_transport is defined))"
-    - "(_oslomsg_rpc_transport is defined) and (_oslomsg_rpc_transport == 'amqp')"
-  tags:
-    - common-qdrouterd
-  block:
-    - name: Add RPC Qdrouterd user
-      shell: "echo {{ _oslomsg_rpc_password }} | saslpasswd2 -c -p -f /var/lib/qdrouterd/qdrouterd.sasldb -u AMQP {{ _oslomsg_rpc_userid }}"
-      no_log: "{{ _oslomsg_nolog | default(True) }}"
-      changed_when: false
