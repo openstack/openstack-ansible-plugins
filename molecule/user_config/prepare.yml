@@ -1,0 +1,61 @@
+---
+# Copyright 2025, Cleura AB
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Simulating valid deploy host
+  hosts: deploy_host
+  vars:
+    testing_branch: "{{ lookup('ansible.builtin.env', 'TEST_BRANCH', default='master') }}"
+  tasks:
+    - name: Create required folders
+      ansible.builtin.file:
+        path: /etc/openstack_deploy
+        state: directory
+        mode: "0755"
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when:
+        - ansible_facts['os_family'] | lower == 'debian'
+
+    - name: Install required python3 packages
+      ansible.builtin.package:
+        name: "{{ molecule_packages[ansible_facts['os_family'] | lower] }}"
+        state: present
+
+    - name: Download sample openstack_user_config
+      ansible.builtin.get_url:
+        url: https://opendev.org/openstack/openstack-ansible/raw/branch/{{ testing_branch }}/etc/openstack_deploy/openstack_user_config.yml.prod.example
+        dest: /etc/openstack_deploy/openstack_user_config.yml
+        mode: "0644"
+      register: download_config
+      until: download_config is success
+      retries: 5
+      delay: 2
+
+    - name: Install openstack-ansible as python package
+      ansible.builtin.pip:
+        name: "git+https://opendev.org/openstack/openstack-ansible@{{ testing_branch }}#egg=openstack-ansible"
+        extra_args: >-
+          -c{{ lookup('ansible.builtin.env', 'TOX_CONSTRAINTS_FILE', default='https://releases.openstack.org/constraints/upper/master') }}
+          -rhttps://opendev.org/openstack/openstack-ansible/raw/branch/{{ testing_branch }}/requirements.txt
+          -e
+        virtualenv: "/opt/ansible-runtime"
+        virtualenv_command: "python3 -m venv"
+      register: install_osa
+      until: install_osa is success
+      retries: 5
+      delay: 2
