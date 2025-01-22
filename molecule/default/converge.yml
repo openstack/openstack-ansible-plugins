@@ -1,0 +1,31 @@
+# basic smoke test that the builtin and OSA connection plugins
+# can connect to the target
+
+- name: Gather facts from container hosts - builtin ssh plugin
+  hosts: osa_plugins_ssh
+  remote_user: root
+  vars:
+    ansible_connection: ansible.builtin.ssh
+  gather_facts: false
+  tasks:
+
+    - name: Ensure ssh connection is working
+      vars:
+        ansible_connection: local
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      ansible.builtin.wait_for:
+        port: 22
+        host: '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+        search_regex: OpenSSH
+        delay: 5
+
+    - name: gather facts
+      ansible.builtin.setup:
+
+
+- name: Gather facts from container hosts - openstack-ansible ssh plugin
+  hosts: osa_plugins_ssh
+  remote_user: root
+  vars:
+    ansible_connection: openstack.osa.ssh
+  gather_facts: true

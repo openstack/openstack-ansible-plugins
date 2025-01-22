@@ -1,0 +1,99 @@
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Generate an SSH key locally
+  hosts: localhost
+  tasks:
+    - name: Generate an OpenSSH keypair
+      community.crypto.openssh_keypair:
+        path: ~/.ssh/molecule
+      register: keypair
+
+- name: Prepare docker containers
+  hosts: osa_plugins
+  vars:
+    sshd_package_name:
+      debian: openssh-server
+      redhat: openssh-server
+    apparmor_package_name:
+      debian: apparmor
+      redhat: ''
+    iproute_package_name:
+      redhat: iproute
+      debian: iproute2
+    iputils_package_name:
+      redhat: iputils
+      debian: iputils-ping
+    ssh_service_name:
+      redhat: sshd
+      debian: ssh
+    install_packages:
+      - "{{ sshd_package_name[ansible_facts['os_family'] | lower] }}"
+      - "{{ apparmor_package_name[ansible_facts['os_family'] | lower] }}"
+      - "{{ iproute_package_name[ansible_facts['os_family'] | lower] }}"
+      - "{{ iputils_package_name[ansible_facts['os_family'] | lower] }}"
+  handlers:
+    - name: Restart sshd service
+      ansible.builtin.systemd:
+        name: "{{ ssh_service_name[ansible_facts['os_family'] | lower] }}"
+        state: restarted
+  tasks:
+    - name: Install required packages
+      ansible.builtin.package:
+        name: "{{ install_packages | select() }}"
+        update_cache: "{{ (ansible_facts['os_family'] | lower == 'debian') | ternary(true, omit) }}"
+
+    - name: Ensure required services are running
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+        masked: false
+      with_items:
+        - "{{ ssh_service_name[ansible_facts['os_family'] | lower] }}"
+
+    - name: Ensure PAM is disabled for EL
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config.d/50-redhat.conf
+        regexp: "^UsePAM"
+        state: absent
+      notify:
+        - Restart sshd service
+      when:
+        - ansible_facts['os_family'] | lower == 'redhat'
+
+    - name: Ensure root user is not locked
+      ansible.builtin.user:
+        name: root
+        password: '*'
+
+    - name: Adjust apparmor
+      when: ansible_facts['os_family'] | lower == 'debian'
+      block:
+        - name: Teardown existing apparmor profiles
+          ansible.builtin.command: aa-teardown
+          failed_when: false
+          changed_when: false
+
+        - name: Restart apparmor
+          ansible.builtin.systemd:
+            name: apparmor
+            state: restarted
+            enabled: true
+            masked: false
+
+    - name: Set authorized key taken from file
+      ansible.posix.authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('file', '~/.ssh/molecule.pub') }}"

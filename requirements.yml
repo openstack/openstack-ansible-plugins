@@ -1,0 +1,44 @@
+roles:
+  - name: apt_package_pinning
+    scm: git
+    src: https://opendev.org/openstack/openstack-ansible-apt_package_pinning
+    version: master
+  - name: systemd_networkd
+    src: https://opendev.org/openstack/ansible-role-systemd_networkd
+    scm: git
+    version: master
+  - name: systemd_service
+    src: https://opendev.org/openstack/ansible-role-systemd_service
+    scm: git
+    version: master
+  - name: systemd_mount
+    src: https://opendev.org/openstack/ansible-role-systemd_mount
+    scm: git
+    version: master
+  - name: lxc_hosts
+    src: https://opendev.org/openstack/openstack-ansible-lxc_hosts
+    scm: git
+    version: master
+  - name: lxc_container_create
+    src: https://opendev.org/openstack/openstack-ansible-lxc_container_create
+    scm: git
+    version: master
+collections:
+  - name: openvswitch.openvswitch
+    source: https://github.com/ansible-collections/openvswitch.openvswitch
+    type: git
+    version: 2.1.1
+  - name:  https://opendev.org/openstack/ansible-config_template
+    type: git
+    version: master
+  - name: https://github.com/ansible-collections/ansible.utils
+    version: main
+    type: git
+  - name: community.general
+    source: https://github.com/ansible-collections/community.general
+    type: git
+    version: 10.2.0
+  - name: community.crypto
+    source: https://github.com/ansible-collections/community.crypto
+    type: git
+    version: 2.22.3
