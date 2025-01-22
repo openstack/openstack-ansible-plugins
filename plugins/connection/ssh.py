@@ -335,7 +335,7 @@ class Connection(SSH.Connection):
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
 
-        super(Connection, self).set_options(task_keys=None, var_options=var_options, direct=direct)
+        super(Connection, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
 
         self.container_name = self.get_option('container_name')
         self.physical_host = self.get_option('physical_host')
