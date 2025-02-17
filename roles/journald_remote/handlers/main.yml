@@ -17,7 +17,7 @@
 - name: Ensure systemd-journal-remote socket enabled
   systemd:
     name: systemd-journal-remote.socket
-    enabled: yes
+    enabled: true
     state: started
   when:
     - (ansible_host in journald_remote_targets)

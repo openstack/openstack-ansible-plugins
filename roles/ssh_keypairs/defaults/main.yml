@@ -31,7 +31,7 @@ ssh_keypairs_method: "standalone"
 # --------
 
 # boolean to enable/disable creation of keys
-ssh_keypairs_create_keys: True
+ssh_keypairs_create_keys: true
 
 # ssh keypairs to create
 #
@@ -75,7 +75,7 @@ ssh_keypairs: []
 ssh_keypairs_install_keys: []
 
 # boolean to enable/disable installation of ssh keys
-ssh_keypairs_install_keypairs: True
+ssh_keypairs_install_keypairs: true
 
 # ----------
 # TRUSTED CA
@@ -111,4 +111,4 @@ ssh_keypairs_authorized_principals_file: "/etc/ssh/auth_principals/%u_principals
 ssh_keypairs_principals: []
 
 # boolean to enable/disable installation of sshd certificate authorities
-ssh_keypairs_install_authorities: True
+ssh_keypairs_install_authorities: true

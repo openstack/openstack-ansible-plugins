@@ -31,4 +31,3 @@
     loop_var: _haproxy_item
   tags:
     - common-haproxy
-

@@ -86,7 +86,7 @@
 - name: Restart systemd-tmpfiles-setup-dev
   service:
     name: "systemd-tmpfiles-setup-dev"
-    enabled: yes
+    enabled: true
     state: restarted
   when:
     - not (is_metal | default(False))

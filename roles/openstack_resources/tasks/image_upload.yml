@@ -43,7 +43,7 @@
       ansible.builtin.get_url:
         url: "{{ image['url'] }}"
         dest: "{{ openstack_resources_image['image_download_path'] | default(tempdir['path']) }}/{{ image['url'] | basename }}"
-        mode: '0644'
+        mode: "0644"
         checksum: "{{ ('checksum' in image) | ternary('md5:' ~ image['checksum'] | default(), omit) }}"
       loop: "{{ images_for_download }}"
       loop_control:
@@ -58,7 +58,7 @@
         fetch_status: []
 
     - name: Register get_image watch variable
-      when: item.changed  # noqa: no-handler
+      when: item.changed # noqa: no-handler
       ansible.builtin.set_fact:
         fetch_status: "{{ fetch_status + [item.ansible_job_id] }}"
       loop: "{{ get_image_results.results }}"
@@ -113,7 +113,7 @@
     upload_status: []
 
 - name: Register watch variable
-  when: item.changed  # noqa: no-handler
+  when: item.changed # noqa: no-handler
   ansible.builtin.set_fact:
     upload_status: "{{ upload_status + [item.ansible_job_id] }}"
   loop: "{{ upload_results.results }}"

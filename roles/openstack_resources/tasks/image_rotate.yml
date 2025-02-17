@@ -41,4 +41,4 @@
     name: "{{ item['name'] }}"
     state: absent
   loop: "{{ images_to_rotate[image['name']][:-(image['keep_copies'])] }}"
-  ignore_errors: true  # noqa: ignore-errors
+  ignore_errors: true # noqa: ignore-errors

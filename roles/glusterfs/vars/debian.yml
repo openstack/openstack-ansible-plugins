@@ -14,6 +14,6 @@
 # limitations under the License.
 
 glusterfs_server_distro_packages:
-  - python3-setuptools  # required for gluster ansible collection
+  - python3-setuptools # required for gluster ansible collection
   - glusterfs-cli
   - glusterfs-server

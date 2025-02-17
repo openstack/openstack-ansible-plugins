@@ -26,7 +26,7 @@
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
     filters:
-      'name': "{{ image['name'] }}"
+      "name": "{{ image['name'] }}"
   register: available_images
   loop: "{{ openstack_resources_image['images'] | rejectattr('checksum', 'undefined') }}"
   loop_control:

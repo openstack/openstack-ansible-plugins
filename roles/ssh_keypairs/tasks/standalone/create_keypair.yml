@@ -19,7 +19,6 @@
     _ca_file: "{{ ssh_keypairs_dir ~ '/' ~ kp.cert.signed_by }}"
   delegate_to: "{{ ssh_keypairs_setup_host }}"
   block:
-
     - name: Generate key pair for {{ kp['name'] }}
       community.crypto.openssh_keypair:
         comment: "{{ kp.comment | default(omit) }}"

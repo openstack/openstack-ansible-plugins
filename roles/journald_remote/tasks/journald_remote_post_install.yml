@@ -21,7 +21,7 @@
     state: "{{ item.state | default('present') }}"
     option: "{{ item.key }}"
     value: "{{ item.value }}"
-    backup: yes
+    backup: true
     mode: "0644"
   with_items: "{{ journald_remote_config_options }}"
   when:

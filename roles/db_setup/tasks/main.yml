@@ -36,7 +36,7 @@
         password: "{{ item.1.password }}"
         host: "{{ item.1.host | default('%') }}"
         priv: "{{ item.0.name }}.*:{{ item.1.priv | default('ALL') }}"
-        append_privs: yes
+        append_privs: true
         login_host: "{{ _oslodb_setup_endpoint | default(omit) }}"
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
         check_hostname: true

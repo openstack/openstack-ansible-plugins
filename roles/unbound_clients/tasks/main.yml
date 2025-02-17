@@ -46,7 +46,7 @@
   set_fact:
     resolvconf_resolver_ips: "{{ resolver_list }}"
     resolvconf_options:
-      - 'timeout:1'
+      - "timeout:1"
   when:
     - resolver_list is defined
     - resolver_list | length > 0
@@ -55,8 +55,8 @@
 - name: Set resolver rotate when physical_host is not an unbound host
   set_fact:
     resolvconf_options:
-      - 'timeout:1'
-      - 'rotate'
+      - "timeout:1"
+      - "rotate"
   when:
     - resolver_list is not defined
 
