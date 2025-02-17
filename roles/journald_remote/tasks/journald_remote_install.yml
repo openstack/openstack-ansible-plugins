@@ -15,14 +15,14 @@
 # limitations under the License.
 
 - name: Install systemd-journal-remote
-  package:
+  ansible.builtin.package:
     name: "{{ journald_remote_distro_packages }}"
     state: "{{ journald_remote_package_state }}"
   notify:
     - Ensure systemd-journal-remote socket enabled
 
 - name: Create journald-remote log directory
-  file:
+  ansible.builtin.file:
     path: "{{ journald_remote_log_path }}"
     state: "directory"
     owner: "{{ journald_remote_system_user }}"

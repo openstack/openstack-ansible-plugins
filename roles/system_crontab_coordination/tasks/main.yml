@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Create crontab
-  template:
+  ansible.builtin.template:
     src: "crontab.j2"
     dest: "/etc/crontab"
     owner: "root"

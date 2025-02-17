@@ -15,7 +15,7 @@
 # limitations under the License.
 
 - name: Ensure receiving hosts are tuned
-  ini_file:
+  community.general.ini_file:
     path: "/etc/systemd/journald.conf"
     section: "{{ item.section | default('Journal') }}"
     state: "{{ item.state | default('present') }}"
@@ -30,7 +30,7 @@
     - Restart systemd-journald
 
 - name: Setup journald services
-  import_role:
+  ansible.builtin.import_role:
     name: systemd_service
   vars:
     systemd_tempd_prefix: "openstack"

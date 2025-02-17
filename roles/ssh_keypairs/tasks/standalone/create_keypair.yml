@@ -49,7 +49,7 @@
       register: kp_cert
 
     - name: Save certificate info for signed key {{ kp['name'] }}
-      copy:
+      ansible.builtin.copy:
         content: "{{ kp_cert['info'] | to_nice_yaml }}"
         dest: "{{ kp_keys['filename'] ~ '-cert.info' }}"
         mode: "0644"

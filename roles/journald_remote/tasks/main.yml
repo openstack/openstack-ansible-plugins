@@ -15,7 +15,7 @@
 # limitations under the License.
 
 - name: Gather variables for each operating system
-  include_vars: "{{ lookup('first_found', params) }}"
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
       files:
@@ -31,13 +31,13 @@
     - always
 
 - name: Install journald-remote packages
-  import_tasks: journald_remote_install.yml
+  ansible.builtin.import_tasks: journald_remote_install.yml
   tags:
     - journald-remote-install
     - journald-remote
 
 - name: Configure journald-remote
-  import_tasks: journald_remote_post_install.yml
+  ansible.builtin.import_tasks: journald_remote_post_install.yml
   tags:
     - journald-remote-config
     - journald-remote

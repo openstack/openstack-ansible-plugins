@@ -19,7 +19,7 @@
     - name: Setup RPC vhost and policies
       vars:
         __mq_policies: "{{ (_oslomsg_rpc_policies | default([]) + oslomsg_rpc_policies) | unique(attribute='name') }}"
-      include_tasks: rabbit_vhost_setup.yml
+      ansible.builtin.include_tasks: rabbit_vhost_setup.yml
       loop: "{{ __resolved_oslomsg_rpc_vhost }}"
       loop_control:
         loop_var: __mq_vhost
@@ -29,7 +29,7 @@
         __mq_nolog: "{{ _oslomsg_nolog | default(True) }}"
         __mq_userid: "{{ _oslomsg_rpc_userid }}"
         __mq_password: "{{ _oslomsg_rpc_password }}"
-      include_tasks: rabbit_user_setup.yml
+      ansible.builtin.include_tasks: rabbit_user_setup.yml
       loop: "{{ __resolved_oslomsg_rpc_vhost }}"
       loop_control:
         loop_var: __mq_vhost
@@ -50,7 +50,7 @@
     - name: Setup Notify vhost and policies
       vars:
         __mq_policies: "{{ (_oslomsg_notify_policies | default([]) + oslomsg_notify_policies) | unique(attribute='name') }}"
-      include_tasks: rabbit_vhost_setup.yml
+      ansible.builtin.include_tasks: rabbit_vhost_setup.yml
       loop: "{{ __resolved_oslomsg_notify_vhost }}"
       loop_control:
         loop_var: __mq_vhost
@@ -65,7 +65,7 @@
         __mq_nolog: "{{ _oslomsg_nolog | default(True) }}"
         __mq_userid: "{{ _oslomsg_notify_userid }}"
         __mq_password: "{{ _oslomsg_notify_password }}"
-      include_tasks: rabbit_user_setup.yml
+      ansible.builtin.include_tasks: rabbit_user_setup.yml
       loop: "{{ __resolved_oslomsg_notify_vhost }}"
       loop_control:
         loop_var: __mq_vhost

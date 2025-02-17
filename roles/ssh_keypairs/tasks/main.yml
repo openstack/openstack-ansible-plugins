@@ -14,14 +14,14 @@
 # limitations under the License.
 
 - name: Include keypair variables for {{ ssh_keypairs_method }}
-  include_vars:
+  ansible.builtin.include_vars:
     file: "{{ ssh_keypairs_method ~ '_keypair.yml' }}"
 
 - name: Create keypairs
   when: ssh_keypairs_create_keys
   block:
     - name: Create keypair directories
-      file:
+      ansible.builtin.file:
         state: directory
         path: "{{ item.path }}"
         owner: "{{ item.owner | default(omit) }}"
@@ -33,7 +33,7 @@
       check_mode: false
 
     - name: Create keypairs
-      include_tasks: "{{ ssh_keypairs_method }}/create_keypair.yml"
+      ansible.builtin.include_tasks: "{{ ssh_keypairs_method }}/create_keypair.yml"
       loop: "{{ ssh_keypairs }}"
       loop_control:
         loop_var: kp
@@ -41,11 +41,11 @@
         kp_dir: "{{ ssh_keypairs_dir }}"
 
 - name: Install ssh server certificate authorities
-  include_tasks: "{{ ssh_keypairs_method }}/install_ssh_ca.yml"
+  ansible.builtin.include_tasks: "{{ ssh_keypairs_method }}/install_ssh_ca.yml"
   when:
     - ssh_keypairs_install_authorities
 
 - name: Install ssh keys
-  include_tasks: "{{ ssh_keypairs_method }}/install_ssh_key.yml"
+  ansible.builtin.include_tasks: "{{ ssh_keypairs_method }}/install_ssh_key.yml"
   when:
     - ssh_keypairs_install_keypairs

@@ -16,7 +16,7 @@
 # create a sorted resolver list with affinity toward unbound container(s)
 # on the same physical_host
 - name: Apply resolver sorting
-  set_fact:
+  ansible.builtin.set_fact:
     resolver_list: |-
       {% set _var = [] %}
       {% for host in groups[resolvconf_resolver_group] %}
@@ -43,7 +43,7 @@
     - physical_host in hostvars['localhost']['unbound_physical_hosts']
 
 - name: Set resolver IP list fact
-  set_fact:
+  ansible.builtin.set_fact:
     resolvconf_resolver_ips: "{{ resolver_list }}"
     resolvconf_options:
       - "timeout:1"
@@ -53,7 +53,7 @@
 
 # rotate is only used when no physical_host affinity is defined
 - name: Set resolver rotate when physical_host is not an unbound host
-  set_fact:
+  ansible.builtin.set_fact:
     resolvconf_options:
       - "timeout:1"
       - "rotate"
@@ -61,5 +61,5 @@
     - resolver_list is not defined
 
 - name: Include the resolvconf role
-  include_role:
+  ansible.builtin.include_role:
     name: resolvconf

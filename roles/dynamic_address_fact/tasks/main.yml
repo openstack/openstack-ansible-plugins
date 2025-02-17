@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Gathering facts for {{ network_address }} interface on metal hosts
-  setup:
+  ansible.builtin.setup:
     gather_subset: "!all,network"
     filter: "{{ dynamic_address_gather_filter | default(('ansible_' ~ default_network_interface_name) | replace('-','_')) }}"
   vars:
@@ -27,7 +27,7 @@
     - always
 
 - name: Set IP to use for {{ network_address }}
-  set_fact: "{{ network_address }}={{ hostvars[inventory_hostname] | json_query(query) }}"
+  ansible.builtin.set_fact: "{{ network_address }}={{ hostvars[inventory_hostname] | json_query(query) }}"
   vars:
     query: "{{ is_metal | ternary(metal_query, non_metal_query) }}"
     non_metal_query: "container_networks.{{ network_address }}.address || ansible_host"

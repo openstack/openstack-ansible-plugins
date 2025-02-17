@@ -28,7 +28,7 @@
 #  "extra_container_config" list to strings containing the options needed.
 
 - name: Set default bind mounts (bind var/log)
-  set_fact:
+  ansible.builtin.set_fact:
     lxc_default_bind_mounts: '{{ lxc_default_bind_mounts | default([{"bind_dir_path": "/var/log", "mount_path": "/openstack/log/" ~ inventory_hostname}]) }}'
   when:
     - default_bind_mount_logs | bool
@@ -36,7 +36,7 @@
     - common-lxc
 
 - name: Ensure mount directories exists
-  file:
+  ansible.builtin.file:
     path: "{{ item['mount_path'] }}"
     state: "directory"
   with_items:
@@ -49,7 +49,7 @@
     - common-lxc
 
 - name: Add bind mount configuration to container
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "/var/lib/lxc/{{ inventory_hostname }}/config"
     line: "lxc.mount.entry = {{ item['mount_path'] }} {{ item['bind_dir_path'].lstrip('/') }} none bind,create={{ item.create | default('dir') }} 0 0"
     insertbefore: "^lxc.mount.entry = .*\\s{{ item['bind_dir_path'].lstrip('/') | regex_replace('/', '\/') }}.*"
@@ -63,7 +63,7 @@
     - common-lxc
 
 - name: Extra lxc config
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/var/lib/lxc/{{ inventory_hostname }}/config"
     regexp: "^{{ item.split('=')[0] }} ="
     line: "{{ item.split('=')[0] }} = {{ item.split('=', 1)[1] }}"
@@ -75,7 +75,7 @@
     - common-lxc
 
 - name: Extra lxc config no restart
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/var/lib/lxc/{{ inventory_hostname }}/config"
     regexp: "^{{ item.split('=')[0] }} ="
     line: "{{ item.split('=')[0] }} = {{ item.split('=', 1)[1] }}"
@@ -86,7 +86,7 @@
     - common-lxc
 
 - name: Check container state
-  command: "lxc-info -n {{ inventory_hostname }} --state"
+  ansible.builtin.command: "lxc-info -n {{ inventory_hostname }} --state"
   changed_when: false
   delegate_to: "{{ physical_host }}"
   register: _lxc_container_state
@@ -102,7 +102,7 @@
 # NOTE(cloudnull): The `lxc-stop` command will have an RC of 2 if the command
 #                  fails due to a container already being in a stopped state.
 - name: Lxc container restart
-  command: >
+  ansible.builtin.command: >
     lxc-stop --name {{ inventory_hostname }}
     --logfile {{ lxc_container_log_path }}/lxc-{{ inventory_hostname }}.log
     --logpriority {{ (debug | bool) | ternary('DEBUG', 'INFO') }}
@@ -123,7 +123,7 @@
 # this uses the LXC CLI tools to ensure that we get logging.
 # TODO(odyssey4me): revisit this once the bug is fixed and released
 - name: Start Container
-  command: >
+  ansible.builtin.command: >
     lxc-start --daemon --name {{ inventory_hostname }}
     --logfile {{ lxc_container_log_path }}/lxc-{{ inventory_hostname }}.log
     --logpriority {{ (debug | bool) | ternary('DEBUG', 'INFO') }}
@@ -137,7 +137,7 @@
     - common-lxc
 
 - name: Wait for container tmpfiles-setup finish
-  raw: systemctl list-units systemd-tmpfiles-setup.service --no-legend | grep 'exited' >/dev/null
+  ansible.builtin.raw: systemctl list-units systemd-tmpfiles-setup.service --no-legend | grep 'exited' >/dev/null
   register: systemd_tmpfiles
   until: systemd_tmpfiles.rc == 0
   retries: 20
@@ -145,7 +145,7 @@
   changed_when: false
 
 - name: Wait for container connectivity
-  wait_for_connection:
+  ansible.builtin.wait_for_connection:
     connect_timeout: "{{ lxc_container_wait_params.connect_timeout | default(omit) }}"
     delay: "{{ lxc_container_wait_params.delay | default(omit) }}"
     sleep: "{{ lxc_container_wait_params.sleep | default(omit) }}"

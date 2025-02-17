@@ -131,6 +131,6 @@
   loop: "{{ upload_status }}"
 
 - name: Removing tmpdir
-  file:
+  ansible.builtin.file:
     path: "{{ tempdir.path }}"
     state: absent

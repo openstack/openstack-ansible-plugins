@@ -15,7 +15,7 @@
 
 - name: Slurp up SSH keys from ssh keypairs setup host {{ ssh_keypairs_setup_host }}
   delegate_to: "{{ ssh_keypairs_setup_host }}"
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ item.src | default(ssh_keypairs_dir ~ item.name | default('')) }}"
   register: _ssh_key_slurp
   when:
@@ -24,7 +24,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy ssh keys to target
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content | b64decode }}"
     dest: "{{ item.item.dest }}"
     mode: "{{ item.item.mode | default(omit) }}"

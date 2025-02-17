@@ -15,7 +15,7 @@
 # limitations under the License.
 
 - name: Ensure systemd-journal-remote socket enabled
-  systemd:
+  ansible.builtin.systemd:
     name: systemd-journal-remote.socket
     enabled: true
     state: started
@@ -23,6 +23,6 @@
     - (ansible_host in journald_remote_targets)
 
 - name: Restart systemd-journald
-  systemd:
+  ansible.builtin.systemd:
     name: systemd-journald
     state: restarted

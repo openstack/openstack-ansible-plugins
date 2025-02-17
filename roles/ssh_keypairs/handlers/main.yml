@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Regenerate trusted_ca file
-  assemble:
+  ansible.builtin.assemble:
     src: "/etc/ssh/trusted_ca.d/"
     dest: "{{ ssh_keypairs_trusted_ca_file }}"
     mode: "0644"
@@ -24,7 +24,7 @@
     _sshd_service_name:
       redhat: "sshd"
       debian: "ssh"
-  service:
+  ansible.builtin.service:
     name: "{{ _sshd_service_name[ansible_facts['os_family'] | lower] }}"
     state: reloaded
   listen:

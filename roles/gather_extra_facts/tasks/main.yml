@@ -14,6 +14,6 @@
 # limitations under the License.
 
 - name: Gather additional facts
-  setup:
+  ansible.builtin.setup:
     gather_subset: "{{ deployment_extra_facts_subset }}"
     filter: "{{ deployment_extra_facts_filter }}"

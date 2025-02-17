@@ -14,14 +14,14 @@
 # limitations under the License.
 
 - name: Ensure trusted CA directory is present
-  file:
+  ansible.builtin.file:
     path: "/etc/ssh/trusted_ca.d"
     state: directory
     mode: "0700"
 
 - name: Slurp up SSH CA certificates from keypair setup host ({{ ssh_keypairs_setup_host }})
   delegate_to: "{{ ssh_keypairs_setup_host }}"
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ item.src | default(ssh_keypairs_dir ~ '/' ~ item.name ~ '.pub') }}"
   register: _ssh_ca_slurp
   when:
@@ -30,7 +30,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create sshd trusted certificate config files
-  template:
+  ansible.builtin.template:
     src: "ssh_ca.j2"
     dest: "/etc/ssh/trusted_ca.d/{{ item.item.name }}"
     mode: "0644"
@@ -42,7 +42,7 @@
     - Regenerate trusted_ca file
 
 - name: Remove sshd trusted authorities for absent CA
-  file:
+  ansible.builtin.file:
     path: "/etc/sshd/trusted_ca.d/{{ item.item.name }}"
     state: absent
   with_items: "{{ _ssh_ca_slurp.results }}"
@@ -56,7 +56,7 @@
 # NOTE (jrosser) Centos-8 sshd is too old to support the 'Include' directive
 #                This task will need keeping in sync with ssh_ca_config.j2
 - name: Ensure sshd config fragments are read on Centos-8
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
     line: "{{ item }}"
   with_items:
@@ -67,7 +67,7 @@
     - Reload sshd
 
 - name: Write sshd trusted authorities config fragement
-  template:
+  ansible.builtin.template:
     src: ssh_ca_config.j2
     dest: "/etc/ssh/sshd_config.d/{{ ssh_keypairs_trusted_ca_config_file }}"
     mode: "0644"
@@ -76,13 +76,13 @@
     - Reload sshd
 
 - name: Ensure authorized principals directory is present
-  file:
+  ansible.builtin.file:
     path: "{{ ssh_keypairs_authorized_principals_file | dirname }}"
     state: directory
     mode: "0755"
 
 - name: Create sshd certificate principals config files
-  template:
+  ansible.builtin.template:
     src: "ssh_principal.j2"
     dest: "{{ (ssh_keypairs_authorized_principals_file | dirname) ~ '/' ~ item.user ~ '_principals' }}"
     mode: "0644"
@@ -94,7 +94,7 @@
     - Reload sshd
 
 - name: Remove sshd certificate principals which are absent
-  file:
+  ansible.builtin.file:
     path: "{{ (ssh_keypairs_authorized_principals_file | dirname) ~ '/' ~ item.user ~ '_principals' }}"
     state: absent
   with_items: "{{ ssh_keypairs_principals }}"

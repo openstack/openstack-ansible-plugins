@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Gather variables for each operating system
-  include_vars: "{{ lookup('first_found', params) }}"
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
       files:
@@ -33,16 +33,16 @@
   when: ansible_facts['pkg_mgr'] == 'dnf'
   block:
     - name: Enable extra repositories
-      command: dnf config-manager --set-enabled "{{ item }}"
+      ansible.builtin.command: dnf config-manager --set-enabled "{{ item }}"
       changed_when: false
       with_items: "{{ glusterfs_server_dnf_enable }}"
 
     - name: Install gluster repo packages
-      package:
+      ansible.builtin.package:
         name: "{{ glusterfs_server_dnf_sig_packages }}"
 
     - name: Apply systemctl overrides
-      import_role:
+      ansible.builtin.import_role:
         name: systemd_service
       vars:
         systemd_services:
@@ -54,18 +54,18 @@
                 ConditionCapability: ""
 
 - name: Install glusterfs server packages
-  package:
+  ansible.builtin.package:
     name: "{{ glusterfs_server_distro_packages }}"
     state: "{{ glusterfs_package_state }}"
 
 - name: Drop glusterfs-wait.sh script
-  copy:
+  ansible.builtin.copy:
     src: glusterfs-wait.sh
     dest: /usr/local/sbin
     mode: "0744"
 
 - name: Add glusterd.service overrides
-  import_role:
+  ansible.builtin.import_role:
     name: systemd_service
   vars:
     systemd_services:
@@ -76,7 +76,7 @@
             ExecStartPost: "/usr/local/sbin/glusterfs-wait.sh"
 
 - name: Configure systemd-tmpfiles to create /dev/fuse at boot
-  copy:
+  ansible.builtin.copy:
     content: "c /dev/fuse 0600 - - - 10:229"
     dest: "/etc/tmpfiles.d/openstack-ansible-glusterfs-server.conf"
     mode: "0644"
@@ -84,7 +84,7 @@
   register: _glusterfs_server_tmpfiles
 
 - name: Restart systemd-tmpfiles-setup-dev
-  service:
+  ansible.builtin.service:
     name: "systemd-tmpfiles-setup-dev"
     enabled: true
     state: restarted
@@ -93,7 +93,7 @@
     - _glusterfs_server_tmpfiles is changed
 
 - name: Start glusterfs server
-  service:
+  ansible.builtin.service:
     name: "{{ glusterfs_server_service }}"
     enabled: true
     state: started
@@ -104,7 +104,7 @@
   when: _glusterfs_is_bootstrap_host
 
 - name: Ensure glusterfs backing directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ glusterfs_server_backing_dir }}"
     state: directory
     mode: "0755"
@@ -112,7 +112,8 @@
 
 - name: Check brick status
   throttle: 1
-  command: gluster volume status {{ glusterfs_server_volume_name }} {{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks }} detail
+  ansible.builtin.command: gluster volume status {{ glusterfs_server_volume_name }} {{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks
+    }} detail
   register: _brick_online_status
   changed_when: false
   failed_when: false
@@ -122,7 +123,7 @@
 - name: Reset brick for a replaced node
   vars:
     brick: "{{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks }}"
-  command: "{{ item }}"
+  ansible.builtin.command: "{{ item }}"
   changed_when: false
   when:
     - _backing_dir_create is changed
@@ -138,13 +139,13 @@
     #       peer's active hostname not to match the one stored on disk. Restarting the service resolves
     #       this and prevents failures upon calls to create volumes.
     - name: Find existing peers' runtime hostnames
-      shell: "gluster peer status | grep Hostname: | cut -d ' ' -f 2"
+      ansible.builtin.shell: "gluster peer status | grep Hostname: | cut -d ' ' -f 2"
       changed_when: false
       register: _existing_peer_hostnames
       when: (glusterfs_server_cluster_members | length) > 1
 
     - name: Restart glusterfs server
-      service:
+      ansible.builtin.service:
         name: "{{ glusterfs_server_service }}"
         state: restarted
       when:
