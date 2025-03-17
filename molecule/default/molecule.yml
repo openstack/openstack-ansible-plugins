@@ -1,0 +1,49 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    force: true
+
+driver:
+  name: docker
+
+platforms:
+  - name: "osa_plugins-${MOLECULE_SCENARIO_NAME}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-ubuntu-systemd:jammy}"
+    command: ${DOCKER_COMMAND:-""}
+    pre_build_image: true
+    privileged: true
+    systemd: true
+    groups:
+      - osa_plugins
+    docker_networks:
+      - name: osa_plugins
+        ipam_config:
+          - subnet: '10.1.0.0/24'
+    networks:
+      - name: osa_plugins
+        ipv4_address: '10.1.0.100'
+
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  inventory:
+    group_vars:
+      all:
+        ansible_ssh_private_key_file: '~/.ssh/molecule'
+    hosts:
+      all:
+        children:
+          osa_plugins_ssh:
+            hosts:
+              osa_plugins_ssh-${MOLECULE_SCENARIO_NAME}:
+                ansible_host: 10.1.0.100
+  config_options:
+    defaults:
+      inject_facts_as_vars: false
+      host_key_checking: false
+
+scenario:
+  name: default

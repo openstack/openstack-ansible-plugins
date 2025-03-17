@@ -19,6 +19,7 @@
       - publish-openstack-docs-pti
       - build-release-notes-jobs-python3
       - openstack-ansible-role-jobs
+      - openstack-ansible-molecule
       - openstack-ansible-upgrade-infra_lxc-jobs
       - openstack-ansible-deploy-infra_lxc-jobs
     check:
