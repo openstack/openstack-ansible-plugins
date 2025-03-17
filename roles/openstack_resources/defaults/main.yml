@@ -103,6 +103,17 @@ openstack_resources_compute: {}
 #     - name: external
 #       ip_version: 6
 #       shared: true
+#   subnet_pools:
+#     - name: main
+#       address_scope: external
+#       prefixes:
+#         - 192.168.0.0/16
+#       default_prefix: 25
+#       max_prefix: 29
+#       min_prefix: 23
+#       quota: 22
+#       default: true
+#       shared: true
 #   networks:
 #     - name: tenant_network
 #       state: present
