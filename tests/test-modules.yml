@@ -17,9 +17,11 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  vars_files:
+    - vars/provider_networks.yml
   tasks:
     - name: Test network mapping consistent order
-      provider_networks:
+      openstack.osa.provider_networks:
         provider_networks: "{{ provider_networks }}"
         bind_prefix: "{{ provider_network_bind_prefix | default('') }}"
         is_metal: "{{ is_metal }}"
@@ -29,6 +31,5 @@
 
     - name: Verify network mappings have a consistent order
       ansible.builtin.assert:
-        that: >-
-          pndata.results | map(attribute='network_mappings') | unique | length
-          == 1
+        that:
+          - pndata.results | map(attribute='network_mappings') | unique | length == 1
