@@ -15,11 +15,11 @@
 
 - name: Fail if sshd is running in the containers
   hosts: all_containers:alt_containers
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   tasks:
     - name: Ensure sshd is not running
-      command: pgrep sshd
+      ansible.builtin.command: pgrep sshd
       register: sshd_pgrep
       failed_when: "sshd_pgrep.rc == 0"
       changed_when: false
@@ -27,27 +27,26 @@
 # The container3 ping validates I75f9d0f55ecd875caa1bf608a77c92f950b679a1
 - name: Test the connection plugin container awareness functions
   hosts: all_containers:alt_containers
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   tasks:
     - name: Test container ping
-      action:
-        module: ping
+      ansible.builtin.ping:
 
 # Test for I56d8afddbccf01f2944d2fdd505b601a4b048374
 - name: Test delegation in the container aware connection plugin
   hosts: localhost
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   tasks:
     - name: Test container delegation without templating
-      command: hostnamectl --transient
+      ansible.builtin.command: hostnamectl --transient
       delegate_to: container1
       register: delegated
       failed_when: delegated.stdout != 'container1'
       changed_when: false
     - name: Test container delegation using templating
-      command: hostnamectl --transient
+      ansible.builtin.command: hostnamectl --transient
       delegate_to: "{{ groups['all_containers'][1] }}"
       register: delegated
       failed_when: delegated.stdout != 'container2'
@@ -56,13 +55,13 @@
 # Test for conditional delegation Ief2fecbc266adcc816336b601253d3e90c39c32b
 - name: Test conditional delegation
   hosts: container1
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   vars:
     delegate_control: "target-host"
   tasks:
     - name: Test conditional delegation
-      command: hostnamectl --transient
+      ansible.builtin.command: hostnamectl --transient
       register: delegated
       failed_when: delegated.stdout != 'container1'
       changed_when: false
@@ -71,12 +70,11 @@
 # Test for If594914df53efacc6d5bba148f4f46280f5a117d
 - name: Test delegation between container physical_hosts
   hosts: fakecontainer
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   tasks:
     - name: Test delegation between containers on different hosts
-      action:
-        module: ping
+      ansible.builtin.ping:
       delegate_to: "{{ groups['all_containers'][0] }}"
 
 - name: Test container_user attribute
@@ -84,14 +82,14 @@
   user: root
   tasks:
     - name: Ensure container alt user
-      user:
+      ansible.builtin.user:
         name: testing
         group: users
     - name: Execute command with container_user set
-      command: whoami
+      ansible.builtin.command: whoami
       vars:
         container_user: testing
-        ansible_become: False
+        ansible_become: false
       register: whoami_output
       changed_when: false
       failed_when:
@@ -100,13 +98,13 @@
 # Test for I69f2eed35859bdc149e5ed21441eab7c8a8352cf
 - name: Create SSH certificate keys
   hosts: localhost
-  become: True
+  become: true
   tags:
     - always
     - sshd-ca
   tasks:
     - name: "Create ssh certificates to auth with"
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.ssh_keypairs
       vars:
         ssh_keypairs_setup_host: localhost
@@ -121,29 +119,29 @@
         ssh_keypairs_install_keys:
           keys:
             - cert: "plugins-{{ inventory_hostname }}"
-              dest: "{{ lookup('env','HOME') }}/.ssh/id_rsa"
-        ssh_keypairs_install_authorities: False
+              dest: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa"
+        ssh_keypairs_install_authorities: false
 
 - name: Reinstall openssh-server for delegation to unknown inventory host
   hosts: container3
   tasks:
     - name: Uninstall OpenSSH server
-      package:
+      ansible.builtin.package:
         name: "{{ openssh_server_package }}"
         state: absent
     - name: Install OpenSSH server
-      package:
+      ansible.builtin.package:
         name: "{{ openssh_server_package }}"
         state: present
     - name: Start OpenSSH server
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ openssh_server_service }}"
-        enabled: yes
-        masked: no
-        daemon_reload: yes
+        enabled: true
+        masked: false
+        daemon_reload: true
         state: restarted
     - name: Add SSH CA to the container
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.ssh_keypairs
       vars:
         ssh_keypairs_setup_host: localhost
@@ -161,7 +159,7 @@
   remote_user: root
   tasks:
     - name: Test container delegation without using inventory name
-      command: hostnamectl --transient
+      ansible.builtin.command: hostnamectl --transient
       delegate_to: 10.100.100.4
       register: delegated
       failed_when: delegated.stdout != 'container3'
