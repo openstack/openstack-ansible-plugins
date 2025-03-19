@@ -36,12 +36,13 @@
 - name: Add service users to roles
   vars:
     role_mapping: "{{ (role is string) | ternary({'name': role, 'state': 'present'}, role) }}"
+    user_project: "{{ user.project | default(_service_project_name) }}"
   openstack.cloud.role_assignment:
     cloud: "{{ _service_cloud_name }}"
     state: "{{ role_mapping['state'] | default('present') }}"
     user: "{{ user.name }}"
     role: "{{ role_mapping['name'] }}"
-    project: "{{ user.project | default(_service_project_name) }}"
+    project: "{{ (user_project is truthy) | ternary(user_project, omit) }}"
     domain: "{{ user.domain | default('default') }}"
     endpoint_type: admin
     validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
