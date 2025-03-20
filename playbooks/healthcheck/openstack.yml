@@ -27,7 +27,7 @@
   vars:
     ansible_python_interpreter: "{{ utility_venv_bin }}/python"
   vars_files:
-    - defaults/healthchecks-vars.yml
+    - vars/openstack.yml
   tasks:
     - name: Test keystone
       block:
