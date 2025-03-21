@@ -13,15 +13,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: Fetch the list of already existing images
+  openstack.cloud.image_info:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+  when:
+    - openstack_resources_image['images'] | selectattr('checksum', 'defined')
+    - not (openstack_resources_image['image_force_upload'] | default(false))
+  register: existing_images
+
 - name: Upload images
   ansible.builtin.include_tasks:
     file: image_upload.yml
-  loop: "{{ openstack_resources_image['images'] | batch(openstack_resources_image['image_upload_batch'] | default(3)) }}"
+  loop: "{{ images_for_upload | batch(openstack_resources_image['image_upload_batch'] | default(3)) }}"
   loop_control:
     loop_var: images
-    label: "{{ openstack_resources_image['images'] | map(attribute='name') | to_json }}"
+    label: "{{ images_for_upload | map(attribute='name') | to_json }}"
+  vars:
+    existing_images_checksums: "{{ existing_images['images'] | default([]) | map(attribute='checksum') }}"
+    images_for_upload: >-
+      {{
+        (openstack_resources_image['image_force_upload'] | default(false)) | ternary(
+          openstack_resources_image['images'],
+          openstack_resources_image['images'] | selectattr('checksum', 'defined') | rejectattr('checksum', 'in', existing_images_checksums) +
+          openstack_resources_image['images'] | rejectattr('checksum', 'defined')
+        )
+      }}
 
-- name: Retrieve all available Openstack images
+- name: Retrieve fresh details about controlled Openstack images
   openstack.cloud.image_info:
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
