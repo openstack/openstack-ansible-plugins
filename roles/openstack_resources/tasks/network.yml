@@ -33,6 +33,34 @@
       shared: "{{ scope['shared'] | default('false') }}"
       ip_version: "{{ scope['ip_version'] | default(4) }}"
 
+- name: Create subnet pools
+  openstack.cloud.subnet_pool:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ pool['name'] }}"
+    project: "{{ pool['project'] | default(omit) }}"
+    description: "{{ pool['description'] | default(omit) }}"
+    address_scope: "{{ pool['address_scope'] | default(omit) }}"
+    prefixes: "{{ pool['prefixes'] | default(omit) }}"
+    default_prefix_length: "{{ pool['default_prefix'] | default(omit) }}"
+    maximum_prefix_length: "{{ pool['max_prefix'] | default(omit) }}"
+    minimum_prefix_length: "{{ pool['min_prefix'] | default(omit) }}"
+    default_quota: "{{ pool['quota'] | default(omit) }}"
+    extra_specs: "{{ pool['extra_specs'] | default(omit) }}"
+    is_default: "{{ pool['default'] | default(false) }}"
+    is_shared: "{{ pool['shared'] | default(false) }}"
+    state: "{{ pool['state'] | default('present') }}"
+  loop: "{{ openstack_resources_network['subnet_pools'] | default([]) }}"
+  loop_control:
+    loop_var: "pool"
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
+      name: "{{ pool['name'] }}"
+      state: "{{ pool['state'] | default('present') }}"
+      shared: "{{ pool['shared'] | default('false') }}"
+      default: "{{ pool['default'] | default('false') }}"
+
 - name: Create network
   openstack.cloud.network:
     cloud: "{{ openstack_resources_cloud_name }}"
