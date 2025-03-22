@@ -99,6 +99,10 @@ openstack_resources_compute: {}
 
 # Define this variable to provide mappings to manage network resources
 # openstack_resources_network:
+#   address_scopes:
+#     - name: external
+#       ip_version: 6
+#       shared: true
 #   networks:
 #     - name: tenant_network
 #       state: present

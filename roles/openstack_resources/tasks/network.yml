@@ -13,6 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: Create address scopes
+  openstack.cloud.address_scope:
+    cloud: "{{ openstack_resources_cloud_name }}"
+    interface: "{{ openstack_resources_interface }}"
+    name: "{{ scope['name'] }}"
+    ip_version: "{{ scope['ip_version'] | default(4) }}"
+    is_shared: "{{ scope['shared'] | default(false) }}"
+    project: "{{ scope['project'] | default(omit) }}"
+    state: "{{ scope['state'] | default('present') }}"
+  loop: "{{ openstack_resources_network['address_scopes'] | default([]) }}"
+  loop_control:
+    loop_var: "scope"
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
+      name: "{{ scope['name'] }}"
+      state: "{{ scope['state'] | default('present') }}"
+      shared: "{{ scope['shared'] | default('false') }}"
+      ip_version: "{{ scope['ip_version'] | default(4) }}"
+
 - name: Create network
   openstack.cloud.network:
     cloud: "{{ openstack_resources_cloud_name }}"
