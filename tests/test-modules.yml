@@ -13,12 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
 - name: Test modules
   hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Test network mapping consistent order
       provider_networks:
@@ -30,7 +28,7 @@
       loop: "{{ range(10) | list }}"
 
     - name: Verify network mappings have a consistent order
-      assert:
+      ansible.builtin.assert:
         that: >-
           pndata.results | map(attribute='network_mappings') | unique | length
           == 1

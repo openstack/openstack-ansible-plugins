@@ -15,11 +15,11 @@
         ansible_python_interpreter: "{{ ansible_playbook_python }}"
       ansible.builtin.wait_for:
         port: 22
-        host: '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+        host: '{{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}'
         search_regex: OpenSSH
         delay: 5
 
-    - name: gather facts
+    - name: Gather facts
       ansible.builtin.setup:
 
 

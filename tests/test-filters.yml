@@ -14,34 +14,33 @@
 # limitations under the License.
 
 
-
 - name: Test filters
   hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Validate string_2_int filter
-      assert:
+      ansible.builtin.assert:
         that:
           - "{{ 'test' | string_2_int }} == 3752"
 
     - name: Set pip package list facts
-      set_fact:
-         pip_package_list_1:
-           - pip==8.1.2
-           - setuptools==25.1.0
-           - wheel==0.29.0
-         pip_package_list_2:
-           - babel==2.3.4
-           - pip==8.1.0
-         pip_package_list_merged:
-           - babel==2.3.4
-           - pip==8.1.0
-           - setuptools==25.1.0
-           - wheel==0.29.0
+      ansible.builtin.set_fact:
+        pip_package_list_1:
+          - pip==8.1.2
+          - setuptools==25.1.0
+          - wheel==0.29.0
+        pip_package_list_2:
+          - babel==2.3.4
+          - pip==8.1.0
+        pip_package_list_merged:
+          - babel==2.3.4
+          - pip==8.1.0
+          - setuptools==25.1.0
+          - wheel==0.29.0
 
     - name: Set splitlines string facts
-      set_fact:
+      ansible.builtin.set_fact:
         string_with_lines: |
           this
           is
@@ -53,14 +52,14 @@
           - a
           - test
     - name: Set splitlines filter fact
-      set_fact:
+      ansible.builtin.set_fact:
         string_split_lines_filtered: "{{ string_with_lines | splitlines }}"
     - name: Validate splitlines filter
-      assert:
+      ansible.builtin.assert:
         that: "string_split_lines_filtered == string_split_lines"
 
     - name: Set git repo facts
-      set_fact:
+      ansible.builtin.set_fact:
         git_repo: "git+https://git.openstack.org/openstack/nova@2bc8128d7793cc72ca2e146de3a092e1fef5033b#egg=nova&gitname=nova"
         git_repo_name: nova
         git_repo_link_parts:
@@ -71,12 +70,12 @@
           original: "git+https://git.openstack.org/openstack/nova@2bc8128d7793cc72ca2e146de3a092e1fef5033b#egg=nova&gitname=nova"
 
     - name: Set deprecation variable facts
-      set_fact:
+      ansible.builtin.set_fact:
         new_var: new
         old_var: old
     - name: Set deprecated filter fact
-      set_fact:
+      ansible.builtin.set_fact:
         deprecated_value: "{{ new_var | deprecated(old_var, 'old_var', 'new_var', 'Next Release', false) }}"
     - name: Validate deprecated filter
-      assert:
+      ansible.builtin.assert:
         that: "deprecated_value == old_var"
