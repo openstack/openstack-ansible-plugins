@@ -1,3 +1,5 @@
+---
+is_metal: true
 provider_networks:
  - network:
      container_bridge: "br-mgmt"

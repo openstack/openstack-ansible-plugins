@@ -1,0 +1,7 @@
+---
+
+- name: Running filters tests
+  ansible.builtin.import_playbook: ../../tests/test-filters.yml
+
+- name: Running modules tests
+  ansible.builtin.import_playbook: ../../tests/test-modules.yml
