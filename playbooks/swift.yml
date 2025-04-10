@@ -20,6 +20,9 @@
     - name: Gather additional facts
       include_role:
         name: openstack.osa.gather_extra_facts
+      vars:
+        deployment_extra_facts_subset: hardware,all_ipv4_addresses,all_ipv6_addresses,interfaces
+        deployment_extra_facts_filter: '*'
       when: osa_gather_facts | default(True)
   tags:
     - always
