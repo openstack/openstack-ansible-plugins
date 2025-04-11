@@ -144,6 +144,7 @@ openstack_resources_network: {}
 
 # Define this variable to manage OpenStack images
 # openstack_resources_image:
+#   image_force_upload: false
 #   image_upload_batch: 3
 #   image_async_timeout: 600
 #   image_async_retries: 200
