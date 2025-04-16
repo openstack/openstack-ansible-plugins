@@ -40,11 +40,12 @@
         loop_label:
           name: "{{ image['name'] }}"
           url: "{{ image['url'] }}"
+        download_checksum: "{{ ('checksum_compressed' in image) | ternary(image.get('checksum_compressed', ''), image.get('checksum', '')) }}"
       ansible.builtin.get_url:
         url: "{{ image['url'] }}"
         dest: "{{ openstack_resources_image['image_download_path'] | default(tempdir['path']) }}/{{ image['url'] | basename }}"
         mode: "0644"
-        checksum: "{{ ('checksum' in image) | ternary('md5:' ~ image['checksum'] | default(), omit) }}"
+        checksum: "{{ (download_checksum | bool) | ternary('md5:' ~ download_checksum, omit) }}"
       loop: "{{ images_for_download }}"
       loop_control:
         loop_var: image
@@ -75,18 +76,55 @@
       delay: "{{ openstack_resources_image['image_async_delay'] | default(10) }}"
       loop: "{{ fetch_status }}"
 
+- name: Decompress compressed images
+  block:
+    - name: Install required packages for decompress images
+      vars:
+        _decompress_package_mapping:
+          gz:
+            debian: gzip
+            redhat: gzip
+          xz:
+            debian: xz-utils
+            redhat: xz
+      ansible.builtin.package:
+        name: "{{ _decompress_package_mapping[item][ansible_facts['os_family'] | lower] }}"
+        state: present
+      loop: "{{ images | selectattr('compressed_format', 'defined') | map(attribute='compressed_format') | unique }}"
+
+    - name: Decompress image file
+      vars:
+        _image_path: >-
+          {{ image['filename'] | default(openstack_resources_image['image_download_path'] | default(tempdir.path) ~ '/' ~ image['url'] | basename) }}
+        _decompress_format_binary:
+          gz: gunzip
+          xz:
+            - xz
+            - -d
+        _decompress_args:
+          - "{{ _decompress_format_binary[image['compressed_format']] }}"
+          - "{{ _image_path }}"
+      ansible.builtin.command:
+        argv: "{{ _decompress_args | flatten }}"
+        creates: "{{ _image_path | split('.' ~ image['compressed_format']) | first }}"
+      loop: "{{ images | selectattr('compressed_format', 'defined') }}"
+      loop_control:
+        loop_var: image
+
 - name: "Uploading images"
   vars:
     loop_label:
       name: "{{ image['name'] }}"
       state: "{{ image['state'] | default('present') }}"
+    _image_path: >-
+      {{ image['filename'] | default(openstack_resources_image['image_download_path'] | default(tempdir.path) ~ '/' ~ image['url'] | basename) }}
   openstack.cloud.image:
     checksum: "{{ image['checksum'] | default(omit) }}"
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
     container_format: "{{ image['container_format'] | default('bare') }}"
     disk_format: "{{ image['disk_format'] | default(omit) }}"
-    filename: "{{ image['filename'] | default(tempdir.path ~ '/' ~ image['url'] | basename) }}"
+    filename: "{{ ('compressed_format' in image) | ternary(_image_path | split('.' ~ image.get('compressed_format', '')) | first, _image_path) }}"
     is_protected: "{{ image['is_protected'] | default(omit) }}"
     kernel: "{{ image['kernel'] | default(omit) }}"
     name: "{{ image['name'] }}"

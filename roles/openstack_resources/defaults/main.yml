@@ -154,6 +154,8 @@ openstack_resources_network: {}
 #       url: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
 #       # filename:
 #       # checksum: # md5 only is supported. Required for image rotation.
+#       # checksum_compressed: # md5 only is supported. Used for compressed images download process
+#       # compressed_format: # xz or gz are supported
 #       disk_format: qcow2
 #       visibility: private
 #       owner: service
