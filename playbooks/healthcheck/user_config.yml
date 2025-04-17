@@ -1,0 +1,137 @@
+---
+# Copyright 2025, Cleura AB
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Playbook to ensure that resulting inventory is generated according to
+# deployer intentions.
+# Sample variables to control test behaviour of the playbook:
+#
+# openstack_test_user_config_dir: /etc/openstack_deploy
+# openstack_test_service_groups_length: 3
+# openstack_test_service_groups:
+#   - galera_all
+#   - glance_api
+#   - keystone_all
+#   - neutron_server
+#   - nova_api_os_compute
+#   - placement_all
+#   - rabbitmq_all
+#
+# openstack_test_mutualy_exclusive_groups:
+#   - ['nova_api_os_compute', 'nova_compute']
+#   - ['neutron_server', 'neutron_ovn_northd']
+#   - ['neutron_server', 'neutron_ovn_controller']
+#   - ['neutron_ovn_gateway', 'nova_compute']
+#
+# openstack_test_collocated_groups:
+#   - ['nova_compute', 'neutron_ovn_controller']
+
+- name: Testing resulting inventory from provided openstack_user_config
+  hosts: "{{ ('deploy_host' in groups) | ternary('deploy_host', 'localhost') }}"
+  tasks:
+    - name: Verify dynamic_inventory is not failing
+      ansible.builtin.command: >-
+        /opt/ansible-runtime/bin/openstack-ansible-inventory --config {{ openstack_test_user_config_dir | default('/etc/openstack_deploy') }}
+      changed_when: false
+      register: dynamic_inventory
+
+    - name: Register OSA inventory content variable
+      ansible.builtin.set_fact:
+        osa_inventory: "{{ dynamic_inventory.stdout | from_json }}"
+
+    - name: Get all real hosts out of children
+      ansible.builtin.set_fact:
+        service_hosts: |
+          {% set hosts = {} %}
+          {% for service in openstack_test_service_groups | default([]) %}
+          {% if osa_inventory[service]['hosts'] | length > 0 %}
+          {%   set _ = hosts.update({service: osa_inventory[service]['hosts']}) %}
+          {% else %}
+          {%   set _ = hosts.update({service: []}) %}
+          {%   for group in osa_inventory[service]['children'] %}
+          {%     set _ = hosts[service].extend(osa_inventory[group]['hosts']) %}
+          {%   endfor %}
+          {% endif %}
+          {% endfor %}
+          {{ hosts }}
+
+    - name: Ensure that services are not running on bare metal
+      ansible.builtin.assert:
+        that:
+          - >-
+            'is_metal' not in osa_inventory['_meta']['hostvars'][item]['properties'] or
+              not osa_inventory['_meta']['hostvars'][item]['properties']['is_metal'] | bool
+          - osa_inventory['_meta']['hostvars'][item]['container_tech'] == 'lxc'
+      with_items: "{{ service_hosts.values() | flatten }}"
+      tags:
+        - skip_ansible_lint
+
+    - name: Ensure that each group has hosts {{ openstack_test_service_groups_length | default(3) }}
+      ansible.builtin.assert:
+        that:
+          - item.value | length == openstack_test_service_groups_length | default(3)
+      with_dict: "{{ service_hosts }}"
+
+    - name: Ensure that containers are split over different physical hosts
+      vars:
+        physical_hosts: |
+          {% set p_hosts = [] %}
+          {% for service in item.value %}
+          {% set _ = p_hosts.append(osa_inventory['_meta']['hostvars'][service]['physical_host']) %}
+          {% endfor %}
+          {{ p_hosts }}
+      ansible.builtin.assert:
+        that:
+          - physical_hosts | unique | length == openstack_test_service_groups_length | default(3)
+      with_dict: "{{ service_hosts }}"
+
+    - name: Verify that openstack_test_mutualy_exclusive_groups are respected
+      vars:
+        exclusive_hosts: |
+          {% set hosts = {} %}
+          {% for service in openstack_test_mutualy_exclusive_groups | default([]) | flatten | unique %}
+          {% if osa_inventory[service]['hosts'] | length > 0 %}
+          {%   set _ = hosts.update({service: osa_inventory[service]['hosts']}) %}
+          {% else %}
+          {%   set _ = hosts.update({service: []}) %}
+          {%   for group in osa_inventory[service]['children'] %}
+          {%     set _ = hosts[service].extend(osa_inventory[group]['hosts']) %}
+          {%   endfor %}
+          {% endif %}
+          {% endfor %}
+          {{ hosts }}
+      ansible.builtin.assert:
+        that:
+          - (exclusive_hosts[item[0]] | select('in', exclusive_hosts[item[1]])) | length == 0
+      loop: "{{ openstack_test_mutualy_exclusive_groups | default([]) }}"
+
+    - name: Verify that second element of openstack_test_collocated_groups contain all hosts from first element
+      vars:
+        collocated_hosts: |
+          {% set hosts = {} %}
+          {% for service in openstack_test_collocated_groups | default([]) | flatten | unique %}
+          {% if osa_inventory[service]['hosts'] | length > 0 %}
+          {%   set _ = hosts.update({service: osa_inventory[service]['hosts']}) %}
+          {% else %}
+          {%   set _ = hosts.update({service: []}) %}
+          {%   for group in osa_inventory[service]['children'] %}
+          {%     set _ = hosts[service].extend(osa_inventory[group]['hosts']) %}
+          {%   endfor %}
+          {% endif %}
+          {% endfor %}
+          {{ hosts }}
+      ansible.builtin.assert:
+        that:
+          - (collocated_hosts[item[0]] | select('in', collocated_hosts[item[1]])) == collocated_hosts[item[0]]
+      loop: "{{ openstack_test_collocated_groups | default([]) }}"
