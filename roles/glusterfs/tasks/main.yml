@@ -40,6 +40,32 @@
     - name: Install gluster repo packages
       ansible.builtin.package:
         name: "{{ glusterfs_server_dnf_sig_packages }}"
+      when:
+        - glusterfs_server_dnf_sig_packages | length > 0
+
+    - name: Add GPG key for COPR GlusterFS
+      ansible.builtin.rpm_key:
+        key: "{{ glusterfs_package_repo_key }}"
+        state: present
+      register: add_keys
+      until: add_keys is success
+      retries: 5
+      delay: 2
+      when:
+        - glusterfs_package_repo_key is defined
+
+    - name: Deploy upstream COPR yum repo for GlusterFS
+      ansible.builtin.yum_repository:
+        name: copr-gluster
+        description: "Copr repo for GlusterFS"
+        baseurl: "{{ glusterfs_package_repo }}"
+        enabled: true
+        gpgcheck: "{{ (glusterfs_package_repo_key is defined) }}"
+        gpgkey: "{{ glusterfs_package_repo_key | default(omit) }}"
+        repo_gpgcheck: false
+        state: present
+      when:
+        - glusterfs_package_repo is defined
 
     - name: Apply systemctl overrides
       ansible.builtin.import_role:
