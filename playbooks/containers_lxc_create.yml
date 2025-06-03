@@ -83,14 +83,11 @@
       assert:
         that:
           - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'bookworm') or
-            (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'jammy') or
             (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'noble') or
-            (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '9') or
             (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10')
         msg: >
           The only supported platforms for this release are Debian 12 (Bookworm)
-          Ubuntu 22.04 (Jammy), Ubuntu 24.04 (Noble), CentOS 9 Stream, CentOS 10 Stream
-          and RHEL 10 derivatives such as Rocky Linux.
+          Ubuntu 24.04 (Noble), CentOS 10 Stream and RHEL 10 derivatives such as Rocky Linux.
     - name: Setup installation variables
       include_role:
         name: openstack.osa.install_defaults
