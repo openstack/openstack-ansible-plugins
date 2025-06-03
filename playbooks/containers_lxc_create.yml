@@ -80,14 +80,9 @@
     - lxc-containers-create
   pre_tasks:
     - name: Check for a supported Operating System
-      assert:
-        that:
-          - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'bookworm') or
-            (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'noble') or
-            (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10')
-        msg: >
-          The only supported platforms for this release are Debian 12 (Bookworm)
-          Ubuntu 24.04 (Noble), CentOS 10 Stream and RHEL 10 derivatives such as Rocky Linux.
+      include_role:
+        name: openstack.osa.platform_check
+
     - name: Setup installation variables
       include_role:
         name: openstack.osa.install_defaults
