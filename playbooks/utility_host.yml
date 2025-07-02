@@ -115,9 +115,11 @@
             url: "{{ utility_upper_constraints_url }}"
             return_content: yes
           register: _abs_reqs
-          run_once: true
           check_mode: false
           ignore_errors: "{{ ansible_check_mode }}"
+          retries: 5
+          delay: 3
+          until: _abs_reqs is succeeded
           tags:
             - always
 
