@@ -53,25 +53,11 @@
   notify:
     - Regenerate trusted_ca file
 
-# NOTE (jrosser) Centos-8 sshd is too old to support the 'Include' directive
-#                This task will need keeping in sync with ssh_ca_config.j2
-- name: Ensure sshd config fragments are read on Centos-8
-  ansible.builtin.lineinfile:
-    path: "/etc/ssh/sshd_config"
-    line: "{{ item }}"
-  with_items:
-    - "TrustedUserCAKeys {{ ssh_keypairs_trusted_ca_file }}"
-    - "AuthorizedPrincipalsFile {{ ssh_keypairs_authorized_principals_file }}"
-  when: (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_major_version'] == '8')
-  notify:
-    - Reload sshd
-
 - name: Write sshd trusted authorities config fragement
   ansible.builtin.template:
     src: ssh_ca_config.j2
     dest: "/etc/ssh/sshd_config.d/{{ ssh_keypairs_trusted_ca_config_file }}"
     mode: "0644"
-  when: not (ansible_facts['distribution'] in ['CentOS', 'Rocky'] and ansible_facts['distribution_major_version'] == '8')
   notify:
     - Reload sshd
 
