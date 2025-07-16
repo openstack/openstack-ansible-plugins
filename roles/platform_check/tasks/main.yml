@@ -17,6 +17,7 @@
   ansible.builtin.assert:
     that:
       - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'bookworm') or
+        (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'trixie') or
         (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'noble') or
         (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10')
     msg: >
