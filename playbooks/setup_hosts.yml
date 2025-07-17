@@ -28,6 +28,9 @@
 - name: Importing openstack_hosts_setup playbook
   ansible.builtin.import_playbook: openstack.osa.openstack_hosts_setup
 
+- name: Importing post metal configuration playbook
+  ansible.builtin.import_playbook: "{{ post_metal_configuration_hook | default('openstack.osa.hook_dummy') }}"
+
 - name: Importing containers_deploy playbook
   ansible.builtin.import_playbook: openstack.osa.containers_deploy
 
