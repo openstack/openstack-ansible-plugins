@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Gather etcd facts
+- name: Gather rabbitmq facts
   hosts: "{{ rabbitmq_host_group | default('rabbitmq_all') }}"
   gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
