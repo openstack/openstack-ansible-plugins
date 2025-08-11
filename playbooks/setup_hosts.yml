@@ -14,25 +14,25 @@
 # limitations under the License.
 
 - name: Importing pre hook playbook
-  import_playbook: "{{ pre_setup_hosts_hook | default('openstack.osa.hook_dummy') }}"
+  ansible.builtin.import_playbook: "{{ pre_setup_hosts_hook | default('openstack.osa.hook_dummy') }}"
 
 - name: Importing certificate_authority playbook
-  import_playbook: openstack.osa.certificate_authority
+  ansible.builtin.import_playbook: openstack.osa.certificate_authority
 
 - name: Importing certificate_ssh_authority playbook
-  import_playbook: openstack.osa.certificate_ssh_authority
+  ansible.builtin.import_playbook: openstack.osa.certificate_ssh_authority
 
 - name: Importing certificate_generate playbook
-  import_playbook: openstack.osa.certificate_generate
+  ansible.builtin.import_playbook: openstack.osa.certificate_generate
 
 - name: Importing openstack_hosts_setup playbook
-  import_playbook: openstack.osa.openstack_hosts_setup
+  ansible.builtin.import_playbook: openstack.osa.openstack_hosts_setup
 
 - name: Importing containers_deploy playbook
-  import_playbook: openstack.osa.containers_deploy
+  ansible.builtin.import_playbook: openstack.osa.containers_deploy
 
 - name: Importing security-hardening playbook
-  import_playbook: openstack.osa.security_hardening
+  ansible.builtin.import_playbook: openstack.osa.security_hardening
 
 - name: Importing post hook playbook
-  import_playbook: "{{ post_setup_hosts_hook | default('openstack.osa.hook_dummy') }}"
+  ansible.builtin.import_playbook: "{{ post_setup_hosts_hook | default('openstack.osa.hook_dummy') }}"

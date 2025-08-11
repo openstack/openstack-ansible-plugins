@@ -15,17 +15,17 @@
 
 - name: Gather skyline facts
   hosts: skyline_all
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tasks:
     - name: Gather additional facts
       include_role:
         name: openstack.osa.gather_extra_facts
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
   tags:
     - always
 
 - name: Configure haproxy services
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: skyline_all
     service_variable: "skyline_haproxy_services"
@@ -38,12 +38,12 @@
 - name: Install skyline components
   hosts: skyline_all
   gather_facts: false
-  serial: "{{ skyline_api_serial | default(['1','100%']) }}"
+  serial: "{{ skyline_api_serial | default(['1', '100%']) }}"
   environment: "{{ deployment_environment_variables | default({}) }}"
   user: root
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -54,12 +54,12 @@
         - always
 
     - name: Including container-setup tasks
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool

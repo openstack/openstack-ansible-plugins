@@ -27,7 +27,7 @@
     - rgw-service-add
   tasks:
     - name: Setup installation variables
-      import_role:
+      ansible.builtin.import_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method | default('source') }}"
       tags:

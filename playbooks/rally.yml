@@ -15,7 +15,7 @@
 
 - name: Gather rally facts
   hosts: utility_all[0]
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
@@ -26,7 +26,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -37,11 +37,11 @@
         - always
 
     - name: End playbook
-      meta: end_play
+      ansible.builtin.meta: end_play
       when:
         - (not (rally_install | default(false)) | bool)
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool

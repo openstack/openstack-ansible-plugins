@@ -21,7 +21,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -36,7 +36,7 @@
     # restart do not cause an unexpected outage, we drain
     # the load balancer back end for this container.
     - name: Disabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
@@ -51,7 +51,7 @@
         - always
 
     - name: Determine tunnel bridge IP address
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.dynamic_address_fact
       vars:
         network_address: "tunnel_address"
@@ -59,7 +59,7 @@
         - always
 
     - name: Configure container (neutron-agent)
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       vars:
         list_of_bind_mounts:
@@ -74,14 +74,14 @@
         - "'neutron_agent' in group_names"
 
     - name: Configure container (other services)
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when:
         - "not is_metal"
         - "'neutron_agent' not in group_names"
 
     - name: Including unbound_clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
@@ -98,7 +98,7 @@
     # the load balancer back end for this container
     # to available again.
     - name: Enabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:

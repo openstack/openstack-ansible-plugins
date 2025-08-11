@@ -18,13 +18,13 @@
   gather_facts: false
   tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
 
     - name: Add hosts to dynamic inventory group
-      group_by:
+      ansible.builtin.group_by:
         key: lxc_containers
         parents: all_lxc_containers
       when:
@@ -48,7 +48,7 @@
     - lxc-containers-create
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -56,14 +56,14 @@
     - role: "lxc_container_create"
   post_tasks:
     - name: Wait for container connectivity
-      wait_for_connection:
+      ansible.builtin.wait_for_connection:
         connect_timeout: "{{ lxc_container_wait_params.connect_timeout | default(omit) }}"
         delay: "{{ lxc_container_wait_params.delay | default(omit) }}"
         sleep: "{{ lxc_container_wait_params.sleep | default(omit) }}"
         timeout: "{{ lxc_container_wait_params.timeout | default(omit) }}"
 
     - name: Clear facts for new container(s)
-      meta: clear_facts
+      ansible.builtin.meta: clear_facts
 
 - name: Gather lxc containers facts
   hosts: all_lxc_containers
@@ -80,11 +80,11 @@
     - lxc-containers-create
   pre_tasks:
     - name: Check for a supported Operating System
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.platform_check
 
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true

@@ -26,7 +26,7 @@
   serial: "{{ haproxy_serial | default('50%') }}"
   tasks:
     - name: Configure haproxy for the service
-      import_role:
+      ansible.builtin.import_role:
         name: haproxy_server
         tasks_from: haproxy_service_config_external.yml
       vars:

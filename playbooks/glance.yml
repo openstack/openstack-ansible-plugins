@@ -15,17 +15,17 @@
 
 - name: Gather glance facts
   hosts: "glance_all"
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tasks:
     - name: Gather additional facts
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.gather_extra_facts
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
   tags:
     - always
 
 - name: Configure haproxy services
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: glance_api
     service_variable: "glance_haproxy_services"
@@ -43,7 +43,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -57,7 +57,7 @@
     # restart do not cause an unexpected outage, we drain
     # the load balancer back end for this container.
     - name: Disabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
@@ -72,7 +72,7 @@
         - always
 
     - name: Configure container (local storage bind mount from host)
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       vars:
         list_of_bind_mounts: "{{ glance_container_bind_mounts }}"
@@ -82,14 +82,14 @@
         - (glance_remote_client is not defined) or (glance_remote_client | length == 0)
 
     - name: Configure container (remote storage)
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when:
         - not is_metal
         - (glance_default_store != "file") or (glance_remote_client is defined)
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
@@ -105,7 +105,7 @@
     # the load balancer back end for this container
     # to available again.
     - name: Enabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:

@@ -15,22 +15,22 @@
 
 - name: Gather memcached facts
   hosts: memcached
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
 - name: Install memcached
   hosts: memcached
   gather_facts: false
-  serial: "{{ memcached_serial | default(['1','100%']) }}"
+  serial: "{{ memcached_serial | default(['1', '100%']) }}"
   user: root
   pre_tasks:
     - name: Including container-setup role
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
     - name: Including unbound-clients role
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool

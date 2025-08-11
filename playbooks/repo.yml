@@ -15,30 +15,30 @@
 
 - name: Gather repo facts
   hosts: repo_all
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
 - name: Setup repo servers
   hosts: repo_all
   gather_facts: false
-  serial: "{{ repo_serial | default(['1','100%']) }}"
+  serial: "{{ repo_serial | default(['1', '100%']) }}"
   user: root
   pre_tasks:
     - name: End playbook
-      meta: end_play
+      ansible.builtin.meta: end_play
       when:
         - (install_method | default('source')) != "source"
 
     - name: Including container-setup role
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       vars:
         list_of_bind_mounts: "{{ repo_container_bind_mounts }}"
       when: not is_metal
 
     - name: Including unbound-clients role
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients.yml
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
@@ -50,7 +50,7 @@
   user: root
   tasks:
     - name: Create gluster cluster
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.glusterfs
       vars:
         glusterfs_server_group_name: "repo_all"
@@ -60,7 +60,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
 
 - name: Configure haproxy services
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: repo_all
     service_variable: "repo_haproxy_services"
@@ -71,11 +71,11 @@
 - name: Setup repo servers
   hosts: repo_all
   gather_facts: false
-  serial: "{{ repo_serial | default(['1','100%']) }}"
+  serial: "{{ repo_serial | default(['1', '100%']) }}"
   user: root
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true

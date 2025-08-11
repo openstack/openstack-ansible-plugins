@@ -15,19 +15,19 @@
 
 - name: Gather zookeeper facts
   hosts: zookeeper_all
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
 - name: Install zookeeper
   hosts: zookeeper_all
   gather_facts: false
-  serial: "{{ zookeeper_serial | default(['1','100%']) }}"
+  serial: "{{ zookeeper_serial | default(['1', '100%']) }}"
   user: root
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Including container-setup role
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
       vars:

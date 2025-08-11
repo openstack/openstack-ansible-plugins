@@ -21,7 +21,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -36,7 +36,7 @@
     # restart do not cause an unexpected outage, we drain
     # the load balancer back end for this container.
     - name: Disabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
@@ -51,7 +51,7 @@
         - always
 
     - name: Determine storage bridge IP address
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.dynamic_address_fact
       vars:
         network_address: "storage_address"
@@ -59,7 +59,7 @@
         - always
 
     - name: Configure container (cinder-volume) when lvm is in-use
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       vars:
         extra_container_config:
@@ -74,20 +74,20 @@
         - "cinder_backend_lvm_inuse | bool"
 
     - name: Configure container (other services)
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when:
         - "not is_metal"
         - "not ( 'cinder_volume' in group_names and cinder_backend_lvm_inuse | bool )"
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
 
     - name: Add volume group block device to cinder # noqa: no-changed-when
-      shell: |
+      ansible.builtin.shell: |
         set -o pipefail
         {% if item.value.volume_group is defined %}
         if [ "$(pvdisplay | grep -B1 {{ item.value.volume_group }} | awk '/PV/ {print $3}')" ];then
@@ -108,7 +108,7 @@
       delegate_to: "{{ physical_host }}"
 
     - name: Trigger udevadm # noqa: no-changed-when
-      command: udevadm trigger
+      ansible.builtin.command: udevadm trigger
       delegate_to: "{{ physical_host }}"
       when: cinder_backend_lvm_inuse | bool
 
@@ -125,7 +125,7 @@
     # the load balancer back end for this container
     # to available again.
     - name: Enabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
