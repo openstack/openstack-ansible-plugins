@@ -15,18 +15,18 @@
 
 - name: Gather unbound facts
   hosts: unbound
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
 - name: Install unbound DNS resolvers
   hosts: unbound
   gather_facts: false
-  serial: "{{ unbound_serial | default(['1','100%']) }}"
+  serial: "{{ unbound_serial | default(['1', '100%']) }}"
   user: root
   pre_tasks:
     - name: Including container-setup role
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
   roles:
@@ -44,7 +44,7 @@
   user: root
   tasks:
     - name: Including unbound-clients role
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool

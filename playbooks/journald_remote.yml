@@ -15,7 +15,7 @@
 
 - name: Gather facts
   hosts: hosts
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 

@@ -15,10 +15,10 @@
 
 - name: Gather ceph-nfs facts
   hosts: ceph-nfs
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tasks:
     - name: Define discovered_interpreter_python
-      set_fact:
+      ansible.builtin.set_fact:
         discovered_interpreter_python: /usr/bin/python3
   tags:
     - always
@@ -29,7 +29,7 @@
   user: root
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true

@@ -22,7 +22,7 @@
 # Many parts of keystone testing is happening in playbooks already, as
 # we are using it for setting up all the other openstack services.
 - name: Test OpenStack basic functionality
-  gather_facts: no
+  gather_facts: false
   hosts: utility_all[0]
   vars:
     ansible_python_interpreter: "{{ utility_venv_bin }}/python"
@@ -42,7 +42,7 @@
           register: service_catalog
 
         - name: Show service catalog
-          debug:
+          ansible.builtin.debug:
             var: service_catalog.results
       tags:
         - healthchecks
@@ -52,7 +52,7 @@
     - name: Test Glance
       block:
         - name: Image(s) download
-          get_url:
+          ansible.builtin.get_url:
             url: "{{ item.url }}"
             dest: "{{ item.dest }}"
             checksum: "{{ item.checksum | default(omit) }}"
@@ -127,7 +127,7 @@
           register: _create_net
 
         - name: Fail if network was not created successfully
-          fail:
+          ansible.builtin.fail:
             msg: "Creating network failure"
           with_items: "{{ _create_net.results }}"
           when:
@@ -143,7 +143,7 @@
           register: openstack_networks
 
         - name: Show networks
-          debug:
+          ansible.builtin.debug:
             var: openstack_networks.networks
 
         - name: Ensure subnet exists
@@ -185,13 +185,13 @@
     - name: Test heat
       block:
         - name: Fetch minimum heat stack
-          get_url:
+          ansible.builtin.get_url:
             url: "{{ heat_stack['source_url'] }}"
             dest: "{{ heat_stack['dest_file'] }}"
             mode: "0640"
 
         - name: Create heat stack
-          ignore_errors: True
+          ignore_errors: true
           register: stack_create
           openstack.cloud.stack:
             cloud: default
@@ -213,7 +213,7 @@
     - name: Test nova
       block:
         - name: Create keypair for nova
-          command: "ssh-keygen -b 2048 -t rsa -f {{ ssh_key }} -q -N ''"  # noqa no-changed-when
+          ansible.builtin.command: "ssh-keygen -b 2048 -t rsa -f {{ ssh_key }} -q -N ''"  # noqa no-changed-when
           args:
             creates: "{{ ssh_key }}"
 
@@ -299,17 +299,17 @@
             server: "{{ nova_vm.name }}"
 
         - name: Show server facts
-          debug:
+          ansible.builtin.debug:
             var: openstack_servers
 
         - name: Discover the healthcheck vm floating IP
-          set_fact:
+          ansible.builtin.set_fact:
             _floating_ip: "{{ openstack_servers | json_query(_query) }}"
           vars:
             _query: "[?name == '{{ nova_vm.name }}'].addresses.{{ nova_vm.network }}[] | [?contains(*,'floating')].addr"
 
         - name: Ensure connection to node works
-          command: "scp -o StrictHostKeyChecking=no -i {{ ssh_key }} cirros@{{ _floating_ip[0] }}:/etc/fstab /tmp/fstab"
+          ansible.builtin.command: "scp -o StrictHostKeyChecking=no -i {{ ssh_key }} cirros@{{ _floating_ip[0] }}:/etc/fstab /tmp/fstab"
           changed_when: false
 
       when:
@@ -378,7 +378,7 @@
 
 # Teardown
 - name: Teardown
-  gather_facts: no
+  gather_facts: false
   hosts: utility_all[0]
   vars:
     ansible_python_interpreter: "{{ utility_venv_bin }}/python"
@@ -388,7 +388,7 @@
     - name: Teardown images tests
       block:
         - name: Remove glance downloads
-          file:
+          ansible.builtin.file:
             state: absent
             path: "{{ item.dest }}"
           with_items: "{{ glance_images }}"
@@ -436,7 +436,7 @@
     - name: Teardown heat tests
       block:
         - name: Remove heat downloads
-          file:
+          ansible.builtin.file:
             path: "{{ heat_stack['dest_file'] }}"
             state: absent
 
@@ -451,7 +451,7 @@
             tag: "{{ heat_stack['tag'] }}"
             state: absent
         - name: Show results of heath stack destroy
-          debug:
+          ansible.builtin.debug:
             var: _stack_destroy
       when:
         - "groups['heat_all'] | length > 0"
@@ -479,7 +479,7 @@
             state: absent
 
         - name: Remove SSH key(s)
-          file:
+          ansible.builtin.file:
             path: "{{ item }}"
             state: absent
           with_items:

@@ -15,12 +15,12 @@
 
 - name: Gather haproxy facts
   hosts: haproxy
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tasks:
     - name: Gather additional facts
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.gather_extra_facts
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
   tags:
     - always
 
@@ -31,16 +31,16 @@
   user: root
   pre_tasks:
     - name: Including container-setup tasks
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
     - name: Remove legacy haproxy configuration files
-      file:
+      ansible.builtin.file:
         dest: "/etc/haproxy/conf.d/{{ item.name }}"
         state: "absent"
       with_items:

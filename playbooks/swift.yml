@@ -15,20 +15,20 @@
 
 - name: Gather swift facts
   hosts: swift_all:swift_remote_all
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tasks:
     - name: Gather additional facts
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.gather_extra_facts
       vars:
         deployment_extra_facts_subset: hardware,all_ipv4_addresses,all_ipv6_addresses,interfaces
         deployment_extra_facts_filter: '*'
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
   tags:
     - always
 
 - name: Configure haproxy services
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: swift_all
     service_variable: "swift_haproxy_services"
@@ -44,7 +44,7 @@
   user: root
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -55,7 +55,7 @@
         - always
 
     - name: Including container-setup tasks
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       vars:
         extra_container_config_no_restart:
@@ -63,7 +63,7 @@
       when: not is_metal
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool

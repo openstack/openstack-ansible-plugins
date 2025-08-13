@@ -20,20 +20,20 @@
     - always
   tasks:
     - name: Gather minimal facts for nova
-      setup:
+      ansible.builtin.setup:
         gather_subset:
           - "!all"
           - min
       when: osa_gather_facts | default(True)
 
     - name: Gather additional facts for nova
-      setup:
+      ansible.builtin.setup:
         gather_subset: "{{ nova_gather_subset | default('processor_count') }}"
         filter: "{{ nova_gather_filter | default('ansible_processor*') }}"
       when: osa_gather_facts | default(True)
 
 - name: "Config haproxy service"
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: "nova_all"
     service_variable: "nova_haproxy_services"
@@ -51,7 +51,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -65,7 +65,7 @@
     # backends are used. This is necessary to ensure that volume-backed Nova
     # instances can function when RBD is the volume backend.
     - name: Set cinder RBD inuse fact
-      set_fact:
+      ansible.builtin.set_fact:
         nova_cinder_rbd_inuse: "{{ True in groups['cinder_volume'] | map('extract', hostvars, 'cinder_backend_rbd_inuse') }}"
       delegate_to: localhost
       delegate_facts: True
@@ -80,7 +80,7 @@
     # restart do not cause an unexpected outage, we drain
     # the load balancer back end for this container.
     - name: Disabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
@@ -101,7 +101,7 @@
         - always
 
     - name: Configure container
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
       vars:
@@ -109,7 +109,7 @@
           - "lxc.start.order=39"
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
@@ -128,7 +128,7 @@
     # the load balancer back end for this container
     # to available again.
     - name: Enabling haproxy backends
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.haproxy_endpoint_manage
         apply:
           tags:
@@ -157,7 +157,7 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
@@ -166,7 +166,7 @@
     # backends are used. This is necessary to ensure that volume-backed Nova
     # instances can function when RBD is the volume backend.
     - name: Set cinder RBD inuse fact
-      set_fact:
+      ansible.builtin.set_fact:
         nova_cinder_rbd_inuse: "{{ True in groups['cinder_volume'] | map('extract', hostvars, 'cinder_backend_rbd_inuse') }}"
       delegate_to: localhost
       delegate_facts: True
@@ -178,7 +178,7 @@
         - always
 
     - name: Configure container
-      include_role:
+      ansible.builtin.include_role:
         name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
       when: not is_metal
       vars:
@@ -186,13 +186,13 @@
           - "lxc.start.order=39"
 
     - name: Including unbound-clients tasks
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
 
     - name: Add nbd devices to the compute
-      shell: |
+      ansible.builtin.shell: |
         for i in /dev/nbd*;do
           lxc-device -n {{ container_name }} add $i $i
         done
@@ -209,7 +209,7 @@
         - always
 
     - name: Add net/tun device to the compute # noqa: no-changed-when
-      command: |
+      ansible.builtin.command: |
         lxc-device -n {{ container_name }} add /dev/net/tun /dev/net/tun
       delegate_to: "{{ physical_host }}"
       when:
@@ -220,7 +220,7 @@
         - always
 
     - name: Check if kvm device exists
-      stat:
+      ansible.builtin.stat:
         path: /dev/kvm
       delegate_to: "{{ physical_host }}"
       register: kvm_device
@@ -232,7 +232,7 @@
         - always
 
     - name: Add kvm device to the compute
-      command: |
+      ansible.builtin.command: |
         lxc-device -n {{ container_name }} add /dev/kvm /dev/kvm
       delegate_to: "{{ physical_host }}"
       register: device_add
@@ -263,12 +263,12 @@
   environment: "{{ deployment_environment_variables | default({}) }}"
   tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
 
     - name: Running db_post_setup tasks from the role
-      import_role:
+      ansible.builtin.import_role:
         name: os_nova
         tasks_from: nova_db_post_setup.yml

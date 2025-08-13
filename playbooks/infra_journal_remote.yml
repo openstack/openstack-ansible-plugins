@@ -15,7 +15,7 @@
 
 - name: Gather facts
   hosts: hosts
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   tags:
     - always
 
@@ -24,7 +24,7 @@
   gather_facts: false
   tasks:
     - name: Include journald-remote role
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.journald_remote
   tags:
     - journal-remote

@@ -20,24 +20,24 @@
     - always
   tasks:
     - name: Gather minimal facts for neutron
-      setup:
+      ansible.builtin.setup:
         gather_subset:
           - "!all"
           - min
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
 
     - name: Gather additional facts for neutron
-      setup:
+      ansible.builtin.setup:
         gather_subset: "{{ neutron_gather_subset | default('processor_count') }}"
         filter: "{{ neutron_gather_filter | default('ansible_processor*') }}"
-      when: osa_gather_facts | default(True)
+      when: osa_gather_facts | default(true)
 
 - name: Configure Neutron dynamic host groupings
   hosts: localhost
   gather_facts: no
   tasks:
     - name: Add hosts to dynamic inventory group
-      add_host:
+      ansible.builtin.add_host:
         group: "{{ dest_group }}"
         name: "{{ item }}"
       with_items: "{{ groups[src_group] }}"
@@ -49,7 +49,7 @@
         group_when: "{{ (neutron_plugin_type | default('ml2.ovn') == 'ml2.ovs.dvr') }}"
 
 - name: Configure haproxy services
-  import_playbook: openstack.osa.haproxy_service_config
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
     service_group: neutron_server
     service_variable: "neutron_haproxy_services"
@@ -60,19 +60,19 @@
     - haproxy-service-config
 
 - name: Install neutron server
-  import_playbook: openstack.osa.common.neutron
+  ansible.builtin.import_playbook: openstack.osa.common.neutron
   vars:
     neutron_hosts: "neutron_server"
     neutron_serial: "{{ neutron_server_serial | default(['1', '100%']) }}"
 
 - name: Install neutron L2 agents
-  import_playbook: openstack.osa.common.neutron
+  ansible.builtin.import_playbook: openstack.osa.common.neutron
   vars:
     neutron_hosts: "neutron_linuxbridge_agent:neutron_openvswitch_agent:!neutron_server"
     neutron_serial: "{{ neutron_agent_serial | default('50%') }}"
 
 - name: Install all other neutron agents
-  import_playbook: openstack.osa.common.neutron
+  ansible.builtin.import_playbook: openstack.osa.common.neutron
   vars:
     neutron_hosts: "neutron_all:!neutron_linuxbridge_agent:!neutron_openvswitch_agent:!neutron_server"
     neutron_serial: "{{ neutron_other_serial | default('1') }}"

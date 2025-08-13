@@ -17,11 +17,11 @@
 # The services need to be installed first though.
 - name: Synchronisation of swift ring and ssh keys
   hosts: swift_all:swift_remote_all
-  gather_facts: "{{ osa_gather_facts | default(True) }}"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
   user: root
   pre_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true

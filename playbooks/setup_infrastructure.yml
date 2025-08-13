@@ -14,47 +14,47 @@
 # limitations under the License.
 
 - name: Importing pre hook playbook
-  import_playbook: "{{ pre_setup_infrastructure_hook | default('openstack.osa.hook_dummy') }}"
+  ansible.builtin.import_playbook: "{{ pre_setup_infrastructure_hook | default('openstack.osa.hook_dummy') }}"
 
 - name: Importing unbound playbook
-  import_playbook: openstack.osa.unbound
+  ansible.builtin.import_playbook: openstack.osa.unbound
 
 - name: Importing haproxy playbook
-  import_playbook: openstack.osa.haproxy
+  ansible.builtin.import_playbook: openstack.osa.haproxy
 
 - name: Importing repo playbook
-  import_playbook: openstack.osa.repo
+  ansible.builtin.import_playbook: openstack.osa.repo
 
 - name: Importing memcached playbook
-  import_playbook: openstack.osa.memcached
+  ansible.builtin.import_playbook: openstack.osa.memcached
 
 - name: Importing galera playbook
-  import_playbook: openstack.osa.galera_server
+  ansible.builtin.import_playbook: openstack.osa.galera_server
 
 - name: Importing rabbitmq playbook
-  import_playbook: openstack.osa.rabbitmq_server
+  ansible.builtin.import_playbook: openstack.osa.rabbitmq_server
 
 - name: Importing utility_host playbook
-  import_playbook: openstack.osa.utility_host
+  ansible.builtin.import_playbook: openstack.osa.utility_host
 
 - name: Importing zookeeper playbook
-  import_playbook: openstack.osa.zookeeper
+  ansible.builtin.import_playbook: openstack.osa.zookeeper
 
 - name: Importing ceph-install playbook
-  import_playbook: openstack.osa.ceph_install.yml
+  ansible.builtin.import_playbook: openstack.osa.ceph_install.yml
 
 - name: Importing ceph-pools playbook
-  import_playbook: openstack.osa.ceph_pools.yml
+  ansible.builtin.import_playbook: openstack.osa.ceph_pools.yml
 
 - name: Importing ceph-nfs-install playbook
-  import_playbook: openstack.osa.ceph_nfs_install.yml
+  ansible.builtin.import_playbook: openstack.osa.ceph_nfs_install.yml
 
 # The journald-remote should be disabled by default until
 # https://github.com/systemd/systemd/issues/2376 has been
 # incorporated in current systemd packages
 - name: Importing infra_journal_remote playbook
-  import_playbook: openstack.osa.infra_journal_remote.yml
+  ansible.builtin.import_playbook: openstack.osa.infra_journal_remote.yml
   when: journald_remote_enabled | default (false) | bool
 
 - name: Importing post hook playbook
-  import_playbook: "{{ post_setup_infrastructure_hook | default('openstack.osa.hook_dummy') }}"
+  ansible.builtin.import_playbook: "{{ post_setup_infrastructure_hook | default('openstack.osa.hook_dummy') }}"

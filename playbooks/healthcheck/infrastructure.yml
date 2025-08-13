@@ -22,18 +22,18 @@
 # Test repo-install.yml
 - name: Ensure all repo-servers are built and are accessible by hosts.
   hosts: all_containers[0]:physical_hosts[0]
-  gather_facts: yes
+  gather_facts: true
   vars:
     repo_requirements_file: "constraints/upper_constraints_cached.txt"
   tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
 
     - name: Check the repo sync file on each repo server
-      uri:
+      ansible.builtin.uri:
         url: "{{ openstack_repo_protocol }}://{{ hostvars[item]['management_address'] }}:{{ repo_server_port }}/{{ repo_requirements_file }}"
       with_inventory_hostnames: "{{ groups['repo_all'] }}"
       when: install_method == 'source'
@@ -44,35 +44,35 @@
 # Test haproxy-install.yml
 - name: Ensuring haproxy runs
   hosts: haproxy
-  gather_facts: yes
+  gather_facts: true
   tasks:
     - name: Check if host can connect to external keepalived ping IP
-      command: "ping -c 2 {{ keepalived_external_ping_address }}"
+      ansible.builtin.command: "ping -c 2 {{ keepalived_external_ping_address }}"
       changed_when: false
 
     - name: Check if host can connect to internal keepalived ping IP
-      command: "ping -c 2 {{ keepalived_internal_ping_address }}"
+      ansible.builtin.command: "ping -c 2 {{ keepalived_internal_ping_address }}"
       changed_when: false
 
     - name: Checking if keepalived is running
-      command: "pgrep keepalived"
+      ansible.builtin.command: "pgrep keepalived"
       changed_when: false
       when: groups['haproxy'] | length > 1
 
     - name: Install netcat
-      package:
+      ansible.builtin.package:
         name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
         state: present
 
     # Fails if HAProxy is not running
     - name: Recording haproxy stats as a way to ensure haproxy runs
-      shell: 'echo "show info;show stat" | nc -U /var/run/haproxy.stat'
+      ansible.builtin.shell: 'echo "show info;show stat" | nc -U /var/run/haproxy.stat'
       changed_when: false
       register: haproxy_stats
 
     # Run this playbook with -v and you'll see your DOWN issues
     - name: Printing the output of haproxy stats
-      debug:
+      ansible.builtin.debug:
         var: haproxy_stats
         verbosity: 1
   tags:
@@ -82,7 +82,7 @@
 # Test repo-use.yml
 - name: Ensure all the containers can connect to the repos
   hosts: all_containers
-  gather_facts: yes
+  gather_facts: true
   # By having serial, you ensure that the first three containers are hitting
   # the load balancer at the same time, which would then cause hitting three
   # different repos servers.
@@ -96,14 +96,14 @@
         - install_method == 'source'
       block:
         - name: Setup installation variables
-          include_role:
+          ansible.builtin.include_role:
             name: openstack.osa.install_defaults
             defaults_from: "{{ install_method }}"
             public: true
 
         # Repo release path points to the internal LB vip
         - name: Check the presence of upper constraints on your repos and check load balancing
-          uri:
+          ansible.builtin.uri:
             url: "{{ openstack_repo_url }}/constraints/upper_constraints_cached.txt"
   tags:
     - healthcheck
@@ -112,19 +112,19 @@
 # Test utility-install.yml
 - name: Ensure the service setup host is ready to run openstack calls
   hosts: "{{ openstack_service_setup_host | default('localhost') }}"
-  gather_facts: no
+  gather_facts: false
   vars:
     ansible_python_interpreter: "{{ openstack_service_setup_host_python_interpreter | default(ansible_facts['python']['executable']) }}"
   pre_tasks:
     - name: Setup installation variables
-      import_role:
+      ansible.builtin.import_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method | default('source') }}"
   tasks:
     - name: Get openstack client config
       openstack.cloud.config:
     - name: Show openstack client config
-      debug:
+      ansible.builtin.debug:
         var: openstack.clouds
         verbosity: 1
   tags:
@@ -134,21 +134,21 @@
 # Test memcached-install.yml
 - name: Check memcached for keystone
   hosts: keystone_all
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Set facts about memcached
-      setup:
+      ansible.builtin.setup:
       delegate_to: "{{ item }}"
       delegate_facts: true
       with_items: "{{ groups['memcached'] }}"
 
     - name: Install netcat
-      package:
+      ansible.builtin.package:
         name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
         state: present
 
     - name: Connect to remote memcache servers (full mesh testing)
-      shell: "echo stats | nc -w 3 {{ hostvars[memcached_host]['management_address'] }} {{ memcached_port }}"
+      ansible.builtin.shell: "echo stats | nc -w 3 {{ hostvars[memcached_host]['management_address'] }} {{ memcached_port }}"
       changed_when: false
       register: memcache_stats
       with_items: "{{ groups['memcached'] }}"
@@ -156,7 +156,7 @@
         loop_var: memcached_host
 
     - name: Output memcache stats if in verbose mode
-      debug:
+      ansible.builtin.debug:
         var: memcache_stats
         verbosity: 1
   tags:
@@ -166,10 +166,10 @@
 # Test galera-install.yml
 - name: Sanity checks for all containers
   hosts: all_containers:physical_hosts
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Connect to galera port
-      wait_for:
+      ansible.builtin.wait_for:
         port: 3306
         host: "{{ internal_lb_vip_address }}"
         state: started
@@ -187,7 +187,7 @@
     - name: Wait for cluster to be ready
       block:
         - name: Wait for cluster ready state
-          command: |
+          ansible.builtin.command: |
             {{ _mariadb_client_binary }} -h {{ management_address }} \
                   -u "{{ galera_root_user | default('root') }}" \
                   -p"{{ galera_root_password }}" \
@@ -201,11 +201,11 @@
           until: mysql_instance_ready is success and mysql_instance_ready.stdout.split()[-1].split(',') | length == groups['galera_all'] | length
       rescue:
         - name: Restarting weird maria instance
-          service:
+          ansible.builtin.service:
             name: mariadb
             state: restarted
         - name: Wait for cluster ready state
-          command: |
+          ansible.builtin.command: |
             {{ _mariadb_client_binary }} -h {{ management_address }} \
                   -u "{{ galera_root_user | default('root') }}" \
                   -p"{{ galera_root_password }}" \
@@ -219,7 +219,7 @@
           until: mysql_instance_ready is success and mysql_instance_ready.stdout.split()[-1].split(',') | length == groups['galera_all'] | length
 
     - name: Check cluster local state
-      command: |
+      ansible.builtin.command: |
         {{ _mariadb_client_binary }} -h {{ management_address }} \
               -u "{{ galera_root_user | default('root') }}" \
               -p"{{ galera_root_password }}" \
@@ -232,7 +232,7 @@
         - skip_ansible_lint
 
     - name: Check cluster evs state
-      command: |
+      ansible.builtin.command: |
         {{ _mariadb_client_binary }} -h {{ management_address }} \
               -u "{{ galera_root_user | default('root') }}" \
               -p"{{ galera_root_password }}" \
@@ -245,7 +245,7 @@
         - skip_ansible_lint
 
     - name: Check contents
-      assert:
+      ansible.builtin.assert:
         that:
           - "'Synced' in wsrep_local_state_comment.stdout"
           - "'OPERATIONAL' in wsrep_evs_state.stdout"
@@ -280,7 +280,7 @@
 
     - name: Try to login with user to DB
       delegate_to: "{{ groups['utility_all'][0] }}"
-      command: |
+      ansible.builtin.command: |
         {{ _mariadb_client_binary }} -h {{ internal_lb_vip_address }} \
               -p"tester-secrete" \
               -u osa-tester \
@@ -319,7 +319,7 @@
 # Test rabbitmq-install.yml
 - name: Add a user for rabbitmq
   hosts: rabbitmq_all[0]
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Configure Rabbitmq vhost
       community.rabbitmq.rabbitmq_vhost:
@@ -342,29 +342,29 @@
 
 - name: Ensure all the usual openstack containers can connect to rabbit
   hosts: all_containers:!galera_all:!memcached:!haproxy:!rabbitmq_all:!unbound:!repo_all
-  gather_facts: no
+  gather_facts: false
   vars:
     venv_path: /tmp/rabbitmqtest
   post_tasks:
     - name: Setup installation variables
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
     - name: Generate venv for rabbitmq testing
-      include_role:
+      ansible.builtin.include_role:
         name: "python_venv_build"
       vars:
         venv_install_destination_path: "{{ venv_path }}"
         venv_pip_packages:
           - pika
     - name: Copying test script
-      copy:
+      ansible.builtin.copy:
         src: "scripts/rabbitmq-test.py"
         dest: "{{ venv_path }}/rabbitmq-test.py"
         mode: "0755"
     - name: Connect to rabbitmq
-      command: "{{ venv_path }}/bin/python {{ venv_path }}/rabbitmq-test.py {{ hostvars[groups['rabbitmq_all'][0]]['management_address'] }}"
+      ansible.builtin.command: "{{ venv_path }}/bin/python {{ venv_path }}/rabbitmq-test.py {{ hostvars[groups['rabbitmq_all'][0]]['management_address'] }}"
       changed_when: false
   tags:
     - healthcheck
@@ -372,7 +372,7 @@
 
 - name: Remove guest user for rabbitmq
   hosts: rabbitmq_all[0]
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Remove test user
       community.rabbitmq.rabbitmq_user:
@@ -396,7 +396,7 @@
   hosts: utility_all[0]
   tasks:
     - name: Probing TCP connection to zookeeper
-      wait_for:
+      ansible.builtin.wait_for:
         host: "{{ hostvars[item]['management_address'] }}"
         port: "{{ coordination_port | default(2181) }}"
       with_items: "{{ groups[coordination_host_group | default('zookeeper_all')] }}"
@@ -405,22 +405,22 @@
   hosts: "zookeeper_all"
   tasks:
     - name: Esuring netcat is installed
-      package:
+      ansible.builtin.package:
         name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
         state: present
 
     - name: Gathering zookeeper state
-      shell: "echo ruok | nc localhost {{ coordination_port | default(2181) }}"
+      ansible.builtin.shell: "echo ruok | nc localhost {{ coordination_port | default(2181) }}"
       register: zookeeper_ok
       changed_when: false
 
     - name: Gathering zookeeper rw/ro
-      shell: "echo isro | nc localhost {{ coordination_port | default(2181) }}"
+      ansible.builtin.shell: "echo isro | nc localhost {{ coordination_port | default(2181) }}"
       register: zookeeper_ro
       changed_when: false
 
     - name: Check zookeeper results
-      assert:
+      ansible.builtin.assert:
         that:
           - "'imok' in zookeeper_ok.stdout"
           - "'rw' in zookeeper_ro.stdout"

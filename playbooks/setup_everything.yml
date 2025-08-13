@@ -14,10 +14,10 @@
 # limitations under the License.
 
 - name: Importing setup_hosts playbook
-  import_playbook: openstack.osa.setup_hosts
+  ansible.builtin.import_playbook: openstack.osa.setup_hosts
 
 - name: Importing setup_infrastructure playbook
-  import_playbook: openstack.osa.setup_infrastructure
+  ansible.builtin.import_playbook: openstack.osa.setup_infrastructure
 
 - name: Importing setup_openstack playbook
-  import_playbook: openstack.osa.setup_openstack
+  ansible.builtin.import_playbook: openstack.osa.setup_openstack

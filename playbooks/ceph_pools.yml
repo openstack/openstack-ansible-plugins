@@ -23,7 +23,7 @@
     - "defaults/{{ install_method }}_install.yml"
   pre_tasks:
     - name: Define discovered_interpreter_python
-      set_fact:
+      ansible.builtin.set_fact:
         discovered_interpreter_python: /usr/bin/python3
   roles:
     - role: ceph-defaults
