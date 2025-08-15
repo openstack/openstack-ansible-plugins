@@ -24,3 +24,4 @@ glusterfs_server_dnf_enable:
 glusterfs_server_distro_packages:
   - glusterfs-server
   - glusterfs-fuse
+  - systemd-udev
