@@ -37,14 +37,14 @@
       register: backends
       changed_when: false
 
-    - name: Loop through backends to set state
-      community.general.haproxy:
-        host: "{{ item }}"
-        state: "{{ backend_state }}"
-        socket: /var/run/haproxy.stat
-        drain: "{{ haproxy_drain | default(False) }}"
-        shutdown_sessions: "False"
-        wait: "True"
-        wait_interval: "{{ haproxy_wait_interval | default(5) }}"
-        wait_retries: "{{ haproxy_wait_retries | default(24) }}"
-      with_items: "{{ backends.stdout_lines }}"
+    - name: Including haproxy_endpoint_manage role
+      ansible.builtin.include_role:
+        name: openstack.osa.haproxy_endpoint_manage
+      vars:
+        haproxy_host: "{{ backend }}"
+        haproxy_state: "{{ backend_state }}"
+        haproxy_target_hosts:
+          - "{{ inventory_hostname }}"
+      loop: "{{ backends.stdout_lines }}"
+      loop_control:
+        loop_var: backend
