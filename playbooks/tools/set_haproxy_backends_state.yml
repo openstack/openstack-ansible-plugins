@@ -1,0 +1,50 @@
+---
+# Copyright 2020, Springer Nature.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This playbook is typically used with the following ansible-playbook
+# arguments:
+# * `-e hostname=<host>`
+# * `-e backend_state=<enabled|disabled>`
+# in order to globally enable/disable a controller at the HAProxy level.
+
+- name: Set HAProxy backends state
+  hosts: haproxy
+  vars_prompt:
+    - name: "hostname"
+      prompt: |-
+        Supply a hostname of backends to be managed.
+        Define metal host to manage LXC container backends on this host
+      private: false
+    - name: "backend_state"
+      prompt: "Supply desired HAProxy state for affected backends"
+      default: "enabled"
+      private: false
+  tasks:
+    - name: List HAProxy backends to process  # noqa: risky-shell-pipe
+      ansible.builtin.shell: echo show servers state | nc -U /var/run/haproxy.stat | awk '{print $4}' | grep '^{{ hostname }}' | sort | uniq
+      register: backends
+      changed_when: false
+
+    - name: Loop through backends to set state
+      community.general.haproxy:
+        host: "{{ item }}"
+        state: "{{ backend_state }}"
+        socket: /var/run/haproxy.stat
+        drain: "{{ haproxy_drain | default(False) }}"
+        shutdown_sessions: "False"
+        wait: "True"
+        wait_interval: "{{ haproxy_wait_interval | default(5) }}"
+        wait_retries: "{{ haproxy_wait_retries | default(24) }}"
+      with_items: "{{ backends.stdout_lines }}"
