@@ -99,6 +99,9 @@
 - name: Importing ceph-rgw-install playbook
   ansible.builtin.import_playbook: openstack.osa.ceph_rgw_install
 
+- name: Importing openstack_resources playbook
+  ansible.builtin.import_playbook: openstack.osa.openstack_resources
+
 - name: Importing skyline playbook
   ansible.builtin.import_playbook: openstack.osa.skyline
 
