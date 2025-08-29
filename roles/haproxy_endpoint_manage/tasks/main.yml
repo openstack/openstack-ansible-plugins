@@ -26,7 +26,7 @@
     wait_retries: "{{ haproxy_wait_retries | default(24) }}"
     weight: "{{ haproxy_weight | default(omit) }}"
   delegate_to: "{{ _haproxy_item }}"
-  with_items: "{{ groups[haproxy_group_name|default('haproxy')] }}"
+  with_items: "{{ haproxy_target_hosts | default(groups[haproxy_group_name | default('haproxy')]) }}"
   loop_control:
     loop_var: _haproxy_item
   tags:
