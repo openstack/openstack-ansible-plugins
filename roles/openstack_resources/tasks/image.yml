@@ -40,7 +40,7 @@
         )
       }}
 
-- name: Retrieve fresh details about controlled Openstack images
+- name: Retrieve fresh details about controlled OpenStack images
   openstack.cloud.image_info:
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
