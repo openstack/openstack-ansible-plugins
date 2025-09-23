@@ -24,3 +24,5 @@ glusterfs_server_volume_name: "gfs"
 glusterfs_bootstrap_node: "{{ groups[glusterfs_server_group_name][0] }}"
 
 glusterfs_package_state: "{{ package_state | default('latest') }}"
+
+glusterfs_epel_mirror: "{{ centos_epel_mirror | default('http://dl.fedoraproject.org/pub/epel') }}"

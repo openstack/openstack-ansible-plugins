@@ -43,29 +43,43 @@
       when:
         - glusterfs_server_dnf_sig_packages | length > 0
 
-    - name: Add GPG key for COPR GlusterFS
+    - name: If a keyfile is provided, copy the gpg keyfile to the key location
+      ansible.builtin.copy:
+        src: "{{ item.keyfile }}"
+        dest: "{{ item.key }}"
+        mode: "0644"
+      with_items: "{{ glusterfs_package_repo_keys | default([]) | selectattr('keyfile', 'defined') | list }}"
+
+    - name: Install gpg keys
       ansible.builtin.rpm_key:
-        key: "{{ glusterfs_package_repo_key }}"
-        state: present
-      register: add_keys
-      until: add_keys is success
+        key: "{{ key.key }}"
+        validate_certs: "{{ key.validate_certs | default(omit) }}"
+        state: "{{ key.state | default('present') }}"
+      with_items: "{{ glusterfs_package_repo_keys | default([]) }}"
+      loop_control:
+        loop_var: key
+      register: _add_yum_keys
+      until: _add_yum_keys  is success
       retries: 5
       delay: 2
-      when:
-        - glusterfs_package_repo_key is defined
 
-    - name: Deploy upstream COPR yum repo for GlusterFS
+    - name: Install required RPM repositories
       ansible.builtin.yum_repository:
-        name: copr-gluster
-        description: "Copr repo for GlusterFS"
-        baseurl: "{{ glusterfs_package_repo }}"
-        enabled: true
-        gpgcheck: "{{ (glusterfs_package_repo_key is defined) }}"
-        gpgkey: "{{ glusterfs_package_repo_key | default(omit) }}"
-        repo_gpgcheck: false
-        state: present
-      when:
-        - glusterfs_package_repo is defined
+        name: "{{ item.name }}"
+        baseurl: "{{ item.baseurl }}"
+        description: "{{ item.description }}"
+        gpgkey: "{{ item.gpgkey }}"
+        gpgcheck: "{{ item.gpgcheck }}"
+        enabled: "{{ item.enabled }}"
+        state: "{{ item.state }}"
+        includepkgs: "{{ item.includepkgs | default([]) }}"
+      loop: "{{ glusterfs_package_repos | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: install_epel_repo
+      until: install_epel_repo  is success
+      retries: 5
+      delay: 2
 
     - name: Apply systemctl overrides
       ansible.builtin.import_role:
