@@ -13,8 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-glusterfs_package_repo: "https://download.copr.fedorainfracloud.org/results/neil/glusterfs/epel-10-$basearch/"
-glusterfs_package_repo_key: "https://download.copr.fedorainfracloud.org/results/neil/glusterfs/pubkey.gpg"
+glusterfs_package_repo_keys:
+  - name: copr-neil-glusterfs
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-COPR-NEIL-GLUSTERFS
+    keyfile: gpg/7D0CC81C
+  - name: epel-10
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-10
+    keyfile: gpg/E37ED158
+
+glusterfs_package_repos:
+  - name: copr-gluster
+    baseurl: "https://download.copr.fedorainfracloud.org/results/neil/glusterfs/epel-10-$basearch/"
+    description: "Copr repo for GlusterFS"
+    enabled: true
+    gpgcheck: true
+    gpgkey: "file://{{ (glusterfs_package_repo_keys | selectattr('name', 'eq', 'copr-neil-glusterfs') | first).key }}"
+    state: present
+  - name: epel-gluster-deps
+    baseurl: "{{ glusterfs_epel_mirror ~ '/' ~ ansible_facts['distribution_major_version'] ~ '/Everything/' ~ ansible_facts['architecture'] }}"
+    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    gpgkey: "file://{{ (glusterfs_package_repo_keys | selectattr('name', 'eq', 'epel-10') | first).key }}"
+    gpgcheck: true
+    enabled: true
+    state: present
+    includepkgs:
+      - gperftools-libs
+      - libunwind
 
 glusterfs_server_dnf_sig_packages: []
 
