@@ -48,7 +48,7 @@
         src: "{{ item.keyfile }}"
         dest: "{{ item.key }}"
         mode: "0644"
-      with_items: "{{ glusterfs_package_repo_keys | selectattr('keyfile', 'defined') | list }}"
+      with_items: "{{ glusterfs_package_repo_keys | default([]) | selectattr('keyfile', 'defined') | list }}"
 
     - name: Install gpg keys
       ansible.builtin.rpm_key:
