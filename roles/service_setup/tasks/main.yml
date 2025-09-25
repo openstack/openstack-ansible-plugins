@@ -42,11 +42,11 @@
         domain_id: "{{ _project_domain | default('default') }}"
         endpoint_type: admin
         validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
+      register: add_project
       when:
         - not (_service_in_ldap | default(False) | bool)
         - _project_name is defined
-      until: add_service is success
+      until: add_project is success
       retries: 5
       delay: 10
 
@@ -79,14 +79,14 @@
         endpoint_type: admin
         validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
         update_password: "{{ (service_update_password | default(False) | bool) | ternary('always', omit) }}"
-      register: add_service
+      register: add_user
       when:
         - not (_service_in_ldap | default(False) | bool)
         - _service_users is defined
         - "'name' in item"
         - "'password' in item"
         - (item.condition | default(True)) | bool
-      until: add_service is success
+      until: add_user is success
       with_items: "{{ _service_users }}"
       retries: 5
       delay: 10
@@ -116,8 +116,8 @@
         region: "{{ _service_region | default('RegionOne') }}"
         endpoint_type: admin
         validate_certs: "{{ not (_service_adminuri_insecure | default(True) | bool) }}"
-      register: add_service
-      until: add_service is success
+      register: add_endpoint
+      until: add_endpoint is success
       retries: 5
       delay: 10
       with_items: "{{ _service_endpoints }}"
