@@ -169,6 +169,9 @@
 - name: Gather ceph-osd facts
   hosts: ceph-osd
   gather_facts: "{{ osa_gather_facts | default(True) }}"
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: "{{ osa_gather_subset | default(lookup('ansible.builtin.env', 'ANSIBLE_GATHER_SUBSET', default='!all,min')) }}"
   tasks:
     - name: Define discovered_interpreter_python
       ansible.builtin.set_fact:
@@ -265,6 +268,9 @@
 - name: Gather ceph-mds facts
   hosts: ceph-mds
   gather_facts: "{{ osa_gather_facts | default(True) }}"
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: "{{ osa_gather_subset | default(lookup('ansible.builtin.env', 'ANSIBLE_GATHER_SUBSET', default='!all,min')) }}"
   tasks:
     - name: Define discovered_interpreter_python
       ansible.builtin.set_fact:
