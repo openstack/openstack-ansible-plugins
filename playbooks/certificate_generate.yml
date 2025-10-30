@@ -15,6 +15,9 @@
 - name: Generate any extra user certificates
   hosts: "{{ openstack_pki_setup_host | default('localhost') }}"
   gather_facts: "{{ osa_gather_facts | default(true) }}"
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: "{{ osa_gather_subset | default(lookup('ansible.builtin.env', 'ANSIBLE_GATHER_SUBSET', default='!all,min')) }}"
   tags:
     - always
   tasks:
