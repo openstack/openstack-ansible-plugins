@@ -46,6 +46,7 @@ glusterfs_server_dnf_enable:
   - crb
 
 glusterfs_server_distro_packages:
+  - python3-setuptools # required for gluster ansible collection
   - glusterfs-server
   - glusterfs-fuse
   - systemd-udev
