@@ -1,0 +1,78 @@
+---
+# Copyright 2025, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Fetch existing gluster UUIDs
+  ansible.builtin.slurp:
+    src: /var/lib/glusterd/glusterd.info
+  register: _glusterd_uuid
+
+- name: Find all peers across cluster
+  ansible.builtin.find:
+    paths: /var/lib/glusterd/peers/
+    recurse: false
+  register: _glusterd_peers
+
+- name: Fetch peers details from cluster
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: "{{ _glusterd_peers.files | map(attribute='path') }}"
+  register: _glusterd_peer_details
+
+- name: Clean up obsolete peers
+  vars:
+    _glusterd_uuid_list: >-
+      {{
+        groups[glusterfs_server_group_name] | map('extract', hostvars, '_glusterd_uuid') | map(attribute='content') | map('b64decode') | map(
+          'regex_replace', '^UUID=([^\n]+)[\s\S]*$', '\1')
+      }}
+    _glusterd_peer_mapping: |-
+      {% set peer_mapping = {} %}
+      {% set data = groups[glusterfs_server_group_name] | map('extract', hostvars, '_glusterd_peer_details') %}
+      {# Decoded version of content for each peer from each host in the cluster #}
+      {% set peer_data = data | map(attribute='results') | flatten | map(attribute='content') | map('b64decode')%}
+      {# We get list of strings, ie ['0fd5cc38-8bfd-4da5-92c7-dc2822e78149:aio1-repo-container'] #}
+      {% set peer_uuid_host = peer_data | map('regex_replace', '^uuid=([^\n]+)[\s\S]*hostname1=([^\n]+)[\s\S]*$', '\\1:\\2') %}
+      {% for peer in peer_uuid_host | map('split', ':') %}
+      {%   set _ = peer_mapping.update({(peer | first): (peer | last | split('.') | first)}) %}
+      {% endfor %}
+      {{ peer_mapping }}
+    _glusterd_stale_uuids: "{{ _glusterd_peer_mapping.keys() | difference(_glusterd_uuid_list) }}"
+  when:
+    - _glusterfs_is_bootstrap_host
+    - _glusterd_stale_uuids | length > 0
+
+  block:
+    - name: Remove gluster volume bricks  # noqa: risky-shell-pipe
+      vars:
+        num_cluster_members: "{{ glusterfs_server_cluster_members | length - _glusterd_stale_uuids | length }}"
+        cluster_has_replicas: "{{ (glusterfs_server_cluster_members | length) > 1 }}"
+      ansible.builtin.shell:
+        cmd: >-
+          yes | gluster volume remove-brick {{ glusterfs_server_volume_name }}
+          {% if cluster_has_replicas %}replica {{ num_cluster_members }}{% endif %}
+          {{ _glusterd_peer_mapping[item] }}:{{ glusterfs_server_bricks }} force
+      changed_when: true
+      with_items: "{{ _glusterd_stale_uuids }}"
+
+    - name: Remove peer from cluster
+      gluster.gluster.gluster_peer:
+        nodes: |-
+          {% set peers = [] %}
+          {% for peer in _glusterd_stale_uuids %}
+          {%   set _ = peers.append(_glusterd_peer_mapping[peer]) %}
+          {% endfor %}
+          {{ peers }}
+        state: absent
+        force: true
