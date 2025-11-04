@@ -1,0 +1,55 @@
+---
+# Copyright 2022, BBC R&D.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Create gluster peers
+  gluster.gluster.gluster_peer:
+    nodes: "{{ glusterfs_server_cluster_members }}"
+  when: _glusterfs_is_bootstrap_host
+
+- name: Ensure glusterfs backing directory exists
+  ansible.builtin.file:
+    path: "{{ glusterfs_server_backing_dir }}"
+    state: directory
+    mode: "0755"
+  register: _backing_dir_create
+
+- name: Check brick status
+  throttle: 1
+  ansible.builtin.command: gluster volume status {{ glusterfs_server_volume_name }} {{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks
+    }} detail
+  register: _brick_online_status
+  changed_when: false
+  failed_when: false
+
+# NOTE (jrosser) run this task if we just created the data dir, the volume exists (status was available)
+#                and the brick on this node is offline. This covers a destroy/create of an existing host
+- name: Reset brick for a replaced node
+  vars:
+    brick: "{{ inventory_hostname | regex_replace('_', '-') }}:{{ glusterfs_server_bricks }}"
+  ansible.builtin.command: "{{ item }}"
+  changed_when: false
+  when:
+    - _backing_dir_create is changed
+    - _brick_online_status.rc == 0
+    - (_brick_online_status.stdout_lines | select('contains', 'Online'))[0] | regex_search('N')
+  with_items:
+    - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} start
+    - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} {{ brick }} commit force
+
+- name: Include glusterfs volume tasks
+  ansible.builtin.include_tasks:
+    file: glusterfs_post_install_brick.yml
+  when:
+    - _glusterfs_is_bootstrap_host

@@ -1,0 +1,75 @@
+---
+# Copyright 2022, BBC R&D.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Enable extra repositories
+  ansible.builtin.command: dnf config-manager --set-enabled "{{ item }}"
+  changed_when: false
+  with_items: "{{ glusterfs_server_dnf_enable }}"
+
+- name: Install gluster repo packages
+  ansible.builtin.package:
+    name: "{{ glusterfs_server_dnf_sig_packages }}"
+  when:
+    - glusterfs_server_dnf_sig_packages | length > 0
+
+- name: If a keyfile is provided, copy the gpg keyfile to the key location
+  ansible.builtin.copy:
+    src: "{{ item.keyfile }}"
+    dest: "{{ item.key }}"
+    mode: "0644"
+  with_items: "{{ glusterfs_package_repo_keys | default([]) | selectattr('keyfile', 'defined') | list }}"
+
+- name: Install gpg keys
+  ansible.builtin.rpm_key:
+    key: "{{ key.key }}"
+    validate_certs: "{{ key.validate_certs | default(omit) }}"
+    state: "{{ key.state | default('present') }}"
+  with_items: "{{ glusterfs_package_repo_keys | default([]) }}"
+  loop_control:
+    loop_var: key
+  register: _add_yum_keys
+  until: _add_yum_keys  is success
+  retries: 5
+  delay: 2
+
+- name: Install required RPM repositories
+  ansible.builtin.yum_repository:
+    name: "{{ item.name }}"
+    baseurl: "{{ item.baseurl }}"
+    description: "{{ item.description }}"
+    gpgkey: "{{ item.gpgkey }}"
+    gpgcheck: "{{ item.gpgcheck }}"
+    enabled: "{{ item.enabled }}"
+    state: "{{ item.state }}"
+    includepkgs: "{{ item.includepkgs | default([]) }}"
+  loop: "{{ glusterfs_package_repos | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: install_epel_repo
+  until: install_epel_repo  is success
+  retries: 5
+  delay: 2
+
+- name: Apply systemctl overrides
+  ansible.builtin.import_role:
+    name: systemd_service
+  vars:
+    systemd_services:
+      - service_name: systemd-tmpfiles-setup-dev
+        load: false
+        systemd_overrides_only: true
+        systemd_overrides:
+          Unit:
+            ConditionCapability: ""

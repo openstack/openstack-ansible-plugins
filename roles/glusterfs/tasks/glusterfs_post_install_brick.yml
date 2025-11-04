@@ -1,0 +1,48 @@
+---
+# Copyright 2022, BBC R&D.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# NOTE: When first establishing a peer relationship, a reverse DNS lookup happens which can cause a
+#       peer's active hostname not to match the one stored on disk. Restarting the service resolves
+#       this and prevents failures upon calls to create volumes.
+- name: Find existing peers' runtime hostnames
+  ansible.builtin.shell: "gluster peer status | grep Hostname: | cut -d ' ' -f 2"
+  changed_when: false
+  register: _existing_peer_hostnames
+  when: (glusterfs_server_cluster_members | length) > 1
+
+- name: Restart glusterfs server
+  ansible.builtin.service:
+    name: "{{ glusterfs_server_service }}"
+    state: restarted
+  when:
+    - _existing_peer_hostnames is not skipped
+    - ((_existing_peer_hostnames.stdout_lines | intersect(glusterfs_server_cluster_members)) | length) != (_existing_peer_hostnames.stdout_lines | length)
+
+# Retry as the service may have just restarted
+- name: Create gluster volume
+  vars:
+    num_cluster_members: "{{ glusterfs_server_cluster_members | length }}"
+    cluster_has_replicas: "{{ (glusterfs_server_cluster_members | length) > 1 }}"
+  gluster.gluster.gluster_volume:
+    state: present
+    name: "{{ glusterfs_server_volume_name }}"
+    bricks: "{{ glusterfs_server_bricks }}"
+    replicas: "{{ cluster_has_replicas | ternary(num_cluster_members, omit) }}"
+    cluster: "{{ glusterfs_server_cluster_members | map('regex_replace', '_', '-') | list }}"
+    force: true
+  register: _volume_create
+  delay: 1
+  retries: 5
+  until: _volume_create is success
