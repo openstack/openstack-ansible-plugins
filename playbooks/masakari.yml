@@ -28,6 +28,7 @@
   serial: "{{ masakari_monitor_serial | default('100%') }}"
   user: root
   vars:
+    pacemaker_corosync_install: true
     pacemaker_corosync_group: masakari_monitor
     pacemaker_corosync_ring_interface: "{{ masakari_monitor_corosync_multicast_interface }}"
     haveged_enabled: false
@@ -44,9 +45,18 @@
             - always
       tags:
         - always
-  roles:
-    - role: "pacemaker_corosync"
+  tasks:
+    - name: Create corosync cluster
+      ansible.builtin.include_role:
+        name: "pacemaker_corosync"
+        apply:
+          tags:
+            - pacemaker-corosync
       tags: pacemaker-corosync
+      when:
+        - pacemaker_corosync_install
+        - pacemaker_corosync_group in groups
+        - groups[pacemaker_corosync_group] | length > 0
 
 - name: Configure haproxy services
   ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
