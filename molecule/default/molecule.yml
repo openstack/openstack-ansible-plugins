@@ -44,6 +44,7 @@ provisioner:
     defaults:
       inject_facts_as_vars: false
       host_key_checking: false
+      local_tmp: /tmp
 
 scenario:
   name: default
