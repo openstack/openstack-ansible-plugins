@@ -23,4 +23,4 @@
     msg: >
       The only supported platforms for this release are Debian 12 (bookworm),
       Debian 13 (trixie), Ubuntu 24.04 (Noble Numbat), CentOS 10 Stream and
-      RHEL 10 derivatives such as Rocky Linux.
+      RHEL 10 derivatives such as Rocky Linux or AlmaLinux.
