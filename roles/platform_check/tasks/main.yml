@@ -21,5 +21,6 @@
         (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'noble') or
         (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10')
     msg: >
-      The only supported platforms for this release are Debian 12 (Bookworm)
-      Ubuntu 24.04 (Noble), CentOS 10 Stream and RHEL 10 derivatives such as Rocky Linux.
+      The only supported platforms for this release are Debian 12 (bookworm),
+      Debian 13 (trixie), Ubuntu 24.04 (Noble Numbat), CentOS 10 Stream and
+      RHEL 10 derivatives such as Rocky Linux.
