@@ -101,6 +101,7 @@
           xz:
             - xz
             - -d
+            - --memlimit=500MiB
         _decompress_args:
           - "{{ _decompress_format_binary[image['compressed_format']] }}"
           - "{{ _image_path }}"
