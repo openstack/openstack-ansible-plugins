@@ -52,14 +52,6 @@
       tags:
         - ceph-mon-facts
         - ceph-nfs
-    # NOTE(noonedeadpunk) drop this once https://github.com/ceph/ceph-ansible/pull/4959 will be merged
-    - name: Create ganesha log dir
-      file:
-        path: /var/log/ganesha
-        owner: root
-        group: root
-        mode: "0755"
-        state: directory
   roles:
     - role: ceph-defaults
       tags:
