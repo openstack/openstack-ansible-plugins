@@ -5,6 +5,7 @@ OpenStack-Ansible plugins
 .. toctree::
    :maxdepth: 2
 
+   openstack-resources.rst
    actions.rst
    filters.rst
 
