@@ -228,6 +228,8 @@
   hosts: keystone_all
   gather_facts: no
   user: root
+  tags:
+    - keystone-config
   environment: "{{ deployment_environment_variables | default({}) }}"
   tasks:
     - name: Setup installation variables
