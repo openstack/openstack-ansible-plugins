@@ -20,6 +20,7 @@ import os
 import re
 
 from ansible import errors
+from jinja2 import pass_environment
 from jinja2.runtime import Undefined
 try:
     from urllib.parse import urlparse
@@ -168,6 +169,42 @@ def splitlines(string_with_lines):
     return string_with_lines.splitlines()
 
 
+@pass_environment
+def osa_rejectattr(environment, data, attribute, *args, **kwargs):
+    """A wrapper for rejectattr that doesn't fail on missing attributes.
+
+    If an element is missing the attribute, it is kept. This is to preserve
+    the behavior of rejectattr before ansible-core 2.19.
+
+    This filter leverages the original rejectattr logic for elements that
+    do have the attribute.
+    """
+    # Resolve the test name and arguments. Default is 'defined' as per Jinja2.
+    test_name = args[0] if args else 'defined'
+    test_args = args[1:]
+
+    result = []
+    for item in data:
+        # Check if the attribute is present on the item.
+        if (isinstance(item, dict) and attribute in item) or \
+           (not isinstance(item, dict) and hasattr(item, attribute)):
+
+            if isinstance(item, dict):
+                val = item.get(attribute)
+            else:
+                val = getattr(item, attribute)
+
+            # Apply the test using the environment.
+            # rejectattr logic: if test(value) is True, the item is REJECTED.
+            if not environment.call_test(test_name, val,
+                                         args=test_args, kwargs=kwargs):
+                result.append(item)
+        else:
+            result.append(item)
+
+    return result
+
+
 class FilterModule(object):
     """Ansible jinja2 filters."""
 
@@ -176,5 +213,6 @@ class FilterModule(object):
         return {
             'string_2_int': string_2_int,
             'splitlines': splitlines,
-            'deprecated': _deprecated
+            'deprecated': _deprecated,
+            'rejectattr': osa_rejectattr
         }
