@@ -31,7 +31,7 @@
 - name: Remove outdated images
   when:
     - "'keep_copies' in image"
-    - item
+    - item | length > 0
     - not item['is_protected']
     - item['visibility'] == image['hide_method']
   openstack.cloud.image:

@@ -45,7 +45,7 @@
     content: "c /dev/fuse 0600 - - - 10:229"
     dest: "/etc/tmpfiles.d/openstack-ansible-glusterfs-server.conf"
     mode: "0644"
-  when: not (is_metal | default(False))
+  when: not (is_metal | default(False)) | bool
   register: _glusterfs_server_tmpfiles
 
 - name: Restart systemd-tmpfiles-setup-dev
@@ -54,7 +54,7 @@
     enabled: true
     state: restarted
   when:
-    - not (is_metal | default(False))
+    - not (is_metal | default(False)) | bool
     - _glusterfs_server_tmpfiles is changed
 
 - name: Start glusterfs server

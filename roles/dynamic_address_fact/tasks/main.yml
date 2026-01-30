@@ -20,7 +20,7 @@
   vars:
     default_network_interface_name: "{{ container_networks[network_address]['bridge'] | default }}"
   when:
-    - is_metal
+    - is_metal | bool
     - (dynamic_address_gather_filter is defined) or (default_network_interface_name | length > 0)
   tags:
     - common-address
