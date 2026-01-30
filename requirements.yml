@@ -42,3 +42,7 @@ collections:
     source: https://github.com/ansible-collections/community.crypto
     type: git
     version: 2.22.3
+  - name: adriacloud.kubernetes
+    source: https://github.com/adriacloud/ansible-collection-kubernetes
+    type: git
+    version: 26.4.1
