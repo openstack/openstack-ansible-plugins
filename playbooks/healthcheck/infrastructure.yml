@@ -425,4 +425,51 @@
           - "'imok' in zookeeper_ok.stdout"
           - "'rw' in zookeeper_ro.stdout"
 
+# Test k8s
+
+- name: Obtain kubeconfig for k8s testing
+  hosts: utility_all[0]
+  gather_facts: false
+  vars:
+    k8s_admin_conf_src: "/etc/kubernetes/admin.conf"
+    k8s_admin_conf_dest: "/root/.kube/config"
+  tasks:
+    - name: Collect admin config from k8s cluster
+      slurp:
+        src: "{{ k8s_admin_conf_src }}"
+      register: k8s_admin_conf_slurp
+      delegate_to: "{{ groups['k8s_all'][0] }}"
+      run_once: true
+
+    - name: Ensure target directory exists
+      file:
+        state: directory
+        path: "{{ k8s_admin_conf_dest | dirname }}"
+        owner: root
+        group: root
+
+    - name: Write k8s admin config to target dir
+      copy:
+        content: "{{ k8s_admin_conf_slurp.content | b64decode }}"
+        dest: "{{ k8s_admin_conf_dest }}"
+        owner: root
+        group: root
+        mode: '0600'
+  tags:
+    - healthcheck
+    - healthcheck-k8s
+
+- name: Run sonobuoy against k8s cluster
+  hosts: utility_all[0]
+  gather_facts: false
+  tasks:
+    - include_role:
+        name: sonobuoy
+      vars:
+        sonobuoy_kubeconfig_file: '/root/.kube/config'
+  tags:
+    - healthcheck
+    - healthcheck-k8s
+
+
 # TODO: Other playbook's tests.
