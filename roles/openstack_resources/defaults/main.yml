@@ -124,7 +124,10 @@ openstack_resources_compute: {}
 #       subnets:
 #         - name: vlan-subnet
 #           cidr: 192.168.20.0/24
-#           gateway_ip: 192.168.20.254
+#           gateway: 192.168.20.254
+#         - name: vlan-subnet-no-gateway
+#           cidr: 192.168.21.0/24
+#           gateway: null
 #   routers:
 #     - name: my_router
 #       network: public
