@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 - name: Test filters
   hosts: localhost
   connection: local
@@ -79,3 +78,38 @@
     - name: Validate deprecated filter
       ansible.builtin.assert:
         that: "deprecated_value == old_var"
+
+    - name: Set osa.rejectattr test data
+      ansible.builtin.set_fact:
+        rejectattr_data:
+          - name: item1
+          - name: item2
+            condition: false
+          - name: item3
+            condition: true
+        rejected_condition_false_result:
+          - name: item1
+          - name: item3
+            condition: true
+        rejected_condition_true_result:
+          - name: item1
+          - name: item2
+            condition: false
+        rejected_search_result:
+          - name: item3
+            condition: true
+
+    - name: Validate osa.rejectattr filter (missing attribute and equalto test)
+      ansible.builtin.assert:
+        that:
+          - (rejectattr_data | openstack.osa.rejectattr('condition', 'equalto', false) | list) == rejected_condition_false_result
+
+    - name: Validate osa.rejectattr filter (missing attribute and truthy test)
+      ansible.builtin.assert:
+        that:
+          - (rejectattr_data | openstack.osa.rejectattr('condition', 'true') | list) == rejected_condition_true_result
+
+    - name: Validate osa.rejectattr filter (complex test with args)
+      ansible.builtin.assert:
+        that:
+          - (rejectattr_data | openstack.osa.rejectattr('name', 'search', '^item[12]$') | list) == rejected_search_result
