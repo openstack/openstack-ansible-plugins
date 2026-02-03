@@ -32,6 +32,12 @@
         filter: "{{ nova_gather_filter | default('ansible_processor*') }}"
       when: osa_gather_facts | default(True)
 
+    - name: Pre-evaluate nova_console_proxy_types fact
+      ansible.builtin.set_fact:
+        nova_console_proxy_types: "{{ nova_console_proxy_types }}"
+      tags:
+        - haproxy-service-config
+
 - name: "Config haproxy service"
   ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
