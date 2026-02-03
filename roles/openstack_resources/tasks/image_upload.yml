@@ -26,7 +26,8 @@
 - name: Downloading image from remote url
   vars:
     images_for_download: "{{ images | selectattr('url', 'defined') }}"
-  when: images_for_download
+  when:
+    - images_for_download | length > 0
   block:
     - name: Create temporary dir for the image download
       ansible.builtin.tempfile:

@@ -34,7 +34,7 @@
       loop_control:
         loop_var: __mq_vhost
   when:
-    - "(_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))"
+    - "(_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined) | bool)"
     - "(_oslomsg_rpc_transport is defined) and (_oslomsg_rpc_transport == 'rabbit')"
   tags:
     - common-rabbitmq
@@ -42,7 +42,7 @@
 - name: Setup Notify MQ Service (RabbitMQ)
   delegate_to: "{{ _oslomsg_notify_setup_host }}"
   when:
-    - "(_oslomsg_notify_configure | default(_oslomsg_notify_transport is defined))"
+    - "(_oslomsg_notify_configure | default(_oslomsg_notify_transport is defined) | bool)"
     - "(_oslomsg_notify_transport is defined) and (_oslomsg_notify_transport == 'rabbit')"
   tags:
     - common-rabbitmq
@@ -58,7 +58,7 @@
         - (_oslomsg_rpc_vhost is undefined) or
           (_oslomsg_notify_vhost != _oslomsg_rpc_vhost) or
           (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host) or
-          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))
+          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined) | bool)
 
     - name: Setup Notify user
       vars:
@@ -73,5 +73,4 @@
         - (_oslomsg_rpc_userid is undefined) or
           (_oslomsg_notify_userid != _oslomsg_rpc_userid) or
           (_oslomsg_notify_setup_host != _oslomsg_rpc_setup_host) or
-          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined))
-
+          not (_oslomsg_rpc_configure | default(_oslomsg_rpc_transport is defined) | bool)

@@ -16,7 +16,7 @@
 - name: Create gluster peers
   gluster.gluster.gluster_peer:
     nodes: "{{ glusterfs_server_cluster_members }}"
-  when: _glusterfs_is_bootstrap_host
+  when: _glusterfs_is_bootstrap_host | bool
 
 - name: Ensure glusterfs backing directory exists
   ansible.builtin.file:
@@ -43,7 +43,7 @@
   when:
     - _backing_dir_create is changed
     - _brick_online_status.rc == 0
-    - (_brick_online_status.stdout_lines | select('contains', 'Online'))[0] | regex_search('N')
+    - (_brick_online_status.stdout_lines | select('contains', 'Online'))[0] | regex_search('N') is not none
   with_items:
     - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} start
     - gluster volume reset-brick {{ glusterfs_server_volume_name }} {{ brick }} {{ brick }} commit force
@@ -52,4 +52,4 @@
   ansible.builtin.include_tasks:
     file: glusterfs_post_install_brick.yml
   when:
-    - _glusterfs_is_bootstrap_host
+    - _glusterfs_is_bootstrap_host | bool

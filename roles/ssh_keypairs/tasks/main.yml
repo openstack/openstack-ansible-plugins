@@ -18,7 +18,7 @@
     file: "{{ ssh_keypairs_method ~ '_keypair.yml' }}"
 
 - name: Create keypairs
-  when: ssh_keypairs_create_keys
+  when: ssh_keypairs_create_keys | bool
   block:
     - name: Create keypair directories
       ansible.builtin.file:
@@ -43,9 +43,9 @@
 - name: Install ssh server certificate authorities
   ansible.builtin.include_tasks: "{{ ssh_keypairs_method }}/install_ssh_ca.yml"
   when:
-    - ssh_keypairs_install_authorities
+    - ssh_keypairs_install_authorities | bool
 
 - name: Install ssh keys
   ansible.builtin.include_tasks: "{{ ssh_keypairs_method }}/install_ssh_key.yml"
   when:
-    - ssh_keypairs_install_keypairs
+    - ssh_keypairs_install_keypairs | bool

@@ -18,8 +18,8 @@
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
   when:
-    - openstack_resources_image['images'] | selectattr('checksum', 'defined')
-    - not (openstack_resources_image['image_force_upload'] | default(false))
+    - openstack_resources_image['images'] | selectattr('checksum', 'defined') | length > 0
+    - not (openstack_resources_image['image_force_upload'] | default(false)) | bool
   register: existing_images
 
 - name: Upload images
