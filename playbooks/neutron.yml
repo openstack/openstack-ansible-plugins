@@ -54,7 +54,7 @@
     service_group: neutron_server
     service_variable: "neutron_haproxy_services"
   when:
-    - groups[service_group]
+    - groups[service_group] | length > 0
     - groups['haproxy'] | length > 0
   tags:
     - haproxy-service-config
