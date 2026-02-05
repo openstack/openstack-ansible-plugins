@@ -22,7 +22,7 @@
 - name: Importing barbican playbook
   ansible.builtin.import_playbook: openstack.osa.barbican
 
-- name: Importing  placement playbook
+- name: Importing placement playbook
   ansible.builtin.import_playbook: openstack.osa.placement
 
 - name: Importing glance playbook
