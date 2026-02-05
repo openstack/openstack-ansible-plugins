@@ -82,6 +82,9 @@
 - name: Importing blazar playbook
   ansible.builtin.import_playbook: openstack.osa.blazar
 
+- name: Importing freezer playbook
+  ansible.builtin.import_playbook: openstack.osa.freezer
+
 - name: Importing masakari playbook
   ansible.builtin.import_playbook: openstack.osa.masakari
 

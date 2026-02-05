@@ -1,0 +1,145 @@
+---
+# Copyright 2026, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Gather Freezer facts
+  hosts: "freezer_all"
+  gather_facts: "{{ osa_gather_facts | default(true) }}"
+  module_defaults:
+    ansible.builtin.setup:
+      gather_subset: "{{ osa_gather_subset | default(lookup('ansible.builtin.env', 'ANSIBLE_GATHER_SUBSET', default='!all,min')) }}"
+  tasks:
+    - name: Gather additional facts
+      ansible.builtin.include_role:
+        name: openstack.osa.gather_extra_facts
+      when: osa_gather_facts | default(true)
+  tags:
+    - always
+
+- name: Configure haproxy services
+  ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
+  vars:
+    service_group: freezer_api
+    service_variable: "freezer_haproxy_services"
+  when:
+    - groups[service_group] | length > 0
+    - groups['haproxy'] | length > 0
+  tags:
+    - haproxy-service-config
+
+- name: Install Freezer API services
+  hosts: freezer_api
+  gather_facts: false
+  serial: "{{ freezer_api_serial | default(['1','100%']) }}"
+  user: root
+  environment: "{{ deployment_environment_variables | default({}) }}"
+  tags:
+    - freezer
+  pre_tasks:
+    - name: Setup installation variables
+      ansible.builtin.include_role:
+        name: openstack.osa.install_defaults
+        defaults_from: "{{ install_method }}"
+        public: true
+        apply:
+          tags:
+            - always
+      tags:
+        - always
+
+    # In order to ensure that any container, software or
+    # config file changes which causes a container/service
+    # restart do not cause an unexpected outage, we drain
+    # the load balancer back end for this container.
+    - name: Disabling haproxy backends
+      ansible.builtin.include_role:
+        name: openstack.osa.haproxy_endpoint_manage
+        apply:
+          tags:
+            - always
+      vars:
+        haproxy_backend: freezer_api-back
+        haproxy_state: disabled
+      when:
+        - "'freezer_api' in group_names"
+        - "groups['freezer_api'] | length > 1"
+      tags:
+        - always
+
+    - name: Including container-setup tasks
+      ansible.builtin.include_role:
+        name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
+      when: not is_metal
+
+    - name: Including unbound-clients tasks
+      ansible.builtin.include_role:
+        name: openstack.osa.unbound_clients
+      when:
+        - hostvars['localhost']['resolvconf_enabled'] | bool
+
+  roles:
+    - role: "os_freezer"
+
+  post_tasks:
+    # Now that container changes are done, we can set
+    # the load balancer back end for this container
+    # to available again.
+    - name: Enabling haproxy backends
+      ansible.builtin.include_role:
+        name: openstack.osa.haproxy_endpoint_manage
+        apply:
+          tags:
+            - always
+      vars:
+        haproxy_backend: freezer_api-back
+        haproxy_state: enabled
+      when:
+        - "'freezer_api' in group_names"
+        - "groups['freezer_api'] | length > 1"
+      tags:
+        - always
+
+- name: Install Freezer Scheduler service
+  hosts: 'freezer_scheduler:!freezer_api'
+  gather_facts: false
+  serial: "{{ freezer_serial | default(['50%']) }}"
+  user: root
+  environment: "{{ deployment_environment_variables | default({}) }}"
+  tags:
+    - freezer
+  pre_tasks:
+    - name: Setup installation variables
+      ansible.builtin.include_role:
+        name: openstack.osa.install_defaults
+        defaults_from: "{{ install_method }}"
+        public: true
+        apply:
+          tags:
+            - always
+      tags:
+        - always
+
+    - name: Including container-setup tasks
+      ansible.builtin.include_role:
+        name: "openstack.osa.{{ container_tech | default('lxc') }}_container_setup"
+      when: not is_metal
+
+    - name: Including unbound-clients tasks
+      ansible.builtin.include_role:
+        name: openstack.osa.unbound_clients
+      when:
+        - hostvars['localhost']['resolvconf_enabled'] | bool
+
+  roles:
+    - role: "os_freezer"
