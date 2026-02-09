@@ -50,7 +50,7 @@
       ansible.builtin.pip:
         name: "git+https://opendev.org/openstack/openstack-ansible@{{ testing_branch }}#egg=openstack-ansible"
         extra_args: >-
-          -c{{ lookup('ansible.builtin.env', 'TOX_CONSTRAINTS_FILE', default='https://releases.openstack.org/constraints/upper/master') }}
+          -chttps://opendev.org/openstack/requirements/raw/branch/{{ testing_branch }}/upper-constraints.txt
           -rhttps://opendev.org/openstack/openstack-ansible/raw/branch/{{ testing_branch }}/requirements.txt
           -e
         virtualenv: "/opt/ansible-runtime"

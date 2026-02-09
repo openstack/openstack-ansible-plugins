@@ -2,27 +2,27 @@ roles:
   - name: apt_package_pinning
     scm: git
     src: https://opendev.org/openstack/openstack-ansible-apt_package_pinning
-    version: master
+    version: stable/2025.1
   - name: systemd_networkd
     src: https://opendev.org/openstack/ansible-role-systemd_networkd
     scm: git
-    version: master
+    version: stable/2025.1
   - name: systemd_service
     src: https://opendev.org/openstack/ansible-role-systemd_service
     scm: git
-    version: master
+    version: stable/2025.1
   - name: systemd_mount
     src: https://opendev.org/openstack/ansible-role-systemd_mount
     scm: git
-    version: master
+    version: stable/2025.1
   - name: lxc_hosts
     src: https://opendev.org/openstack/openstack-ansible-lxc_hosts
     scm: git
-    version: master
+    version: stable/2025.1
   - name: lxc_container_create
     src: https://opendev.org/openstack/openstack-ansible-lxc_container_create
     scm: git
-    version: master
+    version: stable/2025.1
 collections:
   - name: openvswitch.openvswitch
     source: https://github.com/ansible-collections/openvswitch.openvswitch
