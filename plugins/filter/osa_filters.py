@@ -15,13 +15,13 @@
 # (c) 2015, Kevin Carter <kevin.carter@rackspace.com>
 
 import hashlib
-import logging
 import os
 import re
 
 from ansible import errors
+from ansible.utils.display import Display
 from jinja2 import pass_environment
-from jinja2.runtime import Undefined
+from jinja2 import runtime
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -87,26 +87,10 @@ def _deprecated(new_var, old_var=None, old_var_name=None,
         )
 
     # If old_var is undefined or has a None value return the new_var value
-    if isinstance(old_var, Undefined) or not old_var:
+    if isinstance(old_var, runtime.Undefined) or not old_var:
         return new_var
 
-    name = 'Ansible-Warning| '
-    log = logging.getLogger(name)
-    for handler in log.handlers:
-        if name == handler.name:
-            break
-    else:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.name = name
-        stream_format = logging.Formatter(
-            '%(asctime)s - %(name)s%(levelname)s => %(message)s'
-        )
-        stream_handler.setFormatter(stream_format)
-
-        log.setLevel(logging.DEBUG)
-        log.addHandler(stream_handler)
-
+    display = Display()
     message = (
         'Deprecated Option provided: Deprecated variable: "%(old)s", Removal'
         ' timeframe: "%(removed_in)s", Future usage: "%(new)s"'
@@ -115,10 +99,9 @@ def _deprecated(new_var, old_var=None, old_var_name=None,
 
     if str(fatal).lower() in ['yes', 'true']:
         message = 'Fatally %s' % message
-        log.fatal(message)
         raise RuntimeError(message)
     else:
-        log.warn(message)
+        display.warning(message)
         return old_var
 
 
