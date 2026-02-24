@@ -17,6 +17,15 @@
   ansible.builtin.include_vars:
     file: "{{ ssh_keypairs_method ~ '_keypair.yml' }}"
 
+- name: Ensure that openssh is installed
+  vars:
+    _sshd_service_package:
+      redhat: openssh-server
+      debian: openssh-server
+  ansible.builtin.package:
+    name: "{{ _sshd_service_package[ansible_facts['os_family'] | lower] }}"
+    state: present
+
 - name: Create keypairs
   when: ssh_keypairs_create_keys
   block:

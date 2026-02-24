@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Ensure trusted CA directory is present
+- name: Ensure required directories are present
   ansible.builtin.file:
-    path: "/etc/ssh/trusted_ca.d"
+    path: "{{ item.path }}"
     state: directory
-    mode: "0700"
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+  loop:
+    - path: "/etc/ssh/trusted_ca.d"
+      mode: "0700"
+    - path: "/etc/ssh/sshd_config.d/"
+      mode: "0755"
 
 - name: Slurp up SSH CA certificates from keypair setup host ({{ ssh_keypairs_setup_host }})
   delegate_to: "{{ ssh_keypairs_setup_host }}"
