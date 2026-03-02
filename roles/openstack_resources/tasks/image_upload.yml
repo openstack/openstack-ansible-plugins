@@ -165,7 +165,7 @@
   ansible.builtin.async_status:
     jid: "{{ item }}"
   register: job_result
-  until: job_result.finished
+  until: job_result.finished | bool
   retries: "{{ openstack_resources_image['image_async_retries'] | default(200) }}"
   delay: "{{ openstack_resources_image['image_async_delay'] | default(10) }}"
   loop: "{{ upload_status }}"

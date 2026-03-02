@@ -21,7 +21,7 @@
     - name: Validate string_2_int filter
       ansible.builtin.assert:
         that:
-          - "{{ 'test' | openstack.osa.string_2_int }} == 3752"
+          - "'test' | openstack.osa.string_2_int == 3752"
 
     - name: Set pip package list facts
       ansible.builtin.set_fact:
