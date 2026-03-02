@@ -14,11 +14,11 @@
 # limitations under the License.
 
 - name: Create ceph pools
-  hosts: "{{ groups['ceph-mon'][0] | default([]) }}"
+  hosts: "{{ groups['ceph_mon'][0] | default([]) }}"
   user: root
   gather_facts: false
   vars:
-    is_metal: "{{ properties.is_metal|default(false) }}"
+    is_metal: "{{ properties.is_metal | default(false) }}"
   vars_files:
     - "defaults/{{ install_method }}_install.yml"
   pre_tasks:
@@ -75,6 +75,6 @@
         mode: "{{ item.0.item.mode | default(ceph_keyring_permissions) }}"
       with_nested:
         - "{{ _osp_keys.results }}"
-        - "{{ groups['ceph-mon'] }}"
+        - "{{ groups[mon_group_name] }}"
       delegate_to: "{{ item.1 }}"
       no_log: "{{ no_log_on_ceph_key_tasks }}"

@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Gather ceph-mon facts
-  hosts: ceph-mon
+- name: Gather ceph_mon facts
+  hosts: ceph_mon
   gather_facts: false
   tasks:
     - name: Refresh all_addresses facts
@@ -28,7 +28,7 @@
     - always
 
 - name: Install ceph mons
-  hosts: ceph-mon
+  hosts: ceph_mon
   user: root
   gather_facts: false
   pre_tasks:
@@ -166,8 +166,8 @@
     - ceph
     - ceph-mon
 
-- name: Gather ceph-osd facts
-  hosts: ceph-osd
+- name: Gather ceph_osd facts
+  hosts: ceph_osd
   gather_facts: "{{ osa_gather_facts | default(True) }}"
   module_defaults:
     ansible.builtin.setup:
@@ -180,7 +180,7 @@
     - always
 
 - name: Install ceph osds
-  hosts: ceph-osd
+  hosts: ceph_osd
   user: root
   gather_facts: false
   pre_tasks:
@@ -265,8 +265,8 @@
     - ceph
     - ceph-osd
 
-- name: Gather ceph-mds facts
-  hosts: ceph-mds
+- name: Gather ceph_mds facts
+  hosts: ceph_mds
   gather_facts: "{{ osa_gather_facts | default(True) }}"
   module_defaults:
     ansible.builtin.setup:
@@ -279,7 +279,7 @@
     - always
 
 - name: Install ceph metadata servers
-  hosts: ceph-mds
+  hosts: ceph_mds
   gather_facts: false
   user: root
   pre_tasks:

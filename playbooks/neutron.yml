@@ -34,7 +34,7 @@
 
 - name: Configure Neutron dynamic host groupings
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Add hosts to dynamic inventory group
       ansible.builtin.add_host:

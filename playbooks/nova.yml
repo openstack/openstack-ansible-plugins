@@ -74,7 +74,7 @@
       ansible.builtin.set_fact:
         nova_cinder_rbd_inuse: "{{ True in groups['cinder_volume'] | map('extract', hostvars, 'cinder_backend_rbd_inuse') }}"
       delegate_to: localhost
-      delegate_facts: True
+      delegate_facts: true
       when:
         - "'nova_compute' in group_names"
         - "inventory_hostname == ((groups['nova_compute'] | select('in', ansible_play_hosts)) | list)[0]"
@@ -175,7 +175,7 @@
       ansible.builtin.set_fact:
         nova_cinder_rbd_inuse: "{{ True in groups['cinder_volume'] | map('extract', hostvars, 'cinder_backend_rbd_inuse') }}"
       delegate_to: localhost
-      delegate_facts: True
+      delegate_facts: true
       when:
         - "'nova_compute' in group_names"
         - "inventory_hostname == ((groups['nova_compute'] | intersect(ansible_play_hosts)) | list)[0]"

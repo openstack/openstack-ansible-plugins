@@ -30,7 +30,7 @@
 - name: Configure haproxy services
   ansible.builtin.import_playbook: openstack.osa.haproxy_service_config
   vars:
-    service_group: octavia-api
+    service_group: octavia_api
     service_variable: "octavia_haproxy_services"
   when:
     - groups[service_group] | length > 0
