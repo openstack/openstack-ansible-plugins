@@ -17,8 +17,8 @@
   import_playbook: openstack.osa.ceph_rgw_keystone_setup
   when: (groups[rgw_group_name] is defined and groups[rgw_group_name] | length > 0) or (ceph_rgws | length > 0)
 
-- name: Gather ceph-rgw facts
-  hosts: ceph-rgw
+- name: Gather ceph_rgw facts
+  hosts: ceph_rgw
   gather_facts: "{{ osa_gather_facts | default(true) }}"
   module_defaults:
     ansible.builtin.setup:
@@ -31,7 +31,7 @@
     - always
 
 - name: Install ceph radosgw
-  hosts: ceph-rgw
+  hosts: ceph_rgw
   gather_facts: false
   user: root
   pre_tasks:
@@ -71,7 +71,7 @@
     - name: Gather ceph-mon facts
       action: setup
       delegate_to: "{{ item }}"
-      delegate_facts: yes
+      delegate_facts: true
       with_items: "{{ groups[mon_group_name] }}"
       when:
         - inventory_hostname == ansible_play_hosts[0]

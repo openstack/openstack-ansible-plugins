@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Gather ceph-nfs facts
-  hosts: ceph-nfs
+- name: Gather ceph_nfs facts
+  hosts: ceph_nfs
   gather_facts: "{{ osa_gather_facts | default(true) }}"
   module_defaults:
     ansible.builtin.setup:
@@ -27,7 +27,7 @@
     - always
 
 - name: Install nfs-ganesha server
-  hosts: ceph-nfs
+  hosts: ceph_nfs
   gather_facts: false
   user: root
   pre_tasks:

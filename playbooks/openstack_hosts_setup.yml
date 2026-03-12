@@ -20,7 +20,7 @@
 # Also, we can't use a 'when' to check for the ansible_facts['pkg_mgr'] here because
 # we haven't gathered facts yet.
 - name: Install Ansible prerequisites
-  hosts: "{{ openstack_host_group|default('hosts') }}"
+  hosts: "{{ openstack_host_group | default('hosts') }}"
   gather_facts: false
   user: root
   pre_tasks:
@@ -49,7 +49,7 @@
     - always
 
 - name: Basic host setup
-  hosts: "{{ openstack_host_group|default('hosts') }}"
+  hosts: "{{ openstack_host_group | default('hosts') }}"
   gather_facts: false
   user: root
   pre_tasks:
