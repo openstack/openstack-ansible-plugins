@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Setup the OS service
-  delegate_to: "{{ _service_setup_host }}"
+  delegate_to: "{{ _service_setup_host | default(inventory_hostname) }}"
   vars:
     ansible_python_interpreter: "{{ _service_setup_host_python_interpreter }}"
     _service_cloud_name: "{{ service_cloud_name | default('default') }}"

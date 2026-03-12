@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Setup Database Service (MariaDB)
-  delegate_to: "{{ _oslodb_setup_host }}"
+  delegate_to: "{{ _oslodb_setup_host | default(inventory_hostname) }}"
   vars:
     ansible_python_interpreter: "{{ _oslodb_ansible_python_interpreter }}"
   tags:

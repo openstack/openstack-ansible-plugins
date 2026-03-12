@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__resolved_oslomsg_rpc_setup_host: "{{ _oslomsg_rpc_setup_host | default(inventory_hostname) }}"
+__resolved_oslomsg_notify_setup_host: "{{ _oslomsg_notify_setup_host | default(inventory_hostname) }}"
+
 __resolved_oslomsg_rpc_vhost: |-
   {% if _oslomsg_rpc_vhost is string %}
   {%   set vhost_mapping = [{'name': _oslomsg_rpc_vhost, 'state': 'present'}] %}
