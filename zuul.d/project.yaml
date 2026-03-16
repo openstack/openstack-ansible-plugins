@@ -19,8 +19,8 @@
       - publish-openstack-docs-pti
       - build-release-notes-jobs-python3
       - openstack-ansible-molecule
-      # - openstack-ansible-upgrade-infra_lxc-jobs
-      # - openstack-ansible-deploy-infra_lxc-jobs
+      - openstack-ansible-upgrade-infra_lxc-jobs
+      - openstack-ansible-deploy-infra_lxc-jobs
     check:
       jobs:
         - openstack-ansible-deploy-infra_lxc-validate
