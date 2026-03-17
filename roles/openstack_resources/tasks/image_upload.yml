@@ -46,7 +46,10 @@
         url: "{{ image['url'] }}"
         dest: "{{ openstack_resources_image['image_download_path'] | default(tempdir['path']) }}/{{ image['url'] | basename }}"
         mode: "0644"
-        checksum: "{{ (download_checksum | bool) | ternary('md5:' ~ download_checksum, omit) }}"
+        checksum: >-
+          {{ 'md5:' ~ download_checksum
+             if download_checksum | default('')
+             else omit }}
       loop: "{{ images_for_download }}"
       loop_control:
         loop_var: image
