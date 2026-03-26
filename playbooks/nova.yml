@@ -267,6 +267,11 @@
         name: openstack.osa.install_defaults
         defaults_from: "{{ install_method }}"
         public: true
+        apply:
+          tags:
+            - always
+      tags:
+        - always
 
     - name: Running db_post_setup tasks from the role
       import_role:
