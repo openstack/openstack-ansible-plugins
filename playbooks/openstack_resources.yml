@@ -36,3 +36,5 @@
         openstack_resources_network: "{{ openstack_user_network | default({}) }}"
         openstack_resources_image: "{{ openstack_user_image | default({}) }}"
         openstack_resources_coe: "{{ openstack_user_coe | default({}) }}"
+      tags:
+        - always
