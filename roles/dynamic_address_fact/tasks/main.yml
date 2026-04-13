@@ -27,9 +27,9 @@
     - always
 
 - name: Set IP to use for {{ network_address }}
-  ansible.builtin.set_fact: "{{ network_address }}={{ hostvars[inventory_hostname] | json_query(query) }}"
+  ansible.builtin.set_fact: "{{ network_address }}={{ hostvars[inventory_hostname] | json_query(address_query) }}"
   vars:
-    query: "{{ is_metal | ternary(metal_query, non_metal_query) }}"
+    address_query: "{{ is_metal | ternary(metal_query, non_metal_query) }}"
     non_metal_query: "container_networks.{{ network_address }}.address || ansible_host"
     find_bridge: "container_networks.{{ network_address }}.bridge"
     metal_query: "ansible_facts.\"{{ hostvars[inventory_hostname] | json_query(find_bridge) | replace('-','_') }}\".ipv4.address || {{ non_metal_query }}"
