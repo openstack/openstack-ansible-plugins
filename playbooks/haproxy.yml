@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Gather haproxy facts
+- name: Gather HAProxy facts
   hosts: haproxy
   gather_facts: "{{ osa_gather_facts | default(true) }}"
   module_defaults:
@@ -42,17 +42,17 @@
         name: openstack.osa.unbound_clients
       when:
         - hostvars['localhost']['resolvconf_enabled'] | bool
-    - name: Remove legacy haproxy configuration files
+    - name: Remove legacy HAProxy configuration files
       ansible.builtin.file:
         dest: "/etc/haproxy/conf.d/{{ item.name }}"
         state: "absent"
-      with_items:
+      loop:
         - name: "keystone_internal"
-          when: "internal_lb_vip_address == external_lb_vip_address"
+          condition: "{{ internal_lb_vip_address == external_lb_vip_address }}"
         - name: "heat_api_cloudwatch"
-          when: "yes"
+          condition: true
       when:
-        - "item.when | bool"
+        - item.condition | bool
       tags:
         - haproxy-config  # this tag is present because the task is ONLY a config task
 
