@@ -71,7 +71,7 @@
         default_project: "{{ item.project | default(_service_project_name) }}"
       openstack.cloud.identity_user:
         cloud: "{{ _service_cloud_name }}"
-        state: present
+        state: "{{ item.state | default('present') }}"
         name: "{{ item.name }}"
         password: "{{ item.password }}"
         domain: "{{ item.domain | default('default') }}"
@@ -84,7 +84,7 @@
         - not (_service_in_ldap | default(False) | bool)
         - _service_users is defined
         - "'name' in item"
-        - "'password' in item"
+        - "'password' in item or item.get('state') == 'absent'"
         - (item.condition | default(True)) | bool
       until: add_user is success
       with_items: "{{ _service_users }}"
