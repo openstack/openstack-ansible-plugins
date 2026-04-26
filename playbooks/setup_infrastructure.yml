@@ -40,6 +40,9 @@
 - name: Importing zookeeper playbook
   ansible.builtin.import_playbook: openstack.osa.zookeeper
 
+- name: Importing k8s playbook
+  ansible.builtin.import_playbook: openstack.osa.k8s
+
 - name: Importing ceph-install playbook
   ansible.builtin.import_playbook: openstack.osa.ceph_install.yml
 
