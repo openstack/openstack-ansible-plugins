@@ -43,6 +43,10 @@ DOCUMENTATION = '''
           description: Hostname of host running a given container
           vars:
                - name: physical_host
+      physical_host_addr:
+          description: Address of host running a given container
+          vars:
+               - name: physical_host_addr
 '''
 
 import importlib
@@ -75,6 +79,7 @@ class Connection(SSH.Connection):
         self.kwargs = kwargs
         self.container_name = None
         self.physical_host = None
+        self.physical_host_addr = None
 
         # Store the container pid for multi-use
         self.container_pid = None
@@ -86,6 +91,7 @@ class Connection(SSH.Connection):
 
         self.container_name = self.get_option('container_name')
         self.physical_host = self.get_option('physical_host')
+        self.physical_host_addr = self.get_option('physical_host_addr')
 
         # Check to see if container_user is setup first, if so use that value.
         # If it isn't, then default to 'root'
@@ -101,15 +107,18 @@ class Connection(SSH.Connection):
 
         if self.is_container:
             physical_host_addrs = self.get_option('physical_host_addrs') or {}
-            if self.host in physical_host_addrs.values():
-                self.container_name = None
-            else:
-                self._set_physical_host_addr(physical_host_addrs)
+            # Determine the connection address (IP or resolvable name) for the jump host
+            ph_addr = self.physical_host_addr or \
+                      physical_host_addrs.get(self.physical_host, self.physical_host)
 
-    def _set_physical_host_addr(self, physical_host_addrs):
-        physical_host_addr = physical_host_addrs.get(self.physical_host,
-                                                     self.physical_host)
-        self.host = self._options['host'] = self._play_context.remote_addr = physical_host_addr
+            # Target is actually the physical host; disable container logic.
+            if self.host == ph_addr:
+                self.container_name = None
+                self.is_container = False
+                return
+
+            # Route SSH connection through the physical host address
+            self.host = self._options['host'] = self._play_context.remote_addr = ph_addr
 
     def exec_command(self, cmd, in_data=None, sudoable=True):
         """run a command on the remote host."""
