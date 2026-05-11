@@ -28,6 +28,9 @@
     apparmor_package_name:
       debian: apparmor
       redhat: ''
+    gitpython_package_name:
+      debian: python3-git
+      redhat: python3-GitPython
     iproute_package_name:
       redhat: iproute
       debian: iproute2
@@ -38,16 +41,24 @@
       redhat: sshd
       debian: ssh
     install_packages:
-      - "{{ sshd_package_name[ansible_facts['os_family'] | lower] }}"
       - "{{ apparmor_package_name[ansible_facts['os_family'] | lower] }}"
+      - "{{ gitpython_package_name[ansible_facts['os_family'] | lower] }}"
       - "{{ iproute_package_name[ansible_facts['os_family'] | lower] }}"
       - "{{ iputils_package_name[ansible_facts['os_family'] | lower] }}"
+      - "{{ sshd_package_name[ansible_facts['os_family'] | lower] }}"
   handlers:
     - name: Restart sshd service
       ansible.builtin.systemd:
         name: "{{ ssh_service_name[ansible_facts['os_family'] | lower] }}"
         state: restarted
   tasks:
+    - name: Install EPEL
+      ansible.builtin.package:
+        name: epel-release
+        state: present
+      when:
+        - ansible_facts['os_family'] | lower == 'redhat'
+
     - name: Install required packages
       ansible.builtin.package:
         name: "{{ install_packages | select() }}"
