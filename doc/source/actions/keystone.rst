@@ -7,7 +7,7 @@ Manage OpenStack Identity (keystone) users, projects, roles, and endpoints.
 
 Examples
 --------
-.. literalinclude:: ../../../library/keystone
+.. literalinclude:: ../../../library/keystone.py
    :language: yaml
    :start-after: EXAMPLES = """
    :end-before: """

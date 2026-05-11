@@ -82,7 +82,7 @@ options:
       to be exhausted. Defaults to 16. Not required.
 """
 
-EXAMPLES = r"""
+EXAMPLES = """
 
 - name: Clone repos
   git_requirements:
