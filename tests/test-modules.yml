@@ -14,11 +14,12 @@
 # limitations under the License.
 
 - name: Test modules
-  hosts: localhost
-  connection: local
+  hosts: osa_plugins
   gather_facts: false
   vars_files:
     - vars/provider_networks.yml
+  vars:
+    _ansible_role_requirements: "{{ lookup('file', 'ansible-role-requirements.yml') | from_yaml }}"
   tasks:
     - name: Test network mapping consistent order
       openstack.osa.provider_networks:
@@ -33,3 +34,41 @@
       ansible.builtin.assert:
         that:
           - pndata.results | map(attribute='network_mappings') | unique | length == 1
+
+    - name: Create temporary directory for git clones
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: git_reqs
+      register: tmp_git_dir
+
+    - name: Test git_requirements module with refspec and version
+      openstack.osa.git_requirements:
+        default_path: "{{ tmp_git_dir.path }}"
+        repo_info: "{{ _ansible_role_requirements }}"
+      register: git_req_result
+
+    - name: Verify git_requirements results
+      ansible.builtin.assert:
+        that:
+          - git_req_result is successful
+          - git_req_result.changed | bool
+
+    - name: Check if directories were created
+      ansible.builtin.stat:
+        path: "{{ tmp_git_dir.path }}/{{ item }}"
+      register: repo_stats
+      loop: "{{ _ansible_role_requirements | map(attribute='name') }}"
+
+    - name: Clean up temp directory
+      ansible.builtin.file:
+        path: "{{ tmp_git_dir.path }}"
+        state: absent
+
+    - name: Assert directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ repo_stats.results }}"
+      loop_control:
+        label: "{{ item.item }}"

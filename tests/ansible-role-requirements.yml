@@ -1,25 +1,15 @@
 ---
 - name: apt_package_pinning
-  src: https://git.openstack.org/openstack/openstack-ansible-apt_package_pinning
-  scm: git
-  version: master
-- name: pip_install
-  src: https://git.openstack.org/openstack/openstack-ansible-pip_install
+  src: https://opendev.org/openstack/openstack-ansible-apt_package_pinning
   scm: git
   version: master
 - name: openstack_hosts
-  src: https://git.openstack.org/openstack/openstack-ansible-openstack_hosts
+  src: https://opendev.org/openstack/openstack-ansible-openstack_hosts
   scm: git
-  version: master
-- name: lxc_hosts
-  src: https://git.openstack.org/openstack/openstack-ansible-lxc_hosts
+  version: 7750ead05455f867d44eed869ad13c3f7f7eecda
+  shallow_since: '2026-04-20'
+- name: os_ironic
   scm: git
-  version: master
-- name: lxc_container_create
-  src: https://git.openstack.org/openstack/openstack-ansible-lxc_container_create
-  scm: git
-  version: master
-- name: pki
-  src: https://opendev.org/openstack/ansible-role-pki
-  scm: git
-  version: master
+  src: https://opendev.org/openstack/openstack-ansible-os_ironic
+  refspec: refs/changes/09/835709/3
+  version: 6cf41cfa26128b64c422f22a103a8bc98b857f26

@@ -99,12 +99,28 @@ def init_signal():
 def check_out_version(repo, version, pull=False, fetch=True, force=False,
                       refspec=None, tag=False, depth=None,
                       shallow_since=None):
+    # If a refspec is defined, we must always fetch to ensure the ref is
+    # available locally, regardless of the 'fetch' parameter.
+    if refspec:
+        fetch = True
+
     if fetch:
         try:
             if shallow_since:
                 depth = None
-            repo.git.fetch(tags=tag, force=force, refspec=refspec,
-                           depth=depth, shallow_since=shallow_since)
+            fetch_kwargs = {
+                'tags': tag,
+                'force': force,
+                'depth': depth,
+                'shallow_since': shallow_since
+            }
+            if refspec:
+                remote_name = repo.remotes[0].name if repo.remotes else 'origin'
+                # We pass refspec as a positional argument because git fetch
+                # doesn't support --refspec=...
+                repo.git.fetch(remote_name, refspec, **fetch_kwargs)
+            else:
+                repo.git.fetch(**fetch_kwargs)
         except Exception as e:
             return ["Failed to fetch %s\n%s" % (repo.working_dir, str(e))]
 
@@ -125,7 +141,15 @@ def check_out_version(repo, version, pull=False, fetch=True, force=False,
 
     if pull:
         try:
-            repo.git.pull(force=force, refspec=refspec, depth=depth)
+            pull_kwargs = {
+                'force': force,
+                'depth': depth
+            }
+            if refspec:
+                remote_name = repo.remotes[0].name if repo.remotes else 'origin'
+                repo.git.pull(remote_name, refspec, **pull_kwargs)
+            else:
+                repo.git.pull(**pull_kwargs)
         except Exception as e:
             return ["Failed to pull repo %s\n%s" % (repo.working_dir, str(e))]
     return []
@@ -255,7 +279,6 @@ def set_default(dictionary, key, defaults):
 
 def main():
     # Define variables
-    failures = multiprocessing.Manager().list()
 
     # Data we can pass in to the module
     fields = {
@@ -336,7 +359,16 @@ def main():
     if success:
         module.exit_json(msg=str(git_repos), changed=True)
     else:
-        module.fail_json(msg=("Module failed"), meta=failures)
+        # Deep convert ListProxy and any nested ListProxies to standard lists
+        # to avoid TypeError during Ansible serialization.
+        cleaned_failures = []
+        for f in failures:
+            # Check for list-like objects (including ListProxy) that aren't strings
+            if hasattr(f, '__iter__') and not isinstance(f, (str, bytes)):
+                cleaned_failures.append(list(f))
+            else:
+                cleaned_failures.append(f)
+        module.fail_json(msg="Module failed", meta=cleaned_failures)
 
 
 if __name__ == '__main__':

@@ -14,8 +14,7 @@
 # limitations under the License.
 
 - name: Test filters
-  hosts: localhost
-  connection: local
+  hosts: osa_plugins
   gather_facts: false
   tasks:
     - name: Validate string_2_int filter
