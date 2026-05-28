@@ -21,6 +21,7 @@
       - openstack-ansible-molecule
       - openstack-ansible-upgrade-infra_lxc-jobs
       - openstack-ansible-deploy-infra_lxc-jobs
+      - openstack-ansible-deploy-k8sHA_lxc-jobs
     check:
       jobs:
         - openstack-ansible-deploy-infra_lxc-validate

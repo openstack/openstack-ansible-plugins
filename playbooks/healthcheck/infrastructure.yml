@@ -346,26 +346,30 @@
   vars:
     venv_path: /tmp/rabbitmqtest
   post_tasks:
-    - name: Setup installation variables
-      ansible.builtin.include_role:
-        name: openstack.osa.install_defaults
-        defaults_from: "{{ install_method }}"
-        public: true
-    - name: Generate venv for rabbitmq testing
-      ansible.builtin.include_role:
-        name: "python_venv_build"
-      vars:
-        venv_install_destination_path: "{{ venv_path }}"
-        venv_pip_packages:
-          - pika
-    - name: Copying test script
-      ansible.builtin.copy:
-        src: "scripts/rabbitmq-test.py"
-        dest: "{{ venv_path }}/rabbitmq-test.py"
-        mode: "0755"
-    - name: Connect to rabbitmq
-      ansible.builtin.command: "{{ venv_path }}/bin/python {{ venv_path }}/rabbitmq-test.py {{ hostvars[groups['rabbitmq_all'][0]]['management_address'] }}"
-      changed_when: false
+    - name: Run rabbit connection tests
+      when:
+        - groups['rabbitmq_all'] | length > 0
+      block:
+        - name: Setup installation variables
+          ansible.builtin.include_role:
+            name: openstack.osa.install_defaults
+            defaults_from: "{{ install_method }}"
+            public: true
+        - name: Generate venv for rabbitmq testing
+          ansible.builtin.include_role:
+            name: "python_venv_build"
+          vars:
+            venv_install_destination_path: "{{ venv_path }}"
+            venv_pip_packages:
+              - pika
+        - name: Copying test script
+          ansible.builtin.copy:
+            src: "scripts/rabbitmq-test.py"
+            dest: "{{ venv_path }}/rabbitmq-test.py"
+            mode: "0755"
+        - name: Connect to rabbitmq
+          ansible.builtin.command: "{{ venv_path }}/bin/python {{ venv_path }}/rabbitmq-test.py {{ hostvars[groups['rabbitmq_all'][0]]['management_address'] }}"
+          changed_when: false
   tags:
     - healthcheck
     - healthcheck-rabbitmq-install
@@ -427,46 +431,47 @@
 
 # Test k8s
 
-- name: Obtain kubeconfig for k8s testing
+- name: Run sonobuoy against k8s cluster
   hosts: utility_all[0]
   gather_facts: false
   vars:
     k8s_admin_conf_src: "/etc/kubernetes/admin.conf"
     k8s_admin_conf_dest: "/root/.kube/config"
+  pre_tasks:
+    - name: Run pre-tasks for k8s testing
+      when:
+        - groups['k8s_all'] | length > 0
+      block:
+        - name: Collect admin config from k8s cluster
+          ansible.builtin.slurp:
+            src: "{{ k8s_admin_conf_src }}"
+          register: k8s_admin_conf_slurp
+          delegate_to: "{{ groups['k8s_all'] | first | default('localhost') }}"
+          run_once: true
+
+        - name: Ensure target directory exists
+          ansible.builtin.file:
+            state: directory
+            path: "{{ k8s_admin_conf_dest | dirname }}"
+            owner: root
+            group: root
+            mode: "0755"
+
+        - name: Write k8s admin config to target dir
+          ansible.builtin.copy:
+            content: "{{ k8s_admin_conf_slurp.content | b64decode }}"
+            dest: "{{ k8s_admin_conf_dest }}"
+            owner: root
+            group: root
+            mode: '0600'
   tasks:
-    - name: Collect admin config from k8s cluster
-      slurp:
-        src: "{{ k8s_admin_conf_src }}"
-      register: k8s_admin_conf_slurp
-      delegate_to: "{{ groups['k8s_all'][0] }}"
-      run_once: true
-
-    - name: Ensure target directory exists
-      file:
-        state: directory
-        path: "{{ k8s_admin_conf_dest | dirname }}"
-        owner: root
-        group: root
-
-    - name: Write k8s admin config to target dir
-      copy:
-        content: "{{ k8s_admin_conf_slurp.content | b64decode }}"
-        dest: "{{ k8s_admin_conf_dest }}"
-        owner: root
-        group: root
-        mode: '0600'
-  tags:
-    - healthcheck
-    - healthcheck-k8s
-
-- name: Run sonobuoy against k8s cluster
-  hosts: utility_all[0]
-  gather_facts: false
-  tasks:
-    - include_role:
+    - name: Include sonobuoy role
+      ansible.builtin.include_role:
         name: sonobuoy
       vars:
-        sonobuoy_kubeconfig_file: '/root/.kube/config'
+        sonobuoy_kubeconfig_file: '{{ k8s_admin_conf_dest }}'
+      when:
+        - groups['k8s_all'] | length > 0
   tags:
     - healthcheck
     - healthcheck-k8s
