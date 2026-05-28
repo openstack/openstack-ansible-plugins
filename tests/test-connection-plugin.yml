@@ -164,3 +164,15 @@
       register: delegated
       failed_when: delegated.stdout != 'container3'
       changed_when: false
+
+- name: Test physical_host_addr option
+  hosts: container1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ping container with explicit physical_host_addr
+      ansible.builtin.ping:
+      vars:
+        # Explicitly passing physical_host_addr to test the plugin's new logic.
+        # This mimics the recommended configuration for production inventories.
+        physical_host_addr: "{{ hostvars[physical_host]['ansible_host'] | default('127.0.0.1') }}"
