@@ -13,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# NOTE(damiandabrowski): Temporary workaround until https://github.com/ceph/ceph-ansible/pull/7701 is merged
+- hosts: manila_share
+  tasks:
+    - name: Remove ceph repo managed by ceph_client role
+      ansible.builtin.file:
+        path: "/etc/apt/sources.list.d/ceph.sources"
+        state: absent
+      when: ansible_facts['pkg_mgr'] == 'apt'
+
 - name: Install ganesha-nfs
   ansible.builtin.import_playbook: openstack.osa.ceph_nfs_install
 
