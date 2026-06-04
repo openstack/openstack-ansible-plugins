@@ -59,14 +59,14 @@
       changed_when: false
       when: groups['haproxy'] | length > 1
 
-    - name: Install netcat
+    - name: Install socat
       ansible.builtin.package:
-        name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
+        name: "socat"
         state: present
 
     # Fails if HAProxy is not running
     - name: Recording haproxy stats as a way to ensure haproxy runs
-      ansible.builtin.shell: 'echo "show info;show stat" | nc -U /var/run/haproxy.stat'
+      ansible.builtin.shell: 'echo "show info;show stat" | socat stdio unix-connect:/var/run/haproxy.stat'
       changed_when: false
       register: haproxy_stats
 
@@ -142,13 +142,13 @@
       delegate_facts: true
       with_items: "{{ groups['memcached'] }}"
 
-    - name: Install netcat
+    - name: Install socat
       ansible.builtin.package:
-        name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
+        name: "socat"
         state: present
 
     - name: Connect to remote memcache servers (full mesh testing)
-      ansible.builtin.shell: "echo stats | nc -w 3 {{ hostvars[memcached_host]['management_address'] }} {{ memcached_port }}"
+      ansible.builtin.shell: "echo stats | socat -t 3 stdio TCP4:{{ hostvars[memcached_host]['management_address'] }}:{{ memcached_port }}"
       changed_when: false
       register: memcache_stats
       with_items: "{{ groups['memcached'] }}"
@@ -408,18 +408,18 @@
 - name: Ensure zookeeper is healthy
   hosts: "zookeeper_all"
   tasks:
-    - name: Esuring netcat is installed
+    - name: Esuring socat is installed
       ansible.builtin.package:
-        name: "{% if ansible_facts['os_family'] | lower == 'redhat' %}nmap-ncat{% else %}netcat-openbsd{% endif %}"
+        name: "socat"
         state: present
 
     - name: Gathering zookeeper state
-      ansible.builtin.shell: "echo ruok | nc localhost {{ coordination_port | default(2181) }}"
+      ansible.builtin.shell: "echo ruok | socat -t 3 stdio TCP4:127.0.0.1:{{ coordination_port | default(2181) }}"
       register: zookeeper_ok
       changed_when: false
 
     - name: Gathering zookeeper rw/ro
-      ansible.builtin.shell: "echo isro | nc localhost {{ coordination_port | default(2181) }}"
+      ansible.builtin.shell: "echo isro | socat -t 3 stdio TCP4:127.0.0.1:{{ coordination_port | default(2181) }}"
       register: zookeeper_ro
       changed_when: false
 
