@@ -113,27 +113,19 @@
         name: "{{ (ansible_facts['os_family'] | lower == 'debian') | ternary('python3-yaml', 'python3-pyyaml') }}"
         state: present
 
-    - name: Create systemd service directory
+    # TODO(anfimovir): remove this task after 2027.1
+    - name: Remove obsolete ceph-mon systemd override
       ansible.builtin.file:
-        path: "/etc/systemd/system/ceph-mon@.service.d/"
-        state: directory
-        group: "root"
-        owner: "root"
-        mode: "0755"
-      when:
-        - ansible_facts['pkg_mgr'] == 'dnf'
-        - ansible_facts['service_mgr'] == 'systemd'
+        path: "/etc/systemd/system/ceph-mon@.service.d/ceph-mon-systemd-overrides.conf"
+        state: "absent"
+      notify: Reload systemd
 
-    - name: Add systemd override for PrivateDevices
-      ansible.builtin.copy:
-        dest: "/etc/systemd/system/ceph-mon@.service.d/ceph-mon-systemd-overrides.conf"
-        content: |
-          [Service]
-          PrivateDevices=false
-        mode: "0640"
-      when:
-        - ansible_facts['pkg_mgr'] == 'dnf'
-        - ansible_facts['service_mgr'] == 'systemd'
+    # TODO(anfimovir): remove this task after 2027.1
+    - name: Remove ceph-mon systemd override directory
+      ansible.builtin.file:
+        path: "/etc/systemd/system/ceph-mon@.service.d"
+        state: "absent"
+      notify: Reload systemd
 
   roles:
     - role: ceph-defaults
