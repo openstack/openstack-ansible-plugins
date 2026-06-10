@@ -15,7 +15,7 @@
 
 openstack_resources_cloud_name: default
 openstack_resources_interface: internal
-
+openstack_resources_region_name: "{{ service_region | default('RegionOne') }}"
 openstack_resources_setup_host: "{{ openstack_service_setup_host | default('localhost') }}"
 openstack_resources_python_interpreter: >-
   {{

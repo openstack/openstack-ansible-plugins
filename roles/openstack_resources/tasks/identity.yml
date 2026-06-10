@@ -46,6 +46,7 @@
     _service_users: "{{ openstack_resources_identity['users'] | default([]) }}"
     _service_catalog: "{{ openstack_resources_identity['catalog'] | default([]) }}"
     _service_endpoints: "{{ openstack_resources_identity['endpoints'] | default([]) }}"
+    _service_region: "{{ openstack_resources_region_name }}"
 
 - name: Setting up quotas
   delegate_to: "{{ openstack_resources_setup_host }}"
