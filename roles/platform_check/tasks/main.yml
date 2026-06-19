@@ -16,13 +16,12 @@
 - name: Check for a supported Operating System
   ansible.builtin.assert:
     that:
-      - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'bookworm') or
-        (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'trixie') or
+      - (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'trixie') or
         (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'noble') or
         (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_release'] == 'resolute') or
         (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10')
     msg: >
-      The only supported platforms for this release are Debian 12 (bookworm),
+      The only supported platforms for this release are
       Debian 13 (trixie), Ubuntu 24.04 (Noble Numbat),
       Ubuntu 26.04 (Resolute Raccoon) CentOS 10 Stream and RHEL 10 derivatives
       such as Rocky Linux or AlmaLinux.
