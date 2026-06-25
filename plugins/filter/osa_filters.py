@@ -20,6 +20,7 @@ import re
 
 from ansible import errors
 from ansible.utils.display import Display
+from jinja2 import pass_context
 from jinja2 import pass_environment
 from jinja2 import runtime
 try:
@@ -33,7 +34,8 @@ Simple filters that may be useful from within the stack
 """
 
 
-def _deprecated(new_var, old_var=None, old_var_name=None,
+@pass_context
+def _deprecated(context, new_var, old_var=None, old_var_name=None,
                 new_var_name=None, removed_in=None, fatal=False):
     """Provide a deprecation warning on deprecated variables.
 
@@ -86,8 +88,13 @@ def _deprecated(new_var, old_var=None, old_var_name=None,
             ' removed. ' + _usage
         )
 
+    # If old_var is None or Undefined, try to retrieve it from the context
+    if old_var is None or isinstance(old_var, runtime.Undefined):
+        if old_var_name:
+            old_var = context.resolve(old_var_name)
+
     # If old_var is undefined or has a None value return the new_var value
-    if isinstance(old_var, runtime.Undefined) or not old_var:
+    if isinstance(old_var, runtime.Undefined) or old_var is None:
         return new_var
 
     display = Display()

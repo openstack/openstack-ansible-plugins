@@ -71,12 +71,36 @@
       ansible.builtin.set_fact:
         new_var: new
         old_var: old
+        old_var_falsey: false
     - name: Set deprecated filter fact
       ansible.builtin.set_fact:
         deprecated_value: "{{ new_var | openstack.osa.deprecated(old_var, 'old_var', 'new_var', 'Next Release', false) }}"
+        deprecated_value_undefined_default: "{{ new_var | openstack.osa.deprecated(undefined_var | default(none), 'undefined_var', 'new_var', 'Next Release') }}"
+        deprecated_value_undefined_no_default: "{{ 'noop' | openstack.osa.deprecated(old_var_name='undefined_var', new_var_name='new_var', removed_in='Next Release') }}"
+        deprecated_value_undefined_kwarg: "{{ new_var | openstack.osa.deprecated(old_var_name='undefined_var', new_var_name='new_var', removed_in='Next Release', fatal=false) }}"
+        deprecated_value_falsey: "{{ new_var | openstack.osa.deprecated(old_var_falsey, 'old_var_falsey', 'new_var', 'Next Release', false) }}"
     - name: Validate deprecated filter
       ansible.builtin.assert:
-        that: "deprecated_value == old_var"
+        that:
+          - deprecated_value == old_var
+          - deprecated_value_undefined_default == new_var
+          - deprecated_value_undefined_no_default == 'noop'
+          - deprecated_value_undefined_kwarg == new_var
+          - deprecated_value_falsey == old_var_falsey
+
+    - name: Test fatal deprecation raises error when old variable is defined
+      block:
+        - name: Trigger fatal deprecation
+          ansible.builtin.set_fact:
+            deprecated_value_fatal: "{{ new_var | openstack.osa.deprecated(old_var, 'old_var', 'new_var', 'Next Release', true) }}"
+        - name: Fail if the deprecation did not raise an exception
+          ansible.builtin.fail:
+            msg: "The deprecation filter should have raised a fatal exception!"
+      rescue:
+        - name: Verify error message contains 'Fatally'
+          ansible.builtin.assert:
+            that:
+              - "'Fatally' in ansible_failed_result.msg"
 
     - name: Set osa.rejectattr test data
       ansible.builtin.set_fact:
