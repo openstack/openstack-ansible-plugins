@@ -46,9 +46,6 @@
 - name: Importing designate playbook
   ansible.builtin.import_playbook: openstack.osa.designate
 
-- name: Importing swift playbook
-  ansible.builtin.import_playbook: openstack.osa.swift
-
 - name: Importing adjutant playbook
   ansible.builtin.import_playbook: openstack.osa.adjutant
 
@@ -57,6 +54,9 @@
 
 - name: Importing ceilometer playbook
   ansible.builtin.import_playbook: openstack.osa.ceilometer
+
+- name: Importing swift playbook
+  ansible.builtin.import_playbook: openstack.osa.swift
 
 - name: Importing aodh playbook
   ansible.builtin.import_playbook: openstack.osa.aodh
