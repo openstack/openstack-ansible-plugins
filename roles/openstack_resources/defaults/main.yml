@@ -65,10 +65,10 @@ openstack_resources_identity: {}
 #   aggregates:
 #     - name: az1
 #       availability_zone: "az1"
-#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, 'ansible_hostname') }}"
-#       exclusive: "no"
+#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, ['ansible_facts', 'hostname']) }}"
+#       exclusive: false
 #     - name: otheraggregate
-#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, 'ansible_hostname') }}"
+#       hosts: "{{ groups['nova_compute'] | map('extract', hostvars, ['ansible_facts', 'hostname']) }}"
 #   flavors:
 #     - specs:
 #         - name: b.1c0.5gb
