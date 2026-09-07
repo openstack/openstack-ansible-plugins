@@ -99,7 +99,17 @@
     - name: Decompress image file
       vars:
         _image_path: >-
-          {{ image['filename'] | default(openstack_resources_image['image_download_path'] | default(tempdir.path) ~ '/' ~ image['url'] | basename) }}
+          {{
+            image.filename
+            if image.filename is defined
+            else (
+              openstack_resources_image['image_download_path']
+              | default(tempdir.path)
+              ~ '/'
+              ~ image.url
+              | basename
+            )
+          }}
         _decompress_format_binary:
           gz: gunzip
           xz:
@@ -122,7 +132,17 @@
       name: "{{ image['name'] }}"
       state: "{{ image['state'] | default('present') }}"
     _image_path: >-
-      {{ image['filename'] | default(openstack_resources_image['image_download_path'] | default(tempdir.path) ~ '/' ~ image['url'] | basename) }}
+      {{
+        image.filename
+        if image.filename is defined
+        else (
+          openstack_resources_image['image_download_path']
+          | default(tempdir.path)
+          ~ '/'
+          ~ image.url
+          | basename
+        )
+      }}
   openstack.cloud.image:
     checksum: "{{ image['checksum'] | default(omit) }}"
     cloud: "{{ openstack_resources_cloud_name }}"
@@ -177,3 +197,4 @@
   ansible.builtin.file:
     path: "{{ tempdir.path }}"
     state: absent
+  when: tempdir.path is defined
