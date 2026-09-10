@@ -66,7 +66,7 @@ EXAMPLES = """
 #     range: "1:1000"
 #     net_name: "vxlan"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     container_bridge: "br-vxlan"
 #     container_type: "veth"
@@ -86,7 +86,7 @@ EXAMPLES = """
 #     type: "flat"
 #     net_name: "flat"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     container_bridge: "br-vlan"
 #     container_type: "veth"
@@ -97,13 +97,13 @@ EXAMPLES = """
 #     range: "1:1, 101:101"
 #     net_name: "vlan"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     host_bind_override: "bond1"
 #     type: "vlan"
 #     net_name: "physnet1"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     host_bind_override: "bond2"
 #     type: "vlan"
@@ -111,7 +111,7 @@ EXAMPLES = """
 #     range: "1:999"
 #     reference_group: "rack1_hosts"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     host_bind_override: "bond2"
 #     type: "vlan"
@@ -119,7 +119,7 @@ EXAMPLES = """
 #     range: "1000:1999"
 #     reference_group: "rack2_hosts"
 #     group_binds:
-#       - neutron_linuxbridge_agent
+#       - neutron_openvswitch_agent
 # - network:
 #     container_bridge: "br-provider"
 #     container_type: "veth"

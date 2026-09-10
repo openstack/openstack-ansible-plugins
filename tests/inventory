@@ -19,5 +19,5 @@ fake_hosts
 [fake_containers]
 fakecontainer container_name=fakecontainer physical_host=fakehost
 
-[neutron_linuxbridge_agent]
+[neutron_openvswitch_agent]
 localhost
