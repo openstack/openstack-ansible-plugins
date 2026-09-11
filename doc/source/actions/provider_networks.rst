@@ -1,5 +1,5 @@
-provider_networks
-~~~~~~~~~~~~~~~~~
+Parse provider network definitions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Synopsis
 --------
