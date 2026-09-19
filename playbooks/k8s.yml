@@ -21,18 +21,18 @@
       gather_subset: "{{ osa_gather_subset | default(lookup('ansible.builtin.env', 'ANSIBLE_GATHER_SUBSET', default='!all,min')) }}"
   tasks:
     - name: Gather additional facts
-      include_role:
+      ansible.builtin.include_role:
         name: openstack.osa.gather_extra_facts
       when: osa_gather_facts | default(true)
 
-    - name: ensure python3 virtualenv is present
+    - name: Ensure python3 virtualenv is present
       ansible.builtin.package:
         name:
           - python3-venv
           - python3-setuptools
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: ensure ansible target venv is present
+    - name: Ensure ansible target venv is present
       ansible.builtin.pip:
         name:
           - packaging
@@ -88,8 +88,8 @@
         _kernel_package_prefix:
           redhat: 'kernel-headers'
           debian: 'linux-headers'
-      package:
-        name: "{{ _kernel_package_prefix[ansible_facts['os_family']|lower]}}-{{ ansible_facts['kernel'] }}"
+      ansible.builtin.package:
+        name: "{{ _kernel_package_prefix[ansible_facts['os_family'] | lower] }}-{{ ansible_facts['kernel'] }}"
         state: present
       delegate_to: "{{ physical_host }}"
       when: not is_metal
@@ -111,27 +111,34 @@
 - name: Install kubernetes
   hosts: k8s_all
   gather_facts: true
+  environment: "{{ deployment_environment_variables | default({}) }}"
   serial: "{{ k8s_serial | default('20%') }}"
   user: root
   vars:
     k8s_node_labels:
       openstack-control-plane: enabled
     ansible_python_interpreter: "{{ ansible_collection_kubernetes_target_venv ~ '/bin/python' }}"
-  roles:
-      - role: "adriacloud.kubernetes.containerd"
-      - role: "adriacloud.kubernetes.kubernetes"
-      - role: "adriacloud.kubernetes.helm"
-      - role: "adriacloud.kubernetes.cilium"
-        environment: "{{ deployment_environment_variables | default({}) }}"
   tasks:
-      - name: Ensure Nodes are defined and labeled
-        kubernetes.core.k8s:
-          definition:
-            apiVersion: v1
-            kind: Node
-            metadata:
-              name: "{{ inventory_hostname | lower }}"
-              labels: "{{ k8s_node_labels }}"
+    - name: Include containerd role
+      ansible.builtin.include_role:
+        name: "adriacloud.kubernetes.containerd"
+    - name: Include kubernetes role
+      ansible.builtin.include_role:
+        name: "adriacloud.kubernetes.kubernetes"
+    - name: Include HELM role
+      ansible.builtin.include_role:
+        name: "adriacloud.kubernetes.helm"
+    - name: Include Cilium role
+      ansible.builtin.include_role:
+        name: "adriacloud.kubernetes.cilium"
+    - name: Ensure Nodes are defined and labeled
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ inventory_hostname | lower }}"
+            labels: "{{ k8s_node_labels }}"
   tags:
     - k8s
     - k8s-install
@@ -148,7 +155,7 @@
     ansible_python_interpreter: "{{ ansible_collection_kubernetes_target_venv ~ '/bin/python' }}"
   tasks:
     - name: Load collection defaults for role includes
-      ansible.builtin.import_role:
+      ansible.builtin.include_role:
         name: "adriacloud.kubernetes.defaults"
 
     - name: Including cert manager role
