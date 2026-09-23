@@ -28,9 +28,12 @@ collections:
     source: https://github.com/ansible-collections/openvswitch.openvswitch
     type: git
     version: 2.1.1
-  - name:  https://opendev.org/openstack/ansible-config_template
+  - name: openstack.config_template
+    source: https://opendev.org/openstack/ansible-config_template
     type: git
-    version: master
+  - name: ansible.posix
+    source: https://github.com/ansible-collections/ansible.posix
+    type: git
   - name: https://github.com/ansible-collections/ansible.utils
     version: main
     type: git
