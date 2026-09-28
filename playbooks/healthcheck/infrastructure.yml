@@ -360,6 +360,7 @@
             name: "python_venv_build"
           vars:
             venv_install_destination_path: "{{ venv_path }}"
+            venv_wheel_build_enable: "{{ (install_method == 'source') }}"
             venv_pip_packages:
               - pika
         - name: Copying test script
