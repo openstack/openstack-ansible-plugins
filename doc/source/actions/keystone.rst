@@ -1,5 +1,5 @@
-keystone
-~~~~~~~~
+Manage Keystone
+~~~~~~~~~~~~~~~
 
 Synopsis
 --------

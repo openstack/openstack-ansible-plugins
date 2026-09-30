@@ -2,8 +2,9 @@
 Filters
 =======
 
-deprecated
-~~~~~~~~~~
+Warn on deprecated variable use
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This filter will return the old_var value, if defined, along with a
 deprecation warning that will inform the user that the old variable
 should no longer be used.
@@ -32,8 +33,8 @@ will raise an exception if the old variable is used.
    # "new_var"
    # => "old value"
 
-splitlines
-~~~~~~~~~~
+Split multi-line string into a list
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This filter will return of list from a string with line breaks.
 
 .. code-block:: yaml
@@ -47,8 +48,8 @@ This filter will return of list from a string with line breaks.
     {{ string_with_line_breaks | splitlines }}
     # => [ "a string", "with", "line", "breaks" ]
 
-string_2_int
-~~~~~~~~~~~~
+Hash string into bounded integer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This filter will hash a given string, convert it to a base36 int, and return
 the modulo of 10240.
 

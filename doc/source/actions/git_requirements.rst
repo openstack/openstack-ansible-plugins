@@ -1,5 +1,5 @@
-git_requirements
-~~~~~~~~~~~~~~~~
+Clone Git repos in parallel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Synopsis
 --------
