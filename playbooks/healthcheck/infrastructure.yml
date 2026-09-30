@@ -350,24 +350,27 @@
       when:
         - groups['rabbitmq_all'] | length > 0
       block:
-        - name: Setup installation variables
-          ansible.builtin.include_role:
-            name: openstack.osa.install_defaults
-            defaults_from: "{{ install_method }}"
-            public: true
+        - name: Ensure python3-venv present
+          ansible.builtin.package:
+            name:
+              - python3-venv
+            state: present
+          when:
+            - ansible_facts['os_family'] | lower == 'debian'
+
         - name: Generate venv for rabbitmq testing
-          ansible.builtin.include_role:
-            name: "python_venv_build"
-          vars:
-            venv_install_destination_path: "{{ venv_path }}"
-            venv_wheel_build_enable: "{{ (install_method == 'source') }}"
-            venv_pip_packages:
+          ansible.builtin.pip:
+            name:
               - pika
+            virtualenv: "{{ venv_path }}"
+            virtualenv_command: "{{ ansible_facts['python']['executable'] }} -m venv"
+
         - name: Copying test script
           ansible.builtin.copy:
             src: "scripts/rabbitmq-test.py"
             dest: "{{ venv_path }}/rabbitmq-test.py"
             mode: "0755"
+
         - name: Connect to rabbitmq
           ansible.builtin.command: "{{ venv_path }}/bin/python {{ venv_path }}/rabbitmq-test.py {{ hostvars[groups['rabbitmq_all'][0]]['management_address'] }}"
           changed_when: false
