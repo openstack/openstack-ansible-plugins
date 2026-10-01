@@ -34,6 +34,25 @@
   hosts: ceph_rgw
   gather_facts: false
   user: root
+  handlers:
+    - name: Regen pem # noqa: risky-shell-pipe
+      ansible.builtin.shell: |
+          {
+          files=(
+              "{{ ceph_rgw_ssl_cert }}"
+              "{{ ceph_rgw_ssl_key }}"
+          )
+          for f in "${files[@]}"; do
+              cat "$f"
+              # adds a newline at the end of file's content if it doesn't exist
+              tail -c1 "$f" | grep -q '^$' || echo
+            done
+          } > {{ ceph_rgw_ssl_keystore_location }}
+      changed_when: true
+      args:
+        executable: /bin/bash
+      listen:
+        - cert installed
   pre_tasks:
     - name: Setup installation variables
       ansible.builtin.include_role:
@@ -88,9 +107,10 @@
             - ceph-rgw-config
             - pki
       vars:
+        pki_backend: "{{ ceph_rgw_pki_backend | default('standalone') }}"
         pki_setup_host: "{{ ceph_rgw_pki_setup_host }}"
         pki_dir: "{{ ceph_rgw_pki_dir }}"
-        pki_create_certificates: "{{ ceph_rgw_user_ssl_cert is not defined and ceph_rgw_user_ssl_key is not defined }}"
+        pki_create_certificates: "{{ ceph_rgw_user_ssl_cert | length == 0 and ceph_rgw_user_ssl_key | length == 0 }}"
         pki_regen_cert: "{{ ceph_rgw_pki_regen_cert }}"
         pki_certificates: "{{ ceph_rgw_pki_certificates }}"
         pki_install_certificates: "{{ ceph_rgw_pki_install_certificates }}"
@@ -124,6 +144,6 @@
 
   vars:
     is_metal: "{{ properties.is_metal|default(false) }}"
-    radosgw_civetweb_port: "{{ radosgw_service_port }}"
+    radosgw_frontend_port: "{{ radosgw_service_port }}"
   tags:
     - ceph-rgw
