@@ -51,10 +51,17 @@ DOCUMENTATION = '''
 
 import importlib
 import os
+import re
 
 from ansible.module_utils.six.moves import shlex_quote
 
 SSH = importlib.import_module('ansible.plugins.connection.ssh')
+
+# Matches terminal OSC (Operating System Command) escape sequences (e.g. OSC 3008
+# hierarchical context signalling emitted by pam_systemd or shell integrations)
+# which can corrupt non-interactive machine streams like Ansible module output.
+OSC_REGEX_BYTES = re.compile(rb'\x1b\][0-9]*;[^\x1b\x07]*(?:\x1b\\|\x07)')
+OSC_REGEX_STR = re.compile(r'\x1b\][0-9]*;[^\x1b\x07]*(?:\x1b\\|\x07)')
 
 class Connection(SSH.Connection):
     """Transport options for containers.
@@ -142,7 +149,24 @@ class Connection(SSH.Connection):
                 shlex_quote(cmd)
             )
 
-        return super(Connection, self).exec_command(cmd, in_data, sudoable)
+        returncode, stdout, stderr = super(Connection, self).exec_command(cmd, in_data, sudoable)
+
+        if self.is_container:
+            if stdout:
+                stdout = self._strip_osc(stdout)
+            if stderr:
+                stderr = self._strip_osc(stderr)
+
+        return returncode, stdout, stderr
+
+    @staticmethod
+    def _strip_osc(data):
+        if isinstance(data, bytes):
+            if b'\x1b]' in data:
+                return OSC_REGEX_BYTES.sub(b'', data)
+        elif '\x1b]' in data:
+            return OSC_REGEX_STR.sub('', data)
+        return data
 
     def _container_check(self):
         if self.container_name is not None:
