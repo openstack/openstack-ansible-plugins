@@ -251,7 +251,7 @@
           - "'OPERATIONAL' in wsrep_evs_state.stdout"
 
     - name: Create DB for service on "{{ groups['galera_all'][0] }}"
-      community.mysql.mysql_db:
+      ansible.mariadb.mariadb_db:
         login_user: "{{ galera_root_user | default('root') }}"
         login_password: "{{ galera_root_password }}"
         login_host: "{{ management_address }}"
@@ -263,7 +263,7 @@
         - skip_ansible_lint
 
     - name: Grant access to the DB on "{{ groups['galera_all'][-1] }}"
-      community.mysql.mysql_user:
+      ansible.mariadb.mariadb_user:
         login_user: "{{ galera_root_user | default('root') }}"
         login_password: "{{ galera_root_password }}" # noqa no-log-password
         login_host: "{{ management_address }}"
@@ -290,7 +290,7 @@
       when: inventory_hostname == groups['galera_all'][-1]
 
     - name: Remove created user
-      community.mysql.mysql_user:
+      ansible.mariadb.mariadb_user:
         login_user: "{{ galera_root_user | default('root') }}"
         login_password: "{{ galera_root_password }}" # noqa no-log-password
         login_host: "{{ management_address }}"
@@ -304,7 +304,7 @@
       when: inventory_hostname == groups['galera_all'][-1]
 
     - name: Remove created DB
-      community.mysql.mysql_db:
+      ansible.mariadb.mariadb_db:
         login_user: "{{ galera_root_user | default('root') }}"
         login_password: "{{ galera_root_password }}" # noqa no-log-password
         login_host: "{{ management_address }}"

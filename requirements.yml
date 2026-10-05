@@ -31,11 +31,14 @@ collections:
   - name: openstack.config_template
     source: https://opendev.org/openstack/ansible-config_template
     type: git
+  - name: ansible.mariadb
+    source: https://github.com/ansible-collections/ansible.mariadb
+    type: git
   - name: ansible.posix
     source: https://github.com/ansible-collections/ansible.posix
     type: git
-  - name: https://github.com/ansible-collections/ansible.utils
-    version: main
+  - name: ansible.utils
+    source: https://github.com/ansible-collections/ansible.utils
     type: git
   - name: community.general
     source: https://github.com/ansible-collections/community.general
@@ -45,6 +48,9 @@ collections:
     source: https://github.com/ansible-collections/community.crypto
     type: git
     version: 2.22.3
+  - name: kubernetes.core
+    source: https://github.com/ansible-collections/kubernetes.core
+    type: git
   - name: adriacloud.kubernetes
     source: https://github.com/adriacloud/ansible-collection-kubernetes
     type: git

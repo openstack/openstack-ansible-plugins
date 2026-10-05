@@ -21,7 +21,7 @@
     - common-mariadb
   block:
     - name: Create database for service
-      community.mysql.mysql_db:
+      ansible.mariadb.mariadb_db:
         name: "{{ item.name }}"
         login_host: "{{ _oslodb_setup_endpoint | default(omit) }}"
         login_port: "{{ _oslodb_setup_port | default(omit) }}"
@@ -31,7 +31,7 @@
       when: item.condition | default(True)
 
     - name: Grant access to the database for the service
-      community.mysql.mysql_user:
+      ansible.mariadb.mariadb_user:
         name: "{{ item.1.username }}"
         password: "{{ item.1.password }}"
         host: "{{ item.1.host | default('%') }}"
