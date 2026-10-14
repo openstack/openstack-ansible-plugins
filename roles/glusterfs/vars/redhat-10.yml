@@ -30,7 +30,13 @@ glusterfs_package_repos:
     gpgkey: "file://{{ (glusterfs_package_repo_keys | selectattr('name', 'eq', 'copr-neil-glusterfs') | first).key }}"
     state: present
   - name: epel-gluster-deps
-    baseurl: "{{ glusterfs_epel_mirror ~ '/' ~ ansible_facts['distribution_major_version'] ~ '/Everything/' ~ ansible_facts['architecture'] }}"
+    baseurl: >-
+      {{
+        glusterfs_epel_mirror ~
+        '/' ~ ansible_facts['distribution_major_version'] ~
+        (ansible_facts['distribution'] | lower != 'centos') | ternary('z', '') ~
+        '/Everything/' ~ ansible_facts['architecture']
+      }}
     description: "Extra Packages for Enterprise Linux $releasever - $basearch"
     gpgkey: "file://{{ (glusterfs_package_repo_keys | selectattr('name', 'eq', 'epel-10') | first).key }}"
     gpgcheck: true
