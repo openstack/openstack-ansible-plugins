@@ -1,0 +1,12 @@
+---
+- name: openstack_hosts
+  src: https://opendev.org/openstack/openstack-ansible-openstack_hosts
+  scm: git
+  version: c0513c13da15ed7fa162e7c7865bad945f7ad047
+  shallow_since: '2026-04-15'
+- name: pki
+  scm: git
+  src: https://opendev.org/openstack/ansible-role-pki
+  trackbranch: stable/2026.1
+  version: master
+  shallow_since: '2026-06-07'

@@ -5,6 +5,7 @@ import git
 import itertools
 import multiprocessing
 import os
+import shutil
 import signal
 import time
 
@@ -180,90 +181,113 @@ def pull_role(info):
         if len(required_version) == 40:
             version_hash = True
 
+    def clone_repo():
+        # If we have a hash id then treat this a little differently
+        shallow_since = role.get('shallow_since')
+        if shallow_since:
+            depth = None
+        else:
+            depth = role.get('depth')
+
+        if version_hash:
+            repo = git.Repo.clone_from(role["src"], role["dest"],
+                                       no_single_branch=True,
+                                       depth=depth,
+                                       shallow_since=shallow_since,)
+            if not repo:
+                return ["Failed to clone %s" % role["dest"]]
+            return check_out_version(repo, required_version,
+                                     force=config["force"],
+                                     refspec=role["refspec"],
+                                     depth=depth,
+                                     fetch=False,
+                                     shallow_since=shallow_since,)
+        else:
+            git.Repo.clone_from(role["src"], role["dest"],
+                                branch=required_version,
+                                depth=depth,
+                                shallow_since=shallow_since,
+                                no_single_branch=True)
+            return []
+
     def get_repo(dest):
         try:
             return git.Repo(dest)
         except Exception:
-            failtxt = "Role in {0} is broken/not a git repo.".format(
-                role["dest"])
-            failtxt += "Please delete or fix it manually"
-            failures.append(failtxt)
+            if not config["force"]:
+                failtxt = "Role in {0} is broken/not a git repo.".format(
+                    role["dest"])
+                failtxt += "Please delete or fix it manually"
+                failures.append(failtxt)
             return False
+
+    def force_reclone(repo=None):
+        if repo:
+            try:
+                repo.close()
+            except Exception:
+                pass
+        shutil.rmtree(role["dest"], ignore_errors=True)
+        try:
+            return clone_repo()
+        except Exception as e:
+            return ['Failed re-cloning repo %s\n%s' % (role["dest"], str(e))]
 
     # if repo exists
     if os.path.exists(role["dest"]):
         repo = get_repo(role["dest"])
         if not repo:
-            return False  # go to next role
-        repo_url = list(repo.remote().urls)[0]
-        if repo_url != role["src"]:
-            repo.remote().set_url(role["src"])
-
-        # if they want master then fetch, checkout and pull to stay at latest
-        # master
-        if required_version == "master":
-            fail = check_out_version(repo, required_version, pull=True,
-                                     force=config["force"],
-                                     refspec=role["refspec"],
-                                     depth=role["depth"],
-                                     shallow_since=role["shallow_since"])
-
-        # If we have a hash then reset it to
-        elif version_hash:
-            fail = check_out_version(repo, required_version,
-                                     force=config["force"],
-                                     refspec=role["refspec"],
-                                     depth=role["depth"],
-                                     shallow_since=role["shallow_since"])
-        else:
-            # describe can fail in some cases so be careful:
-            try:
-                current_version = repo.git.describe(tags=True)
-            except Exception:
-                current_version = ""
-            if current_version == required_version and not config["force"]:
-                fail = []
-                pass
+            if config["force"]:
+                fail = force_reclone()
             else:
+                return False  # go to next role
+        else:
+            repo_url = list(repo.remote().urls)[0]
+            if repo_url != role["src"]:
+                repo.remote().set_url(role["src"])
+
+            # if they want master then fetch, checkout and pull to stay at latest
+            # master
+            if required_version == "master":
+                fail = check_out_version(repo, required_version, pull=True,
+                                         force=config["force"],
+                                         refspec=role["refspec"],
+                                         depth=role["depth"],
+                                         shallow_since=role["shallow_since"])
+
+            # If we have a hash then reset it to
+            elif version_hash:
                 fail = check_out_version(repo, required_version,
                                          force=config["force"],
                                          refspec=role["refspec"],
                                          depth=role["depth"],
-                                         shallow_since=role["shallow_since"],
-                                         tag=True)
+                                         shallow_since=role["shallow_since"])
+            else:
+                # describe can fail in some cases so be careful:
+                try:
+                    current_version = repo.git.describe(tags=True)
+                except Exception:
+                    current_version = ""
+                if current_version == required_version and not config["force"]:
+                    fail = []
+                    pass
+                else:
+                    fail = check_out_version(repo, required_version,
+                                             force=config["force"],
+                                             refspec=role["refspec"],
+                                             depth=role["depth"],
+                                             shallow_since=role["shallow_since"],
+                                             tag=True)
+
+            if fail and config["force"]:
+                fail = force_reclone(repo)
 
     else:
         try:
-            # If we have a hash id then treat this a little differently
-            shallow_since = role.get('shallow_since')
-            if shallow_since:
-                depth = None
-            else:
-                depth = role.get('depth')
-
-            if version_hash:
-                repo = git.Repo.clone_from(role["src"], role["dest"],
-                                           no_single_branch=True,
-                                           depth=depth,
-                                           shallow_since=shallow_since,)
-                if not repo:
-                    return False  # go to next role
-                fail = check_out_version(repo, required_version,
-                                         force=config["force"],
-                                         refspec=role["refspec"],
-                                         depth=depth,
-                                         fetch=False,
-                                         shallow_since=shallow_since,)
-            else:
-                git.Repo.clone_from(role["src"], role["dest"],
-                                    branch=required_version,
-                                    depth=depth,
-                                    shallow_since=shallow_since,
-                                    no_single_branch=True)
-                fail = []
-
+            fail = clone_repo()
         except Exception as e:
-            fail = ('Failed cloning repo %s\n%s' % (role["dest"], str(e)))
+            fail = ['Failed cloning repo %s\n%s' %
+                    (role["dest"], str(e))]
 
     if fail == []:
         return True

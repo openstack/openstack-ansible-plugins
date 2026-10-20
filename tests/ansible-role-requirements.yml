@@ -13,3 +13,9 @@
   src: https://opendev.org/openstack/openstack-ansible-os_ironic
   refspec: refs/changes/09/835709/3
   version: 6cf41cfa26128b64c422f22a103a8bc98b857f26
+- name: pki
+  scm: git
+  src: https://opendev.org/openstack/ansible-role-pki
+  trackbranch: stable/2026.1
+  version: d21553828999bd7599138514a849bf337b615764
+  shallow_since: '2026-10-05'
