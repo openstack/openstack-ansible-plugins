@@ -26,6 +26,10 @@
     check:
       jobs:
         - openstack-ansible-deploy-infra_lxc-validate
+        - openstack-ansible-tox-molecule-rockylinux-10:
+            voting: false
     gate:
       jobs:
         - openstack-ansible-deploy-infra_lxc-validate
+        - openstack-ansible-tox-molecule-rockylinux-10:
+            voting: false

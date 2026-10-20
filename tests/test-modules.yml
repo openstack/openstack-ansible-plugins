@@ -20,6 +20,7 @@
     - vars/provider_networks.yml
   vars:
     _ansible_role_requirements: "{{ lookup('file', 'ansible-role-requirements.yml') | from_yaml }}"
+    _ansible_role_requirements_update: "{{ lookup('file', 'ansible-role-requirements-update.yml') | from_yaml }}"
   tasks:
     - name: Test network mapping consistent order
       openstack.osa.provider_networks:
@@ -41,34 +42,146 @@
         suffix: git_reqs
       register: tmp_git_dir
 
-    - name: Test git_requirements module with refspec and version
-      openstack.osa.git_requirements:
-        default_path: "{{ tmp_git_dir.path }}"
-        repo_info: "{{ _ansible_role_requirements }}"
-      register: git_req_result
+    - name: Test git_requirements lifecycle
+      block:
+        - name: Test git_requirements module with refspec and version
+          openstack.osa.git_requirements:
+            default_path: "{{ tmp_git_dir.path }}"
+            repo_info: "{{ _ansible_role_requirements }}"
+          register: git_req_result
 
-    - name: Verify git_requirements results
-      ansible.builtin.assert:
-        that:
-          - git_req_result is successful
-          - git_req_result.changed | bool
+        - name: Verify git_requirements results
+          ansible.builtin.assert:
+            that:
+              - git_req_result is successful
+              - git_req_result.changed | bool
 
-    - name: Check if directories were created
-      ansible.builtin.stat:
-        path: "{{ tmp_git_dir.path }}/{{ item }}"
-      register: repo_stats
-      loop: "{{ _ansible_role_requirements | map(attribute='name') }}"
+        - name: Check if directories were created
+          ansible.builtin.stat:
+            path: "{{ tmp_git_dir.path }}/{{ item }}"
+          register: repo_stats
+          loop: "{{ _ansible_role_requirements | map(attribute='name') }}"
 
-    - name: Clean up temp directory
-      ansible.builtin.file:
-        path: "{{ tmp_git_dir.path }}"
-        state: absent
+        - name: Assert directories exist
+          ansible.builtin.assert:
+            that:
+              - item.stat.exists
+              - item.stat.isdir
+          loop: "{{ repo_stats.results }}"
+          loop_control:
+            label: "{{ item.item }}"
 
-    - name: Assert directories exist
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-          - item.stat.isdir
-      loop: "{{ repo_stats.results }}"
-      loop_control:
-        label: "{{ item.item }}"
+        - name: Check git commit HEAD on cloned repos
+          ansible.builtin.command:
+            cmd: git rev-parse HEAD
+            chdir: "{{ tmp_git_dir.path }}/{{ item.name }}"
+          register: git_heads
+          loop: "{{ _ansible_role_requirements }}"
+          loop_control:
+            label: "{{ item.name }}"
+          changed_when: false
+
+        - name: Assert HEAD matches expected version for pinned commits
+          ansible.builtin.assert:
+            that:
+              - item.stdout == item.item.version
+          loop: "{{ git_heads.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+          when: item.item.version | length == 40
+
+        - name: Check git status is clean on cloned repos
+          ansible.builtin.command:
+            cmd: git status --porcelain
+            chdir: "{{ tmp_git_dir.path }}/{{ item.name }}"
+          register: git_statuses
+          loop: "{{ _ansible_role_requirements }}"
+          loop_control:
+            label: "{{ item.name }}"
+          changed_when: false
+
+        - name: Assert repo working trees are clean
+          ansible.builtin.assert:
+            that:
+              - item.stdout == ""
+          loop: "{{ git_statuses.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+
+        - name: Test switching an existing repo to an older checksum with deepened shallow_since
+          openstack.osa.git_requirements:
+            default_path: "{{ tmp_git_dir.path }}"
+            force: true
+            repo_info: "{{ _ansible_role_requirements_update }}"
+          register: git_req_update_result
+
+        - name: Verify git_requirements update succeeded
+          ansible.builtin.assert:
+            that:
+              - git_req_update_result is successful
+              - git_req_update_result.changed | bool
+
+        - name: Check git commit HEAD on updated repos
+          ansible.builtin.command:
+            cmd: git rev-parse HEAD
+            chdir: "{{ tmp_git_dir.path }}/{{ item.name }}"
+          register: updated_git_heads
+          loop: "{{ _ansible_role_requirements_update }}"
+          loop_control:
+            label: "{{ item.name }}"
+          changed_when: false
+
+        - name: Assert HEAD matches expected version for pinned commits in updated repos
+          ansible.builtin.assert:
+            that:
+              - item.stdout == item.item.version
+          loop: "{{ updated_git_heads.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+          when: item.item.version | length == 40
+
+        - name: Check current branch on branch-pinned updated repos
+          ansible.builtin.command:
+            cmd: git rev-parse --abbrev-ref HEAD
+            chdir: "{{ tmp_git_dir.path }}/{{ item.name }}"
+          register: updated_git_branches
+          loop: "{{ _ansible_role_requirements_update }}"
+          loop_control:
+            label: "{{ item.name }}"
+          changed_when: false
+          when: item.version | length != 40
+
+        - name: Assert branch matches expected version for branch-pinned updated repos
+          ansible.builtin.assert:
+            that:
+              - item.stdout == item.item.version
+          loop: "{{ updated_git_branches.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+          when:
+            - item.item.version | length != 40
+            - not item.skipped | default(false)
+
+        - name: Check git status is clean on updated repos
+          ansible.builtin.command:
+            cmd: git status --porcelain
+            chdir: "{{ tmp_git_dir.path }}/{{ item.name }}"
+          register: updated_git_statuses
+          loop: "{{ _ansible_role_requirements_update }}"
+          loop_control:
+            label: "{{ item.name }}"
+          changed_when: false
+
+        - name: Assert updated repo working trees are clean
+          ansible.builtin.assert:
+            that:
+              - item.stdout == ""
+          loop: "{{ updated_git_statuses.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+
+      always:
+        - name: Clean up temp directory
+          ansible.builtin.file:
+            path: "{{ tmp_git_dir.path }}"
+            state: absent
