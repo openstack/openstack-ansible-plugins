@@ -39,7 +39,11 @@
     loop_var: subnet
     label: "{{ loop_label | to_json }}"
   vars:
-    network_uuid: "{{ _provisioned_networks['results'] | selectattr('network.name', 'eq', network['name']) | map(attribute='id') | first }}"
+    network_uuid: "{{ _provisioned_networks['results']
+      | selectattr('network.name', 'eq', network['name'])
+      | selectattr('network.project', 'eq', network['project'])
+      | map(attribute='id')
+      | first }}"
     loop_label:
       name: "{{ subnet['name'] }}"
       network_name: "{{ network['name'] }}"
