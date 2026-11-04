@@ -29,3 +29,5 @@ glusterfs_bootstrap_node: "{{ groups[glusterfs_server_group_name][0] }}"
 glusterfs_package_state: "{{ package_state | default('latest') }}"
 
 glusterfs_epel_mirror: "{{ centos_epel_mirror | default('http://dl.fedoraproject.org/pub/epel') }}"
+glusterfs_epel_key: >-
+  {{ centos_epel_key | default('https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-' ~ ansible_facts['distribution_major_version']) }}

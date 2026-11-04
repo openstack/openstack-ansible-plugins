@@ -19,7 +19,7 @@ glusterfs_package_repo_keys:
     keyfile: gpg/7D0CC81C
   - name: epel-10
     key: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-10
-    keyfile: gpg/E37ED158
+    url: "{{ glusterfs_epel_key }}"
 
 glusterfs_package_repos:
   - name: copr-gluster
