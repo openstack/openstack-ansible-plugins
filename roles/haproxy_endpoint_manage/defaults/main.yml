@@ -1,0 +1,16 @@
+---
+# Backend should be supplied dynamically, otherwise module
+# will try to auto-detect it.
+# haproxy_backend:
+haproxy_drain: false
+haproxy_group_name: haproxy
+haproxy_host: "{{ inventory_hostname }}"
+haproxy_shutdown_sessions: false
+haproxy_socket: /var/run/haproxy.stat
+haproxy_state: enabled
+haproxy_target_hosts: "{{ groups[haproxy_group_name] }}"
+haproxy_wait: false
+haproxy_wait_interval: 5
+haproxy_wait_retries: 24
+# Weight of the backend. Skipped when undefined.
+# haproxy_weight:
