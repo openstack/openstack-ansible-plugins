@@ -31,6 +31,13 @@
     mode: "0644"
   with_items: "{{ glusterfs_package_repo_keys | default([]) | selectattr('keyfile', 'defined') | list }}"
 
+- name: If a url is provided, download the gpg keyfile to the key location
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.key }}"
+    mode: "0644"
+  with_items: "{{ glusterfs_package_repo_keys | selectattr('url', 'defined') | list }}"
+
 - name: Install gpg keys
   ansible.builtin.rpm_key:
     key: "{{ key.key }}"
