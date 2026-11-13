@@ -65,33 +65,34 @@
   openstack.cloud.network:
     cloud: "{{ openstack_resources_cloud_name }}"
     interface: "{{ openstack_resources_interface }}"
-    name: "{{ network['name'] }}"
-    state: "{{ network['state'] | default(omit) }}"
-    external: "{{ network['external'] | default(omit) }}"
-    shared: "{{ network['shared'] | default(omit) }}"
-    project: "{{ network['project'] | default(omit) }}"
-    mtu_size: "{{ network['mtu'] | default(omit) }}"
-    provider_network_type: "{{ network['network_type'] | default(omit) }}"
-    provider_physical_network: "{{ network['physical_network'] | default(omit) }}"
-    provider_segmentation_id: "{{ network['segmentation_id'] | default(omit) }}"
+    name: "{{ _network['name'] }}"
+    state: "{{ _network['state'] | default(omit) }}"
+    external: "{{ _network['external'] | default(omit) }}"
+    shared: "{{ _network['shared'] | default(omit) }}"
+    project: "{{ _network['project'] | default(omit) }}"
+    mtu_size: "{{ _network['mtu'] | default(omit) }}"
+    provider_network_type: "{{ _network['network_type'] | default(omit) }}"
+    provider_physical_network: "{{ _network['physical_network'] | default(omit) }}"
+    provider_segmentation_id: "{{ _network['segmentation_id'] | default(omit) }}"
   loop: "{{ openstack_resources_network['networks'] | default([]) }}"
   register: _provisioned_networks
   loop_control:
-    loop_var: "network"
+    loop_var: "_network"
     label: "{{ loop_label | to_json }}"
   vars:
     loop_label:
-      name: "{{ network['name'] }}"
-      state: "{{ network['state'] | default('present') }}"
-      external: "{{ network['external'] | default('false') }}"
-      shared: "{{ network['shared'] | default('false') }}"
+      name: "{{ _network['name'] }}"
+      state: "{{ _network['state'] | default('present') }}"
+      external: "{{ _network['external'] | default('false') }}"
+      shared: "{{ _network['shared'] | default('false') }}"
 
 - name: Creating subnets for each network
   ansible.builtin.include_tasks:
     file: network_subnets.yml
-  loop: "{{ openstack_resources_network['networks'] | default([]) | selectattr('subnets', 'defined') }}"
+  loop: "{{ _provisioned_networks['results'] | default([]) | selectattr('_network.subnets', 'defined') }}"
   loop_control:
-    loop_var: network
+    loop_var: subnet_network
+    label: "{{ subnet_network['_network']['name'] }}"
 
 - name: Creating routers
   openstack.cloud.router:
